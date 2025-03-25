@@ -1,0 +1,21 @@
+{
+    "manifest_version": 3,
+    "name": "Timbers Matchday Notifier",
+    "version": "1.0",
+    "description": "Get notified about upcoming Portland Timbers matches and engage with fellow Timbers fans!",
+    "action": {
+      "default_popup": "popup.html",
+      "default_icon": "icon.png"
+    },
+    "background": {
+      "service_worker": "background.js"
+    },
+    "permissions": [
+      "storage",
+      "alarms"
+    ],
+    "host_permissions": [
+      "https://www.mlssoccer.com/*"
+    ]
+  }
+  
