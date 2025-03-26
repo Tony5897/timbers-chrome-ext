@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Timbers Matchday Notifier</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      width: 290px;
+      font-family: 'Helvetica Neue', sans-serif;
+      font-weight: 400;
+      text-transform: uppercase;
+      margin: 0;
+      padding: 10px;
+      background-color: #fff;
+      color: #fff;
+    }
+    header, .section {
+      margin-bottom: 10px;
+      text-decoration: strong;
+    }
+    header h1 {
+      font-size: 24px;
+      font-weight: 900;
+      text-align: center;
+      color: #013220;
+    }
+    .match-info, .fan-engagement {
+      background: #183F10;
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .match-info p, .fan-engagement p {
+      margin: 15px 0;
+    }
+    .countdown {
+      font-weight: bold;
+      font-size: 18px;
+      text-align: center;
+      color: #fff;
+    }
+    button {
+      display: block;
+      width: 100%;
+      padding: 8px;
+      margin-top: 10px;
+      border: 3.5px solid #1B1B1B;
+      border-radius: 5px;
+      background-color: #F0E451;
+      color: #013220;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Timbers Matchday</h1> 
+  </header>
+
+  <section class="match-info section">
+    <h2>Next Match</h2>
+    <div id="match-info">
+      Loading match data...
+    </div>
+    <div id="countdown" class="countdown"></div>
+    <a id="full-schedule" href="https://www.mlssoccer.com/schedule/portland-timbers-matches" target="_blank" rel="noopener">View Full Schedule</a>
+  </section>
+
+  <section class="fan-engagement section">
+    <h2>Fan Engagement</h2>
+    <div id="fan-engagement-area">
+      <p>How confident are you in the Timbers win?</p>
+      <button data-vote="high">High Confidence</button>
+      <button data-vote="medium">Medium Confidence</button>
+      <button data-vote="low">Low Confidence</button>
+      <p id="vote-result"></p>
+    </div>
+  </section>
+
+  <script src="popup.js"></script>
+</body>
+</html>
