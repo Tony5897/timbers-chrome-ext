@@ -1,8 +1,8 @@
-// tests/scraper.test.js
 const cheerio = require('cheerio');
+const background = require('../background');
 
 describe('Background scraper logic', () => {
-  let html, $;
+  let html;
   beforeAll(() => {
     html = `
       <div class="match-row">
@@ -12,14 +12,33 @@ describe('Background scraper logic', () => {
         <span class="match-time">7:30 PM</span>
         <span class="match-venue">Providence Park</span>
       </div>`;
-    $ = cheerio.load(html);
+    
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        text: () => Promise.resolve(html)
+      })
+    );
+
+    // Mock chrome API
+    global.chrome = {
+      runtime: {
+        onMessage: { addListener: jest.fn() },
+      },
+      alarms: {
+        create: jest.fn(),
+        onAlarm: { addListener: jest.fn() }
+      },
+      storage: {
+        local: { set: jest.fn() }
+      }
+    };
   });
 
-  test('extract opponent, date, time, and venue correctly', () => {
-    const next = $('.match-row').first();
-    expect(next.find('.match-club').eq(1).text().trim()).toBe('Seattle Sounders');
-    expect(next.find('.match-date').text().trim()).toBe('2025-05-10');
-    expect(next.find('.match-time').text().trim()).toBe('7:30 PM');
-    expect(next.find('.match-venue').text().trim()).toBe('Providence Park');
+  test('fetchAndParseSchedule extracts match data correctly', async () => {
+    const matchData = await background.fetchAndParseSchedule();
+    expect(matchData.opponent).toBe('Seattle Sounders');
+    expect(matchData.date).toBe('2025-05-10');
+    expect(matchData.time).toBe('7:30 PM');
+    expect(matchData.location).toBe('Providence Park');
   });
 });

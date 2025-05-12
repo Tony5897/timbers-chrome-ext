@@ -2,18 +2,21 @@ name: CI
 
 on:
   push:
-    branches: [develop, main, "feat/*"]
+    branches: [ main, develop, "feat/*" ]
   pull_request:
-    branches: [develop, main]
+    branches: [ main, develop ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
       - uses: actions/checkout@v3
       
-      - uses: actions/setup-node@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: '18'
           cache: 'npm'
@@ -21,15 +24,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      - name: Run tests with coverage
-        run: npm test        
-      
-      - name: Upload coverage reports to Codecov
+      - name: Run tests
+        run: npm test
+
+      - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/lcov.info
-          fail_ci_if_error: true
-          files: ./coverage/lcov.info
-          fail_ci_if_error: true
-
+          fail_ci_if_error: true # Optional: fails CI if Codecov fails
