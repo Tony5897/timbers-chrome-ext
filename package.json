@@ -4,7 +4,7 @@
   "description": "[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://your-build-pipeline-url)",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest --ci"
   },
   "keywords": [],
   "author": "",
@@ -19,7 +19,13 @@
   "jest": {
     "reporters": [
       "default",
-      ["jest-junit", { "outputDirectory": ".", "outputName": "jest-test-results.xml" }]
+      [
+        "jest-junit",
+        {
+          "outputDirectory": ".",
+          "outputName": "jest-test-results.xml"
+        }
+      ]
     ]
   }
 }
