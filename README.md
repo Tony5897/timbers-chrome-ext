@@ -1,6 +1,7 @@
 # Portland Timbers Matchday Notifier
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://your-build-pipeline-url)
+![CI](https://github.com/tonymartinez/timbers-chrome-ext/actions/workflows/ci.yml/badge.svg)
+[![Coverage](https://img.shields.io/codecov/c/github/tonymartinez/timbers-chrome-ext)](https://codecov.io/gh/tonymartinez/timbers-chrome-ext)
 
 A Chrome extension that notifies you about upcoming Portland Timbers matches and engages fans with interactive features.
 
