@@ -65,7 +65,14 @@ document.addEventListener('DOMContentLoaded', () => {
             chrome.storage.local.get(['votes'], (result) => {
                 if (chrome.runtime.lastError) {
                     console.error("Error getting votes:", chrome.runtime.lastError.message);
-                    voteResult.textContent = "Error processing vote.";
+                    let resultEl = voteResult || document.getElementById('vote-result');
+                    if (!resultEl) {
+                        resultEl = document.createElement('p');
+                        resultEl.id = 'vote-result';
+                        document.body.appendChild(resultEl);
+                    }
+                    resultEl.textContent = "Error: Could not retrieve votes.";
+                    chrome.runtime.lastError = null;
                     return;
                 }
                 const votes = result.votes || { high: 0, medium: 0, low: 0 };
@@ -73,7 +80,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 chrome.storage.local.set({ votes }, () => {
                     if (chrome.runtime.lastError) {
                         console.error("Error setting votes:", chrome.runtime.lastError.message);
-                        voteResult.textContent = "Error saving vote.";
+                        voteResult.textContent = "Error: Could not retrieve votes.";
+                        chrome.runtime.lastError = null;
                         return;
                     }
                     voteResult.textContent = `Thanks for voting! Votes: High ${votes.high}, Medium ${votes.medium}, Low ${votes.low}`;
