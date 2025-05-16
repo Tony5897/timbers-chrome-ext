@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1747096419715" clover="3.2.0">
-  <project timestamp="1747096419715" name="All files">
+<coverage generated="1747378346411" clover="3.2.0">
+  <project timestamp="1747378346411" name="All files">
     <metrics statements="30" coveredstatements="20" conditionals="16" coveredconditionals="5" methods="9" coveredmethods="4" elements="55" coveredelements="29" complexity="0" loc="30" ncloc="30" packages="1" files="1" classes="1"/>
     <file name="background.js" path="/Users/tonymartinez/Desktop/timbers-chrome-ext/background.js">
       <metrics statements="30" coveredstatements="20" conditionals="16" coveredconditionals="5" methods="9" coveredmethods="4"/>
