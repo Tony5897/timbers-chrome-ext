@@ -1,0 +1,101 @@
+body {
+  width: 290px;
+  font-family: 'Helvetica Neue', sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  margin: 0;
+  padding: 10px;
+  background-color: #fff;
+  color: #1b1b1b;
+}
+
+header,
+.section {
+  margin-bottom: 10px;
+}
+
+header h1 {
+  font-size: 24px;
+  font-weight: 900;
+  text-align: center;
+  color: #013220;
+  margin: 8px 0;
+}
+
+.match-info,
+.fan-engagement {
+  background: #183f10;
+  color: #fff;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.match-info h2,
+.fan-engagement h2 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: #f0e451;
+}
+
+.match-info p,
+.fan-engagement p {
+  margin: 8px 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.match-info p strong {
+  color: #f0e451;
+}
+
+.countdown {
+  font-weight: bold;
+  font-size: 16px;
+  text-align: center;
+  color: #f0e451;
+  padding: 8px 0;
+}
+
+#full-schedule {
+  display: block;
+  text-align: center;
+  color: #f0e451;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 6px 0 2px;
+}
+
+#full-schedule:hover {
+  text-decoration: underline;
+}
+
+button {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  margin-top: 8px;
+  border: 2px solid #f0e451;
+  border-radius: 5px;
+  background-color: #f0e451;
+  color: #013220;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+button:hover {
+  background-color: transparent;
+  color: #f0e451;
+}
+
+#vote-result {
+  text-align: center;
+  font-weight: 600;
+  color: #f0e451;
+  font-size: 12px;
+}
