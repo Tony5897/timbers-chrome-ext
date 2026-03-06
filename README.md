@@ -58,20 +58,26 @@ Use the **Fan Engagement** section to vote on your confidence level for the next
 
 ```
 timbers-chrome-ext/
-├── background.js        # Service worker — fetches and caches match data
-├── popup.html           # Extension popup UI
-├── popup.js             # Popup logic — countdown, voting, data display
-├── styles.css           # Popup stylesheet
-├── manifest.json        # Chrome extension manifest (MV3)
-├── icon.png             # Extension icon
+├── background.js           # Service worker — fetches and caches match data
+├── popup.html              # Extension popup UI
+├── popup.js                # Popup logic — countdown, voting, data display
+├── styles.css              # Popup stylesheet (CSS custom properties design system)
+├── manifest.json           # Chrome extension manifest (MV3)
+├── icon.png                # Source icon (640×668)
+├── icons/                  # Generated extension icons
+│   ├── icon-16.png
+│   ├── icon-48.png
+│   └── icon-128.png
+├── scripts/
+│   └── generate-icons.js   # Build script — generates sized icons from source
 ├── tests/
-│   ├── scraper.test.js  # Background scraper unit tests
-│   ├── popup.test.js    # Popup UI and integration tests
+│   ├── scraper.test.js     # Background scraper unit tests
+│   ├── popup.test.js       # Popup UI and integration tests
 │   └── mocks/
-│       └── styleMock.js # Jest CSS mock
+│       └── styleMock.js    # Jest CSS mock
 └── .github/
     └── workflows/
-        └── ci.yml       # GitHub Actions CI pipeline
+        └── ci.yml          # GitHub Actions CI pipeline
 ```
 
 ## Contributing
