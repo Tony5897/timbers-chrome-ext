@@ -6,7 +6,8 @@
     "test": "jest --ci --coverage",
     "test:watch": "jest --watch",
     "lint": "eslint .",
-    "build:icons": "node scripts/generate-icons.js"
+    "build:icons": "node scripts/generate-icons.js",
+    "build:safari": "bash scripts/convert-safari.sh"
   },
   "keywords": [
     "chrome-extension",
