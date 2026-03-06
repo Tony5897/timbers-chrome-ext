@@ -49,6 +49,6 @@ module.exports = [
     },
   },
   {
-    ignores: ['coverage/', 'node_modules/'],
+    ignores: ['coverage/', 'node_modules/', 'scripts/'],
   },
 ];
