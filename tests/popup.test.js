@@ -15,46 +15,52 @@ describe('Popup HTML Content', () => {
   beforeEach(() => {
     const htmlWithoutScripts = html.replace(/<script.*?<\/script>/gs, '');
     document.documentElement.innerHTML = htmlWithoutScripts;
-
-    const countdownDiv = document.getElementById('countdown');
-    if (countdownDiv) {
-      countdownDiv.textContent = 'Loading countdown...';
-    }
-
-    const matchInfoDiv = document.getElementById('match-info');
-    if (matchInfoDiv) {
-      matchInfoDiv.textContent = 'Loading match data...';
-    }
   });
 
-  it('should display the main header', () => {
-    const headerElement = document.querySelector('header h1');
-    expect(headerElement).not.toBeNull();
-    expect(headerElement.textContent).toBe('Timbers Matchday');
+  it('should display the branded header', () => {
+    const team = document.querySelector('.ext-team');
+    expect(team).not.toBeNull();
+    expect(team.textContent).toBe('Portland Timbers');
+
+    const appName = document.querySelector('.ext-app-name');
+    expect(appName).not.toBeNull();
+    expect(appName.textContent).toBe('Matchday');
   });
 
-  it('should have "Next Match" section', () => {
-    const nextMatchSection = document.querySelector('.match-info h2');
-    expect(nextMatchSection).not.toBeNull();
-    expect(nextMatchSection.textContent).toBe('Next Match');
+  it('should have "Next Match" card title', () => {
+    const title = document.querySelector('.match-card .card-title');
+    expect(title).not.toBeNull();
+    expect(title.textContent).toBe('Next Match');
   });
 
-  it('should have "Fan Engagement" section', () => {
-    const fanEngagementSection = document.querySelector('.fan-engagement h2');
-    expect(fanEngagementSection).not.toBeNull();
-    expect(fanEngagementSection.textContent).toBe('Fan Engagement');
+  it('should have "Confidence Poll" card title', () => {
+    const title = document.querySelector('.vote-card .card-title');
+    expect(title).not.toBeNull();
+    expect(title.textContent).toBe('Confidence Poll');
   });
 
-  it('should initially display "Loading match data..."', () => {
-    const matchInfoDiv = document.getElementById('match-info');
-    expect(matchInfoDiv).not.toBeNull();
-    expect(matchInfoDiv.textContent.trim()).toBe('Loading match data...');
+  it('should show loading skeleton by default', () => {
+    const skeleton = document.getElementById('match-skeleton');
+    expect(skeleton).not.toBeNull();
+    expect(skeleton.classList.contains('hidden')).toBe(false);
   });
 
-  it('should initially display "Loading countdown..."', () => {
-    const countdownDiv = document.getElementById('countdown');
-    expect(countdownDiv).not.toBeNull();
-    expect(countdownDiv.textContent.trim()).toBe('Loading countdown...');
+  it('should have match info hidden by default', () => {
+    const matchInfo = document.getElementById('match-info');
+    expect(matchInfo).not.toBeNull();
+    expect(matchInfo.classList.contains('hidden')).toBe(true);
+  });
+
+  it('should have three vote buttons', () => {
+    const buttons = document.querySelectorAll('.vote-btn');
+    expect(buttons.length).toBe(3);
+  });
+
+  it('should have footer with external links', () => {
+    const footer = document.querySelector('.ext-footer');
+    expect(footer).not.toBeNull();
+    const links = footer.querySelectorAll('a');
+    expect(links.length).toBe(2);
   });
 });
 
@@ -124,7 +130,7 @@ describe('Popup.js Functionality', () => {
       matchTimestamp: FIXED_TIME + (3 * 24 * 60 * 60 * 1000),
     };
 
-    it('should display match data when fetched', async () => {
+    it('should display match data and hide skeleton when fetched', async () => {
       mockChrome.runtime.sendMessage = jest.fn((msg, cb) => {
         if (msg.action === 'getMatchData') {
           setTimeout(() => cb({ matchData: mockMatchData }), 0);
@@ -135,12 +141,13 @@ describe('Popup.js Functionality', () => {
       document.dispatchEvent(new Event('DOMContentLoaded'));
       await flushAsync();
 
-      const matchInfoDiv = document.getElementById('match-info');
-      expect(matchInfoDiv.innerHTML).toContain(mockMatchData.opponent);
-      expect(matchInfoDiv.innerHTML).toContain(mockMatchData.tv);
+      expect(document.getElementById('match-skeleton').classList.contains('hidden')).toBe(true);
+      expect(document.getElementById('match-info').classList.contains('hidden')).toBe(false);
+      expect(document.getElementById('match-opponent').textContent).toBe('Seattle Sounders');
+      expect(document.getElementById('match-details').innerHTML).toContain('FS1');
     });
 
-    it('should handle no matchData in response', async () => {
+    it('should show error state when no matchData in response', async () => {
       mockChrome.runtime.sendMessage = jest.fn((msg, cb) => {
         if (msg.action === 'getMatchData') {
           setTimeout(() => cb({ matchData: null }), 0);
@@ -151,10 +158,11 @@ describe('Popup.js Functionality', () => {
       document.dispatchEvent(new Event('DOMContentLoaded'));
       await flushAsync();
 
-      expect(document.getElementById('match-info').textContent).toBe('Could not retrieve match data at this time.');
+      expect(document.getElementById('match-error').classList.contains('hidden')).toBe(false);
+      expect(document.getElementById('match-error-text').textContent).toBe('Could not retrieve match data at this time.');
     });
 
-    it('should handle runtime.lastError on fetch', async () => {
+    it('should show error state on runtime.lastError', async () => {
       mockChrome.runtime.sendMessage = jest.fn((msg, cb) => {
         if (msg.action === 'getMatchData') {
           mockChrome.runtime.lastError = { message: 'Fetch error' };
@@ -166,10 +174,11 @@ describe('Popup.js Functionality', () => {
       document.dispatchEvent(new Event('DOMContentLoaded'));
       await flushAsync();
 
-      expect(document.getElementById('match-info').textContent).toBe('Error: Could not retrieve match data.');
+      expect(document.getElementById('match-error').classList.contains('hidden')).toBe(false);
+      expect(document.getElementById('match-error-text').textContent).toBe('Could not retrieve match data.');
     });
 
-    it('should display "N/A" for missing fields and handle missing timestamp', async () => {
+    it('should display N/A for missing detail fields', async () => {
       const partialData = { opponent: 'Vancouver Whitecaps' };
       mockChrome.runtime.sendMessage = jest.fn((msg, cb) => {
         if (msg.action === 'getMatchData') {
@@ -181,8 +190,10 @@ describe('Popup.js Functionality', () => {
       document.dispatchEvent(new Event('DOMContentLoaded'));
       await flushAsync();
 
-      expect(document.getElementById('match-info').innerHTML).toContain('<strong>Date:</strong> N/A');
-      expect(document.getElementById('countdown').textContent).toBe('Match time unavailable.');
+      expect(document.getElementById('match-opponent').textContent).toBe('Vancouver Whitecaps');
+      const values = document.querySelectorAll('.detail-value');
+      const texts = Array.from(values).map(v => v.textContent);
+      expect(texts).toContain('N/A');
     });
   });
 
@@ -192,7 +203,7 @@ describe('Popup.js Functionality', () => {
       jest.setSystemTime(new Date(FIXED_TIME));
     });
 
-    it('should display and update countdown', async () => {
+    it('should display segmented countdown for future match', async () => {
       const futureTimestamp = FIXED_TIME + (24 * 60 * 60 * 1000);
       const data = { opponent: 'TestCountdown', matchTimestamp: futureTimestamp };
 
@@ -212,15 +223,15 @@ describe('Popup.js Functionality', () => {
       document.dispatchEvent(new Event('DOMContentLoaded'));
       jest.advanceTimersByTime(100);
 
-      const countdownDiv = document.getElementById('countdown');
-      expect(countdownDiv.textContent).toMatch(/1d 0h 0m \d{1,2}s remaining/);
+      expect(document.getElementById('countdown-wrap').classList.contains('hidden')).toBe(false);
+      expect(document.getElementById('cd-days').textContent).toBe('01');
+      expect(document.getElementById('cd-hours').textContent).toBe('00');
 
       global.setInterval = originalSetInterval;
-      expect(countdownDiv.textContent).not.toBe('Match is live!');
       Date.now = originalNow;
     });
 
-    it('should display "Match is live!" when time is up', async () => {
+    it('should show LIVE badge when match time has passed', async () => {
       const pastTimestamp = FIXED_TIME - 1000;
       const data = { opponent: 'TestLive', matchTimestamp: pastTimestamp };
 
@@ -237,27 +248,8 @@ describe('Popup.js Functionality', () => {
       document.dispatchEvent(new Event('DOMContentLoaded'));
       jest.advanceTimersByTime(100);
 
-      expect(document.getElementById('countdown').textContent).toBe('Match is live!');
-      global.setInterval = originalSetInterval;
-    });
-
-    it('should display "Match time unavailable." if matchTimestamp is not a number', async () => {
-      const invalidData = { opponent: 'Test FC', matchTimestamp: 'not-a-valid-timestamp' };
-
-      mockChrome.runtime.sendMessage = jest.fn((msg, cb) => {
-        if (msg.action === 'getMatchData') {
-          setTimeout(() => cb({ matchData: invalidData }), 0);
-        }
-      });
-
-      const originalSetInterval = global.setInterval;
-      global.setInterval = jest.fn(() => 123);
-
-      initializePopupScript();
-      document.dispatchEvent(new Event('DOMContentLoaded'));
-      jest.advanceTimersByTime(100);
-
-      expect(document.getElementById('countdown').textContent).toBe('Match time unavailable.');
+      expect(document.getElementById('live-badge').classList.contains('hidden')).toBe(false);
+      expect(document.getElementById('countdown-wrap').classList.contains('hidden')).toBe(true);
       global.setInterval = originalSetInterval;
     });
   });
@@ -268,7 +260,7 @@ describe('Popup.js Functionality', () => {
       global.chrome = mockChrome;
     });
 
-    it('should call storage.local.set when a vote button is clicked', async () => {
+    it('should persist vote and show results when a vote button is clicked', async () => {
       mockChrome.runtime.sendMessage = jest.fn((msg, cb) => {
         if (msg.action === 'getMatchData') {
           setTimeout(() => cb({ matchData: null }), 0);
@@ -285,12 +277,12 @@ describe('Popup.js Functionality', () => {
 
       expect(mockChrome.storage.local.get).toHaveBeenCalledWith(['votes'], expect.any(Function));
       expect(mockChrome.storage.local.set).toHaveBeenCalledWith(
-        { votes: { high: 1, medium: 0, low: 0 } },
+        { votes: { high: 1, medium: 0, low: 0 }, hasVoted: true },
         expect.any(Function)
       );
     });
 
-    it('should display vote tallies after casting a vote', async () => {
+    it('should display vote results with thanks message after casting a vote', async () => {
       mockChrome.runtime.sendMessage = jest.fn((msg, cb) => {
         if (msg.action === 'getMatchData') {
           setTimeout(() => cb({ matchData: null }), 0);
@@ -305,9 +297,11 @@ describe('Popup.js Functionality', () => {
       mediumButton.click();
       await flushAsync();
 
-      const voteResult = document.getElementById('vote-result');
-      expect(voteResult.textContent).toContain('Thanks for voting!');
-      expect(voteResult.textContent).toContain('Medium 1');
+      const thanks = document.getElementById('vote-thanks');
+      expect(thanks.textContent).toContain('Thanks for voting!');
+
+      expect(document.getElementById('vote-buttons').classList.contains('hidden')).toBe(true);
+      expect(document.getElementById('vote-results').classList.contains('hidden')).toBe(false);
     });
   });
 });

@@ -2,34 +2,115 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Timbers Matchday Notifier</title>
+  <title>Timbers Matchday</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header>
-    <h1>Timbers Matchday</h1> 
+
+  <header class="ext-header">
+    <img src="icon.png" class="ext-logo" alt="Portland Timbers crest">
+    <div class="ext-header-text">
+      <span class="ext-team">Portland Timbers</span>
+      <span class="ext-app-name">Matchday</span>
+    </div>
   </header>
 
-  <section class="match-info section">
-    <h2>Next Match</h2>
-    <div id="match-info">
-      Loading match data...
+  <section class="match-card">
+    <h2 class="card-title">Next Match</h2>
+
+    <div class="skeleton-block" id="match-skeleton" aria-hidden="true">
+      <div class="skeleton-line sk-wide"></div>
+      <div class="skeleton-line sk-narrow"></div>
+      <div class="skeleton-line sk-wide"></div>
     </div>
-    <div id="countdown" class="countdown"></div>
-    <a id="full-schedule" href="https://www.mlssoccer.com/schedule/portland-timbers-matches" target="_blank" rel="noopener">View Full Schedule</a>
+
+    <div id="match-info" class="hidden" aria-live="polite">
+      <div class="match-vs-row">
+        <span class="match-home">Portland Timbers</span>
+        <span class="vs-badge">VS</span>
+        <span class="match-opponent" id="match-opponent"></span>
+      </div>
+      <div class="match-details" id="match-details"></div>
+    </div>
+
+    <div id="match-error" class="match-error hidden" role="alert">
+      <span class="error-icon">!</span>
+      <span id="match-error-text"></span>
+    </div>
+
+    <div class="countdown-wrap hidden" id="countdown-wrap">
+      <div class="countdown-unit">
+        <span class="cd-num" id="cd-days">--</span>
+        <span class="cd-label">Days</span>
+      </div>
+      <span class="cd-sep">:</span>
+      <div class="countdown-unit">
+        <span class="cd-num" id="cd-hours">--</span>
+        <span class="cd-label">Hrs</span>
+      </div>
+      <span class="cd-sep">:</span>
+      <div class="countdown-unit">
+        <span class="cd-num" id="cd-mins">--</span>
+        <span class="cd-label">Min</span>
+      </div>
+      <span class="cd-sep">:</span>
+      <div class="countdown-unit">
+        <span class="cd-num" id="cd-secs">--</span>
+        <span class="cd-label">Sec</span>
+      </div>
+    </div>
+
+    <div class="live-badge hidden" id="live-badge" aria-live="assertive">● LIVE NOW</div>
+
+    <a class="schedule-link" href="https://www.mlssoccer.com/schedule/portland-timbers-matches" target="_blank" rel="noopener">View Full Schedule →</a>
   </section>
 
-  <section class="fan-engagement section">
-    <h2>Fan Engagement</h2>
-    <div id="fan-engagement-area">
-      <p>How confident are you in the Timbers win?</p>
-      <button data-vote="high">High Confidence</button>
-      <button data-vote="medium">Medium Confidence</button>
-      <button data-vote="low">Low Confidence</button>
-      <p id="vote-result"></p>
+  <section class="vote-card">
+    <h2 class="card-title">Confidence Poll</h2>
+    <p class="vote-prompt">How confident are you in today's result?</p>
+
+    <div class="vote-buttons" id="vote-buttons">
+      <button class="vote-btn" data-vote="high">
+        <span class="vote-icon">🔥</span>
+        <span class="vote-label">High</span>
+      </button>
+      <button class="vote-btn" data-vote="medium">
+        <span class="vote-icon">⚡</span>
+        <span class="vote-label">Med</span>
+      </button>
+      <button class="vote-btn" data-vote="low">
+        <span class="vote-icon">😬</span>
+        <span class="vote-label">Low</span>
+      </button>
+    </div>
+
+    <div class="vote-results hidden" id="vote-results" aria-live="polite">
+      <p class="results-title">Community Vote</p>
+      <div class="vote-bar-row">
+        <span class="bar-label">High 🔥</span>
+        <div class="bar-track"><div class="bar-fill" id="bar-high"></div></div>
+        <span class="bar-pct" id="pct-high">0%</span>
+      </div>
+      <div class="vote-bar-row">
+        <span class="bar-label">Med ⚡</span>
+        <div class="bar-track"><div class="bar-fill" id="bar-medium"></div></div>
+        <span class="bar-pct" id="pct-medium">0%</span>
+      </div>
+      <div class="vote-bar-row">
+        <span class="bar-label">Low 😬</span>
+        <div class="bar-track"><div class="bar-fill" id="bar-low"></div></div>
+        <span class="bar-pct" id="pct-low">0%</span>
+      </div>
+      <p class="vote-thanks" id="vote-thanks"></p>
     </div>
   </section>
+
+  <footer class="ext-footer">
+    <a href="https://www.timbers.com" target="_blank" rel="noopener">Portland Timbers</a>
+    <span class="footer-sep">·</span>
+    <a href="https://www.mlssoccer.com" target="_blank" rel="noopener">MLS</a>
+  </footer>
 
   <script src="popup.js"></script>
 </body>
