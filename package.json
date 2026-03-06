@@ -4,20 +4,24 @@
   "description": "Track Portland Timbers matches and engage with other fans",
   "scripts": {
     "test": "jest --ci --coverage",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "lint": "eslint ."
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "chrome-extension",
+    "portland-timbers",
+    "mls"
+  ],
+  "author": "Tony Martinez",
   "license": "ISC",
-  "dependencies": {
-    "cheerio": "1.0.0-rc.12"
-  },
   "devDependencies": {
     "@babel/core": "^7.27.1",
     "@babel/preset-env": "^7.27.2",
     "@testing-library/jest-dom": "^5.16.5",
     "babel-jest": "^29.7.0",
     "domexception": "^4.0.0",
+    "eslint": "^9.39.3",
+    "globals": "^17.4.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0"
   }

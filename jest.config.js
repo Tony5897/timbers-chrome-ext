@@ -4,5 +4,9 @@ module.exports = {
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': '<rootDir>/tests/mocks/styleMock.js',
   },
-  reporters: ['default']
+  transform: {
+    '^.+\\.js$': 'babel-jest',
+  },
+  collectCoverageFrom: ['background.js', 'popup.js'],
+  reporters: ['default'],
 };
