@@ -133,6 +133,45 @@ timbers-chrome-ext/
 └── LICENSE                   # ISC License
 ```
 
+## Extension Messaging Architecture
+
+Chrome extensions run in isolated execution contexts — the popup UI and the background service worker cannot share memory or call each other's functions directly. This project uses Chrome's runtime messaging API to bridge them.
+
+### Data flow
+
+```text
+┌─────────────┐   sendMessage({ action: 'getMatchData' })   ┌──────────────┐
+│  popup.js   │ ──────────────────────────────────────────▶  │ background.js│
+│  (popup UI) │                                              │ (service wkr)│
+│             │ ◀──────────────────────────────────────────  │              │
+└─────────────┘   sendResponse({ matchData })                └──────┬───────┘
+                                                                    │
+                                                     fetchAndParseSchedule()
+                                                                    │
+                                                                    ▼
+                                                         mlssoccer.com/schedule
+```
+
+1. **Popup opens** — `popup.js` dispatches `chrome.runtime.sendMessage({ action: 'getMatchData' })` and shows a skeleton loader while waiting.
+2. **Background handles request** — `background.js` listens via `chrome.runtime.onMessage.addListener`, calls `fetchAndParseSchedule()`, and returns the result through `sendResponse`. The listener returns `true` to keep the message channel open for the async response.
+3. **Popup renders** — On success the popup displays match data and starts the countdown timer. On failure it surfaces an error state with a user-facing message.
+
+### Periodic refresh
+
+The background service worker creates a `chrome.alarms` alarm (`fetchDataAlarm`, 60-minute interval) that independently fetches and caches match data in `chrome.storage.local`. This ensures fresh data is available even if the popup hasn't been opened recently — and avoids redundant network requests when the user does open it.
+
+### Vote persistence
+
+Fan confidence votes are stored entirely in `chrome.storage.local` (`votes` and `hasVoted` keys). The popup reads existing votes on load and writes new votes on click, with no round-trip to the background worker required.
+
+## Security Considerations
+
+- **Manifest V3 service workers** — No persistent background page; the service worker is event-driven and terminates when idle, reducing memory footprint and attack surface.
+- **Minimal permissions** — Only `storage`, `alarms`, and a single host permission (`mlssoccer.com`). No `tabs`, `activeTab`, `webRequest`, or broad host access.
+- **No remote code execution** — All JavaScript is bundled locally. No CDN imports, no `eval()`, no dynamically injected scripts.
+- **CSP-compliant** — No inline scripts in `popup.html`; all logic loads from `popup.js` via a standard `<script>` tag, satisfying Chrome's extension Content Security Policy.
+- **Input handling** — Scraped HTML is parsed via `DOMParser` and accessed through DOM queries (`textContent`). No raw HTML is injected into the popup, preventing cross-site scripting from malformed schedule data.
+
 ## Chrome Web Store
 
 Submitted to the Chrome Web Store — pending review.
@@ -150,7 +189,6 @@ Submitted to the Chrome Web Store — pending review.
 See [PRIVACY.md](PRIVACY.md) for the full privacy policy.
 
 **Summary:** This extension stores all data locally on your device. It fetches publicly available schedule data from mlssoccer.com. No personal information is collected, transmitted, or shared.
-
 
 ## Contributing
 
