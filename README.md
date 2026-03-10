@@ -174,9 +174,18 @@ Fan confidence votes are stored entirely in `chrome.storage.local` (`votes` and 
 
 ## Chrome Web Store
 
-Submitted to the Chrome Web Store — pending review.
+**Status: Published — unlisted**
+
+![Chrome Web Store — Published Unlisted](assets/chrome-store-published.jpg)
+
+The extension is live on the Chrome Web Store and installable via direct link. It was submitted and approved on March 6, 2026.
+
+<details>
+<summary>Submission history</summary>
 
 ![Chrome Web Store — Pending Review](assets/chrome-web-store-pending.png)
+
+</details>
 
 - **Manifest V3** compliant
 - Icons at 16px, 48px, and 128px
