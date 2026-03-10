@@ -12,6 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const voteThanks = document.getElementById('vote-thanks');
   let timerInterval;
 
+  const dataNotice = document.getElementById('data-notice');
+
   chrome.runtime.sendMessage({ action: 'getMatchData' }, (response) => {
     if (chrome.runtime.lastError) {
       console.error('Error fetching match data:', chrome.runtime.lastError.message);
@@ -19,7 +21,10 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     if (response && response.matchData) {
-      displayMatchData(response.matchData);
+      displayMatchData(response.matchData, response.source);
+      if (response.source === 'cache' || response.source === 'fallback') {
+        dataNotice.classList.remove('hidden');
+      }
     } else {
       showError('Could not retrieve match data at this time.');
     }
@@ -32,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
     matchErrorText.textContent = msg;
   }
 
-  function displayMatchData(matchData) {
+  function displayMatchData(matchData, source) {
     skeleton.classList.add('hidden');
     matchError.classList.add('hidden');
     matchInfo.classList.remove('hidden');
@@ -64,11 +69,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     if (typeof matchData.matchTimestamp === 'number') {
-      startCountdown(matchData.matchTimestamp);
+      startCountdown(matchData.matchTimestamp, source);
     }
   }
 
-  function startCountdown(matchTimestamp) {
+  function startCountdown(matchTimestamp, source) {
     const daysEl = document.getElementById('cd-days');
     const hoursEl = document.getElementById('cd-hours');
     const minsEl = document.getElementById('cd-mins');
@@ -87,7 +92,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (diff <= 0) {
         countdownWrap.classList.add('hidden');
-        liveBadge.classList.remove('hidden');
+        if (source === 'live') {
+          liveBadge.classList.remove('hidden');
+        }
         clearInterval(timerInterval);
         return;
       }

@@ -153,8 +153,8 @@ Chrome extensions run in isolated execution contexts — the popup UI and the ba
 ```
 
 1. **Popup opens** — `popup.js` dispatches `chrome.runtime.sendMessage({ action: 'getMatchData' })` and shows a skeleton loader while waiting.
-2. **Background handles request** — `background.js` listens via `chrome.runtime.onMessage.addListener`, calls `fetchAndParseSchedule()`, and returns the result through `sendResponse`. The listener returns `true` to keep the message channel open for the async response.
-3. **Popup renders** — On success the popup displays match data and starts the countdown timer. On failure it surfaces an error state with a user-facing message.
+2. **Background handles request** — `background.js` listens via `chrome.runtime.onMessage.addListener` and attempts a three-tier resolution: live fetch, cached data from `chrome.storage.local`, then a bundled fallback fixture (`data/fallback.json`). The response includes a `source` field (`'live'`, `'cache'`, or `'fallback'`) so the popup can indicate data freshness.
+3. **Popup renders** — On success the popup displays match data and starts the countdown timer. If the data came from cache or fallback, a subtle notice is shown. The error state only appears if all three tiers return nothing.
 
 ### Periodic refresh
 

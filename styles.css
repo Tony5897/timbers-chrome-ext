@@ -309,6 +309,18 @@ body::-webkit-scrollbar-thumb {
   font-size: 12px;
 }
 
+/* ── Data Notice ──────────────────────────────────────── */
+
+.data-notice {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--tc-text-muted);
+  padding: calc(var(--tc-space) * 0.75) 0;
+  margin-bottom: calc(var(--tc-space) * 0.5);
+}
+
 /* ── Schedule Link ─────────────────────────────────────── */
 
 .schedule-link {

@@ -133,7 +133,7 @@ describe('Popup.js Functionality', () => {
     it('should display match data and hide skeleton when fetched', async () => {
       mockChrome.runtime.sendMessage = jest.fn((msg, cb) => {
         if (msg.action === 'getMatchData') {
-          setTimeout(() => cb({ matchData: mockMatchData }), 0);
+          setTimeout(() => cb({ matchData: mockMatchData, source: 'live' }), 0);
         }
       });
 
@@ -145,12 +145,43 @@ describe('Popup.js Functionality', () => {
       expect(document.getElementById('match-info').classList.contains('hidden')).toBe(false);
       expect(document.getElementById('match-opponent').textContent).toBe('Seattle Sounders');
       expect(document.getElementById('match-details').innerHTML).toContain('FS1');
+      expect(document.getElementById('data-notice').classList.contains('hidden')).toBe(true);
+    });
+
+    it('should show data-notice when source is cache', async () => {
+      mockChrome.runtime.sendMessage = jest.fn((msg, cb) => {
+        if (msg.action === 'getMatchData') {
+          setTimeout(() => cb({ matchData: mockMatchData, source: 'cache' }), 0);
+        }
+      });
+
+      initializePopupScript();
+      document.dispatchEvent(new Event('DOMContentLoaded'));
+      await flushAsync();
+
+      expect(document.getElementById('match-info').classList.contains('hidden')).toBe(false);
+      expect(document.getElementById('data-notice').classList.contains('hidden')).toBe(false);
+    });
+
+    it('should show data-notice when source is fallback', async () => {
+      mockChrome.runtime.sendMessage = jest.fn((msg, cb) => {
+        if (msg.action === 'getMatchData') {
+          setTimeout(() => cb({ matchData: mockMatchData, source: 'fallback' }), 0);
+        }
+      });
+
+      initializePopupScript();
+      document.dispatchEvent(new Event('DOMContentLoaded'));
+      await flushAsync();
+
+      expect(document.getElementById('match-info').classList.contains('hidden')).toBe(false);
+      expect(document.getElementById('data-notice').classList.contains('hidden')).toBe(false);
     });
 
     it('should show error state when no matchData in response', async () => {
       mockChrome.runtime.sendMessage = jest.fn((msg, cb) => {
         if (msg.action === 'getMatchData') {
-          setTimeout(() => cb({ matchData: null }), 0);
+          setTimeout(() => cb({ matchData: null, source: null }), 0);
         }
       });
 
@@ -231,13 +262,13 @@ describe('Popup.js Functionality', () => {
       Date.now = originalNow;
     });
 
-    it('should show LIVE badge when match time has passed', async () => {
+    it('should show LIVE badge when match time has passed and source is live', async () => {
       const pastTimestamp = FIXED_TIME - 1000;
       const data = { opponent: 'TestLive', matchTimestamp: pastTimestamp };
 
       mockChrome.runtime.sendMessage = jest.fn((msg, cb) => {
         if (msg.action === 'getMatchData') {
-          setTimeout(() => cb({ matchData: data }), 0);
+          setTimeout(() => cb({ matchData: data, source: 'live' }), 0);
         }
       });
 
@@ -249,6 +280,50 @@ describe('Popup.js Functionality', () => {
       jest.advanceTimersByTime(100);
 
       expect(document.getElementById('live-badge').classList.contains('hidden')).toBe(false);
+      expect(document.getElementById('countdown-wrap').classList.contains('hidden')).toBe(true);
+      global.setInterval = originalSetInterval;
+    });
+
+    it('should NOT show LIVE badge when source is cache even if match time passed', async () => {
+      const pastTimestamp = FIXED_TIME - 1000;
+      const data = { opponent: 'TestStale', matchTimestamp: pastTimestamp };
+
+      mockChrome.runtime.sendMessage = jest.fn((msg, cb) => {
+        if (msg.action === 'getMatchData') {
+          setTimeout(() => cb({ matchData: data, source: 'cache' }), 0);
+        }
+      });
+
+      const originalSetInterval = global.setInterval;
+      global.setInterval = jest.fn(() => 123);
+
+      initializePopupScript();
+      document.dispatchEvent(new Event('DOMContentLoaded'));
+      jest.advanceTimersByTime(100);
+
+      expect(document.getElementById('live-badge').classList.contains('hidden')).toBe(true);
+      expect(document.getElementById('countdown-wrap').classList.contains('hidden')).toBe(true);
+      global.setInterval = originalSetInterval;
+    });
+
+    it('should NOT show LIVE badge when source is fallback even if match time passed', async () => {
+      const pastTimestamp = FIXED_TIME - 1000;
+      const data = { opponent: 'TestFallback', matchTimestamp: pastTimestamp };
+
+      mockChrome.runtime.sendMessage = jest.fn((msg, cb) => {
+        if (msg.action === 'getMatchData') {
+          setTimeout(() => cb({ matchData: data, source: 'fallback' }), 0);
+        }
+      });
+
+      const originalSetInterval = global.setInterval;
+      global.setInterval = jest.fn(() => 123);
+
+      initializePopupScript();
+      document.dispatchEvent(new Event('DOMContentLoaded'));
+      jest.advanceTimersByTime(100);
+
+      expect(document.getElementById('live-badge').classList.contains('hidden')).toBe(true);
       expect(document.getElementById('countdown-wrap').classList.contains('hidden')).toBe(true);
       global.setInterval = originalSetInterval;
     });
