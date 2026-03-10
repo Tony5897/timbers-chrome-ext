@@ -40,12 +40,46 @@ async function fetchAndParseSchedule() {
   }
 }
 
+function getCachedMatchData() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get('latestMatchData', (result) => {
+      resolve(result.latestMatchData || null);
+    });
+  });
+}
+
+function getBundledFallback() {
+  return fetch(chrome.runtime.getURL('data/fallback.json'))
+    .then((res) => res.json())
+    .catch(() => null);
+}
+
+async function getMatchDataWithFallback() {
+  const live = await fetchAndParseSchedule();
+  if (live) {
+    chrome.storage.local.set({ latestMatchData: live });
+    return { matchData: live, source: 'live' };
+  }
+
+  const cached = await getCachedMatchData();
+  if (cached) {
+    return { matchData: cached, source: 'cache' };
+  }
+
+  const fallback = await getBundledFallback();
+  if (fallback) {
+    return { matchData: fallback, source: 'fallback' };
+  }
+
+  return { matchData: null, source: null };
+}
+
 if (typeof chrome !== 'undefined' && chrome.runtime) {
   chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     if (request.action === 'getMatchData') {
-      fetchAndParseSchedule()
-        .then((matchData) => sendResponse({ matchData }))
-        .catch(() => sendResponse({ matchData: null }));
+      getMatchDataWithFallback()
+        .then((result) => sendResponse(result))
+        .catch(() => sendResponse({ matchData: null, source: null }));
       return true;
     }
   });
@@ -65,5 +99,5 @@ if (typeof chrome !== 'undefined' && chrome.alarms) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { fetchAndParseSchedule };
+  module.exports = { fetchAndParseSchedule, getMatchDataWithFallback };
 }
