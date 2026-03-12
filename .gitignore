@@ -30,3 +30,9 @@ DerivedData/
 # Logs
 *.log
 npm-debug.log*
+
+# Timber extension specific
+telemetry.local.js
+
+# Local AI assistant data
+.claude/

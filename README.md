@@ -199,6 +199,43 @@ See [PRIVACY.md](PRIVACY.md) for the full privacy policy.
 
 **Summary:** This extension stores all data locally on your device. It fetches publicly available schedule data from mlssoccer.com. No personal information is collected, transmitted, or shared.
 
+## Telemetry
+
+Product analytics use **GA4 Measurement Protocol** via direct `fetch()` — no gtag.js, no Google Tag Manager, no remotely hosted scripts. MV3-safe and Chrome Web Store-compliant.
+
+### Secret handling
+
+| File | Committed | Purpose |
+|------|-----------|---------|
+| `telemetry.example.js` | ✅ Yes | Template — copy this to get started |
+| `telemetry.local.js` | ❌ Gitignored | Your real Measurement ID + API Secret |
+
+To set up locally after cloning:
+
+```bash
+cp telemetry.example.js telemetry.local.js
+# Edit telemetry.local.js and replace placeholder values with your GA4 credentials
+```
+
+### Events tracked
+
+| Event | Fired from | Key params |
+|-------|-----------|-----------|
+| `popup_open` | popup | `ui_surface` |
+| `match_fetch_started` | background | `ui_surface` |
+| `match_fetch_live_success` | background | `source`, `has_match_data`, `fetch_duration_ms` |
+| `match_fetch_cache_used` | background | `source`, `has_match_data` |
+| `match_fetch_fallback_used` | background | `source`, `has_match_data` |
+| `match_fetch_failed` | popup + background | `has_match_data` |
+| `schedule_link_clicked` | popup | `ui_surface` |
+
+### Verifying in GA4 Realtime
+
+1. Load the extension unpacked with `telemetry.local.js` present
+2. Open GA4 → Reports → Realtime
+3. Click the extension popup — `popup_open` should appear within ~30 seconds
+4. Use the DebugView (`Admin → DebugView`) for event-level parameter inspection
+
 ## Contributing
 
 1. Fork the repository
