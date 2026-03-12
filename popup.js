@@ -14,6 +14,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const dataNotice = document.getElementById('data-notice');
 
+  if (typeof Telemetry !== 'undefined') {
+    Telemetry.sendEvent('popup_open', { ui_surface: 'popup' });
+  }
+
   chrome.runtime.sendMessage({ action: 'getMatchData' }, (response) => {
     if (chrome.runtime.lastError) {
       console.error('Error fetching match data:', chrome.runtime.lastError.message);
@@ -25,8 +29,24 @@ document.addEventListener('DOMContentLoaded', () => {
       if (response.source === 'cache' || response.source === 'fallback') {
         dataNotice.classList.remove('hidden');
       }
+      if (typeof Telemetry !== 'undefined') {
+        const evt = response.source === 'live'
+          ? 'match_fetch_live_success'
+          : response.source === 'cache'
+            ? 'match_fetch_cache_used'
+            : 'match_fetch_fallback_used';
+        Telemetry.sendEvent(evt, {
+          source: response.source,
+          has_match_data: true,
+          stale_notice_shown: response.source !== 'live',
+          ui_surface: 'popup',
+        });
+      }
     } else {
       showError('Could not retrieve match data at this time.');
+      if (typeof Telemetry !== 'undefined') {
+        Telemetry.sendEvent('match_fetch_failed', { has_match_data: false, ui_surface: 'popup' });
+      }
     }
   });
 
@@ -125,6 +145,15 @@ document.addEventListener('DOMContentLoaded', () => {
       showVoteResults(result.votes || { high: 0, medium: 0, low: 0 });
     }
   });
+
+  const scheduleLink = document.querySelector('.schedule-link');
+  if (scheduleLink) {
+    scheduleLink.addEventListener('click', () => {
+      if (typeof Telemetry !== 'undefined') {
+        Telemetry.sendEvent('schedule_link_clicked', { ui_surface: 'popup' });
+      }
+    });
+  }
 
   document.querySelectorAll('.vote-btn').forEach((btn) => {
     btn.addEventListener('click', () => {

@@ -1,3 +1,6 @@
+try { importScripts('telemetry.local.js'); } catch (_e) {}
+try { importScripts('telemetry.js'); } catch (_e) {}
+
 const SELECTORS = {
   matchRow: '.match-row',
   club: '.match-club',
@@ -55,22 +58,53 @@ function getBundledFallback() {
 }
 
 async function getMatchDataWithFallback() {
+  const fetchStart = Date.now();
+
+  if (typeof Telemetry !== 'undefined') {
+    Telemetry.sendEvent('match_fetch_started', { ui_surface: 'background' });
+  }
+
   const live = await fetchAndParseSchedule();
   if (live) {
     chrome.storage.local.set({ latestMatchData: live });
+    if (typeof Telemetry !== 'undefined') {
+      Telemetry.sendEvent('match_fetch_live_success', {
+        source: 'live',
+        has_match_data: true,
+        fetch_duration_ms: Date.now() - fetchStart,
+        ui_surface: 'background',
+      });
+    }
     return { matchData: live, source: 'live' };
   }
 
   const cached = await getCachedMatchData();
   if (cached) {
+    if (typeof Telemetry !== 'undefined') {
+      Telemetry.sendEvent('match_fetch_cache_used', {
+        source: 'cache',
+        has_match_data: true,
+        ui_surface: 'background',
+      });
+    }
     return { matchData: cached, source: 'cache' };
   }
 
   const fallback = await getBundledFallback();
   if (fallback) {
+    if (typeof Telemetry !== 'undefined') {
+      Telemetry.sendEvent('match_fetch_fallback_used', {
+        source: 'fallback',
+        has_match_data: true,
+        ui_surface: 'background',
+      });
+    }
     return { matchData: fallback, source: 'fallback' };
   }
 
+  if (typeof Telemetry !== 'undefined') {
+    Telemetry.sendEvent('match_fetch_failed', { has_match_data: false, ui_surface: 'background' });
+  }
   return { matchData: null, source: null };
 }
 

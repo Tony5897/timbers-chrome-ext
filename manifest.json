@@ -19,7 +19,8 @@
         "alarms"
     ],
     "host_permissions": [
-        "https://www.mlssoccer.com/*"
+        "https://www.mlssoccer.com/*",
+        "https://www.google-analytics.com/*"
     ],
     "icons": {
         "16": "icons/icon-16.png",
