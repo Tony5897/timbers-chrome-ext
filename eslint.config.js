@@ -10,18 +10,28 @@ module.exports = [
       globals: {
         ...globals.browser,
         chrome: 'readonly',
+        Telemetry: 'readonly',
       },
     },
     rules: {
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }],
       'no-console': ['warn', { allow: ['error', 'warn'] }],
+      'no-empty': ['error', { allowEmptyCatch: true }],
+    },
+  },
+  {
+    files: ['background.js', 'telemetry.js'],
+    languageOptions: {
+      globals: {
+        module: 'readonly',
+      },
     },
   },
   {
     files: ['background.js'],
     languageOptions: {
       globals: {
-        module: 'readonly',
+        importScripts: 'readonly',
       },
     },
   },
