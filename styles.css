@@ -124,11 +124,12 @@ body::-webkit-scrollbar-thumb {
 
 .match-home,
 .match-opponent {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   flex: 1;
+  white-space: nowrap;
 }
 
 .match-home {
