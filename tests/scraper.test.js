@@ -164,7 +164,7 @@ describe('Fallback data flow', () => {
 
     const result = await background.getMatchDataWithFallback();
     expect(result.source).toBe('fallback');
-    expect(result.matchData.opponent).toBe('Seattle Sounders FC');
+    expect(result.matchData.opponent).toBe('LA Galaxy');
   });
 
   test('returns null matchData when all tiers fail', async () => {
