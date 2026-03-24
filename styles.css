@@ -115,9 +115,9 @@ body::-webkit-scrollbar-thumb {
 
 .match-vs-row {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: calc(var(--tc-space) * 1.5);
+  gap: calc(var(--tc-space) * 0.75);
   margin-bottom: calc(var(--tc-space) * 2);
   text-align: center;
 }
@@ -128,18 +128,18 @@ body::-webkit-scrollbar-thumb {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  flex: 1;
-  white-space: nowrap;
+  width: 100%;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 
 .match-home {
   color: var(--tc-gold);
-  text-align: right;
 }
 
 .match-opponent {
   color: var(--tc-white);
-  text-align: left;
 }
 
 .vs-badge {
