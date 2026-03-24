@@ -189,7 +189,7 @@ The extension is live on the Chrome Web Store and installable via direct link. I
 
 - **Manifest V3** compliant
 - Icons at 16px, 48px, and 128px
-- Minimal permissions (`storage`, `alarms`, single host)
+- Minimal permissions (`storage`, `alarms`, two specific host permissions: `site.api.espn.com` and `google-analytics.com`)
 - Privacy policy included (`PRIVACY.md`)
 - No remote code execution; all logic is bundled locally
 
