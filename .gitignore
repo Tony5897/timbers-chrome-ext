@@ -34,5 +34,5 @@ npm-debug.log*
 # Timber extension specific
 telemetry.local.js
 
-# Local AI assistant data
-.claude/
+# Local tool data
+.local/
