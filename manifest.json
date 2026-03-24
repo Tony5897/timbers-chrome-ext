@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Timbers Matchday",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "Track Portland Timbers matches and engage with other fans",
     "action": {
         "default_popup": "popup.html",
@@ -19,7 +19,7 @@
         "alarms"
     ],
     "host_permissions": [
-        "https://www.mlssoccer.com/*",
+        "https://site.api.espn.com/*",
         "https://www.google-analytics.com/*"
     ],
     "icons": {

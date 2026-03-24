@@ -90,7 +90,7 @@ No polyfills or browser-specific code paths are required. The `chrome` namespace
 
 ## Usage
 
-Click the Timbers Matchday icon in the browser toolbar to open the popup. The extension automatically fetches the latest schedule data from MLS and displays the next upcoming match with a live countdown timer.
+Click the Timbers Matchday icon in the browser toolbar to open the popup. The extension automatically fetches the latest schedule data from the ESPN sports API and displays the next upcoming match with a live countdown timer.
 
 Use the **Confidence Poll** section to vote on your confidence level and see how other fans are feeling.
 
@@ -149,11 +149,11 @@ Chrome extensions run in isolated execution contexts — the popup UI and the ba
                                                      fetchAndParseSchedule()
                                                                     │
                                                                     ▼
-                                                         mlssoccer.com/schedule
+                                              site.api.espn.com (ESPN sports API)
 ```
 
 1. **Popup opens** — `popup.js` dispatches `chrome.runtime.sendMessage({ action: 'getMatchData' })` and shows a skeleton loader while waiting.
-2. **Background handles request** — `background.js` listens via `chrome.runtime.onMessage.addListener` and attempts a three-tier resolution: live fetch, cached data from `chrome.storage.local`, then a bundled fallback fixture (`data/fallback.json`). The response includes a `source` field (`'live'`, `'cache'`, or `'fallback'`) so the popup can indicate data freshness.
+2. **Background handles request** — `background.js` listens via `chrome.runtime.onMessage.addListener` and attempts a three-tier resolution: live fetch from the ESPN sports API (`site.api.espn.com`), cached data from `chrome.storage.local`, then a bundled fallback fixture (`data/fallback.json`). The response includes a `source` field (`'live'`, `'cache'`, or `'fallback'`) so the popup can indicate data freshness.
 3. **Popup renders** — On success the popup displays match data and starts the countdown timer. If the data came from cache or fallback, a subtle notice is shown. The error state only appears if all three tiers return nothing.
 
 ### Periodic refresh
@@ -167,10 +167,10 @@ Fan confidence votes are stored entirely in `chrome.storage.local` (`votes` and 
 ## Security Considerations
 
 - **Manifest V3 service workers** — No persistent background page; the service worker is event-driven and terminates when idle, reducing memory footprint and attack surface.
-- **Minimal permissions** — Only `storage`, `alarms`, and a single host permission (`mlssoccer.com`). No `tabs`, `activeTab`, `webRequest`, or broad host access.
+- **Minimal permissions** — Only `storage`, `alarms`, and two host permissions (`site.api.espn.com` and `google-analytics.com`). No `tabs`, `activeTab`, `webRequest`, or broad host access.
 - **No remote code execution** — All JavaScript is bundled locally. No CDN imports, no `eval()`, no dynamically injected scripts.
 - **CSP-compliant** — No inline scripts in `popup.html`; all logic loads from `popup.js` via a standard `<script>` tag, satisfying Chrome's extension Content Security Policy.
-- **Input handling** — Scraped HTML is parsed via `DOMParser` and accessed through DOM queries (`textContent`). No raw HTML is injected into the popup, preventing cross-site scripting from malformed schedule data.
+- **Structured data only** — Match data is consumed as parsed JSON from the ESPN API. No raw HTML is injected into the popup.
 
 ## Chrome Web Store
 
@@ -197,7 +197,7 @@ The extension is live on the Chrome Web Store and installable via direct link. I
 
 See [PRIVACY.md](PRIVACY.md) for the full privacy policy.
 
-**Summary:** This extension stores all data locally on your device. It fetches publicly available schedule data from mlssoccer.com. No personal information is collected, transmitted, or shared.
+**Summary:** This extension stores all data locally on your device. It fetches publicly available schedule data from the ESPN sports API. No personal information is collected, transmitted, or shared.
 
 ## Telemetry
 
