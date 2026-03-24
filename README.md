@@ -197,7 +197,7 @@ The extension is live on the Chrome Web Store and installable via direct link. I
 
 See [PRIVACY.md](PRIVACY.md) for the full privacy policy.
 
-**Summary:** Match data and poll state are stored locally on your device. The extension fetches publicly available schedule data from the ESPN sports API and sends anonymous usage events to Google Analytics via the GA4 Measurement Protocol. No personally identifiable information is collected or shared.
+**Summary:** Match data and poll state are stored locally on your device. The extension fetches publicly available schedule data from the ESPN sports API and sends usage events to Google Analytics via the GA4 Measurement Protocol. The extension does not intentionally collect directly identifying personal information; standard telemetry metadata (such as IP address, user agent, and a randomly generated client ID) is processed by Google Analytics as part of normal event delivery.
 
 ## Telemetry
 
