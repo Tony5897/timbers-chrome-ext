@@ -162,11 +162,14 @@ body::-webkit-scrollbar-thumb {
   grid-template-columns: 1fr 1fr;
   gap: var(--tc-space);
   margin-bottom: calc(var(--tc-space) * 2);
+  justify-items: center;
+  text-align: center;
 }
 
 .detail-item {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 2px;
 }
 
