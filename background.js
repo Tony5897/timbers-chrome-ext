@@ -1,45 +1,60 @@
 try { importScripts('telemetry.local.js'); } catch (_e) {}
 try { importScripts('telemetry.js'); } catch (_e) {}
 
-const SELECTORS = {
-  matchRow: '.match-row',
-  club: '.match-club',
-  date: '.match-date',
-  time: '.match-time',
-  venue: '.match-venue',
-};
-
-const SCHEDULE_URL = 'https://www.mlssoccer.com/schedule/portland-timbers-matches';
+const ESPN_SCHEDULE_URL =
+  'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/teams/9723/schedule';
+const TIMBERS_ESPN_ID = '9723';
 
 async function fetchAndParseSchedule() {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
   try {
-    const response = await fetch(SCHEDULE_URL);
-    const html = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
+    const response = await fetch(ESPN_SCHEDULE_URL, { signal: controller.signal });
+    if (!response.ok) return null;
+    const data = await response.json();
 
-    const nextMatch = doc.querySelector(SELECTORS.matchRow);
-    if (!nextMatch) {
-      return null;
-    }
+    const now = Date.now();
+    const events = data.events || [];
+    const next = events.find((e) => {
+      const comp = e.competitions && e.competitions[0];
+      return comp &&
+        !comp.status?.type?.completed &&
+        new Date(e.date).getTime() > now;
+    });
+    if (!next) return null;
 
-    const clubs = nextMatch.querySelectorAll(SELECTORS.club);
-    const opponent = (clubs.length > 1 ? clubs[1].textContent.trim() : '') || 'TBA';
+    const comp = next.competitions[0];
+    const competitors = comp.competitors || [];
+    const opponentTeam = competitors.find((c) => c.team.id !== TIMBERS_ESPN_ID);
+    const opponent = opponentTeam?.team?.displayName || 'TBA';
 
-    const dateEl = nextMatch.querySelector(SELECTORS.date);
-    const timeEl = nextMatch.querySelector(SELECTORS.time);
-    const venueEl = nextMatch.querySelector(SELECTORS.venue);
+    const matchTimestamp = new Date(next.date).getTime();
+    const matchDate = new Date(matchTimestamp);
 
-    const date = (dateEl && dateEl.textContent.trim()) || 'TBA';
-    const time = (timeEl && timeEl.textContent.trim()) || 'TBA';
-    const location = (venueEl && venueEl.textContent.trim()) || 'TBA';
-    const tv = 'Check Local Listings';
+    const date = matchDate.toLocaleDateString('en-US', {
+      timeZone: 'America/Los_Angeles',
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric',
+    }).replace(/\//g, '-');
 
-    const matchTimestamp = new Date(`${date} ${time}`).getTime();
+    const time =
+      matchDate.toLocaleTimeString('en-US', {
+        timeZone: 'America/Los_Angeles',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      }) + ' PT';
+
+    const location = comp.venue?.fullName || 'TBA';
+    const broadcasts = comp.broadcasts || [];
+    const tv = broadcasts.flatMap((b) => b.names || []).join(', ') || 'Check Local Listings';
+
     return { opponent, date, time, location, tv, matchTimestamp };
-  } catch (error) {
-    console.error('Error fetching or parsing schedule:', error);
+  } catch (_e) {
     return null;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
@@ -91,7 +106,7 @@ async function getMatchDataWithFallback() {
   }
 
   const fallback = await getBundledFallback();
-  if (fallback) {
+  if (fallback && fallback.matchTimestamp > Date.now()) {
     if (typeof Telemetry !== 'undefined') {
       Telemetry.sendEvent('match_fetch_fallback_used', {
         source: 'fallback',
