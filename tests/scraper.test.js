@@ -1,18 +1,52 @@
 const background = require('../background');
 const fallbackFixture = require('../data/fallback.json');
 
-describe('Background scraper logic', () => {
-  const matchHtml = `
-    <html><body>
-      <div class="match-row">
-        <span class="match-club">Portland Timbers</span>
-        <span class="match-club">Seattle Sounders</span>
-        <span class="match-date">2025-05-10</span>
-        <span class="match-time">7:30 PM</span>
-        <span class="match-venue">Providence Park</span>
-      </div>
-    </body></html>`;
+// ESPN API response factory.
+// Uses a date far enough in the future to always pass the "upcoming match"
+// filter without needing to mock Date.now().
+// Apr 5 2030 02:30 UTC = Apr 4 2030 7:30 PM PDT
+const ESPN_FUTURE_DATE = '2030-04-05T02:30:00Z';
 
+function makeEspnResponse(overrides = {}) {
+  return {
+    events: [
+      {
+        date: overrides.date !== undefined ? overrides.date : ESPN_FUTURE_DATE,
+        competitions: [
+          {
+            status: {
+              type: { completed: overrides.completed !== undefined ? overrides.completed : false },
+            },
+            venue: { fullName: overrides.venue !== undefined ? overrides.venue : 'BC Place' },
+            competitors: [
+              { team: { id: '9723', displayName: 'Portland Timbers' }, homeAway: 'away' },
+              {
+                team: {
+                  id: '1234',
+                  displayName: overrides.opponent !== undefined ? overrides.opponent : 'Vancouver Whitecaps FC',
+                },
+                homeAway: 'home',
+              },
+            ],
+            broadcasts:
+              overrides.broadcasts !== undefined ? overrides.broadcasts : [{ names: ['Apple TV'] }],
+          },
+        ],
+      },
+    ],
+  };
+}
+
+function mockFetch(json, ok = true) {
+  global.fetch = jest.fn(() =>
+    Promise.resolve({
+      ok,
+      json: () => Promise.resolve(json),
+    })
+  );
+}
+
+describe('Background scraper logic', () => {
   beforeEach(() => {
     global.chrome = {
       runtime: {
@@ -29,25 +63,36 @@ describe('Background scraper logic', () => {
     delete global.fetch;
   });
 
-  test('extracts match data correctly from valid HTML', async () => {
-    global.fetch = jest.fn(() =>
-      Promise.resolve({ text: () => Promise.resolve(matchHtml) })
-    );
+  test('extracts match data correctly from valid ESPN API response', async () => {
+    mockFetch(makeEspnResponse());
 
     const matchData = await background.fetchAndParseSchedule();
-    expect(matchData.opponent).toBe('Seattle Sounders');
-    expect(matchData.date).toBe('2025-05-10');
-    expect(matchData.time).toBe('7:30 PM');
-    expect(matchData.location).toBe('Providence Park');
-    expect(matchData.tv).toBe('Check Local Listings');
+    expect(matchData.opponent).toBe('Vancouver Whitecaps FC');
+    expect(matchData.date).toBe('04-04-2030');
+    expect(matchData.time).toBe('7:30 PM PT');
+    expect(matchData.location).toBe('BC Place');
+    expect(matchData.tv).toBe('Apple TV');
     expect(typeof matchData.matchTimestamp).toBe('number');
+    expect(matchData.matchTimestamp).toBeGreaterThan(0);
   });
 
-  test('returns null when no match-row is found', async () => {
-    const emptyHtml = '<html><body><div class="no-matches">No upcoming matches</div></body></html>';
-    global.fetch = jest.fn(() =>
-      Promise.resolve({ text: () => Promise.resolve(emptyHtml) })
-    );
+  test('returns null when response.ok is false', async () => {
+    mockFetch({}, false);
+
+    const matchData = await background.fetchAndParseSchedule();
+    expect(matchData).toBeNull();
+  });
+
+  test('returns null when no upcoming events exist', async () => {
+    // All events marked as completed
+    mockFetch(makeEspnResponse({ completed: true }));
+
+    const matchData = await background.fetchAndParseSchedule();
+    expect(matchData).toBeNull();
+  });
+
+  test('returns null when events array is empty', async () => {
+    mockFetch({ events: [] });
 
     const matchData = await background.fetchAndParseSchedule();
     expect(matchData).toBeNull();
@@ -60,33 +105,50 @@ describe('Background scraper logic', () => {
     expect(matchData).toBeNull();
   });
 
-  test('returns TBA for missing fields', async () => {
-    const sparseHtml = `
-      <html><body>
-        <div class="match-row">
-          <span class="match-club">Portland Timbers</span>
-        </div>
-      </body></html>`;
-    global.fetch = jest.fn(() =>
-      Promise.resolve({ text: () => Promise.resolve(sparseHtml) })
-    );
+  test('uses TBA for missing opponent', async () => {
+    const response = makeEspnResponse();
+    // Remove the non-Timbers competitor to simulate missing opponent
+    response.events[0].competitions[0].competitors = [
+      { team: { id: '9723', displayName: 'Portland Timbers' }, homeAway: 'home' },
+    ];
+    mockFetch(response);
 
     const matchData = await background.fetchAndParseSchedule();
     expect(matchData.opponent).toBe('TBA');
-    expect(matchData.date).toBe('TBA');
-    expect(matchData.time).toBe('TBA');
+  });
+
+  test('uses TBA for missing venue', async () => {
+    const response = makeEspnResponse();
+    delete response.events[0].competitions[0].venue;
+    mockFetch(response);
+
+    const matchData = await background.fetchAndParseSchedule();
     expect(matchData.location).toBe('TBA');
+  });
+
+  test('falls back to Check Local Listings when broadcasts array is empty', async () => {
+    mockFetch(makeEspnResponse({ broadcasts: [] }));
+
+    const matchData = await background.fetchAndParseSchedule();
+    expect(matchData.tv).toBe('Check Local Listings');
+  });
+
+  test('joins multiple broadcast names with comma', async () => {
+    mockFetch(makeEspnResponse({ broadcasts: [{ names: ['Apple TV', 'FOX'] }] }));
+
+    const matchData = await background.fetchAndParseSchedule();
+    expect(matchData.tv).toBe('Apple TV, FOX');
   });
 });
 
 describe('Fallback data flow', () => {
   const cachedData = {
     opponent: 'LAFC',
-    date: '2026-03-20',
+    date: '06-20-2026',
     time: '8:00 PM PT',
     location: 'Providence Park',
     tv: 'Apple TV',
-    matchTimestamp: 1774123200000,
+    matchTimestamp: 1782043200000,
   };
 
   beforeEach(() => {
@@ -110,21 +172,8 @@ describe('Fallback data flow', () => {
     delete global.fetch;
   });
 
-  test('returns live data with source "live" when fetch succeeds', async () => {
-    const liveHtml = `
-      <html><body>
-        <div class="match-row">
-          <span class="match-club">Portland Timbers</span>
-          <span class="match-club">Real Salt Lake</span>
-          <span class="match-date">2026-06-01</span>
-          <span class="match-time">7:00 PM</span>
-          <span class="match-venue">Providence Park</span>
-        </div>
-      </body></html>`;
-
-    global.fetch = jest.fn(() =>
-      Promise.resolve({ text: () => Promise.resolve(liveHtml) })
-    );
+  test('returns live data with source "live" when ESPN API succeeds', async () => {
+    mockFetch(makeEspnResponse({ opponent: 'Real Salt Lake', venue: 'Providence Park' }));
 
     const result = await background.getMatchDataWithFallback();
     expect(result.source).toBe('live');
@@ -154,6 +203,7 @@ describe('Fallback data flow', () => {
         return Promise.reject(new Error('Network down'));
       }
       return Promise.resolve({
+        ok: true,
         json: () => Promise.resolve(fallbackFixture),
       });
     });
@@ -164,7 +214,7 @@ describe('Fallback data flow', () => {
 
     const result = await background.getMatchDataWithFallback();
     expect(result.source).toBe('fallback');
-    expect(result.matchData.opponent).toBe('LA Galaxy');
+    expect(result.matchData.opponent).toBe('Vancouver Whitecaps FC');
   });
 
   test('returns null matchData when all tiers fail', async () => {
