@@ -20,6 +20,7 @@ coverage/
 
 # Safari / Xcode output
 safari/
+safari-staging/
 *.xcodeproj
 *.xcworkspace
 DerivedData/
