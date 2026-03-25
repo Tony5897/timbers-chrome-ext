@@ -28,6 +28,14 @@ if ! xcrun -f safari-web-extension-converter &>/dev/null; then
   exit 1
 fi
 
+if ! command -v python3 &>/dev/null; then
+  echo "Error: python3 not found." >&2
+  echo "  Required for cleanup-safari-resources.py post-conversion step." >&2
+  echo "  Install via Homebrew:  brew install python3" >&2
+  echo "  Or download from:      https://www.python.org/downloads/" >&2
+  exit 1
+fi
+
 # ── Safety check: telemetry.local.js must NOT ship in the Safari bundle ───────
 if [ -f "${PROJECT_ROOT}/telemetry.local.js" ]; then
   echo ""
@@ -76,8 +84,9 @@ if [ -f "$PBXPROJ" ]; then
   python3 "${PROJECT_ROOT}/scripts/cleanup-safari-resources.py" "${PBXPROJ}"
 else
   echo ""
-  echo "Warning: project.pbxproj not found at expected path — skipping cleanup." >&2
+  echo "Error: project.pbxproj not found — conversion likely failed." >&2
   echo "  Expected: ${PBXPROJ}" >&2
+  exit 1
 fi
 
 # ── Done ──────────────────────────────────────────────────────────────────────

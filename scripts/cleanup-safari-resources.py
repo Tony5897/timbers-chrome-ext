@@ -94,14 +94,16 @@ def main():
     # ── Step 1: find which PBXResourcesBuildPhase belongs to the extension ──
     # Locate the "Timbers Matchday Extension" PBXNativeTarget block and
     # pull out its Resources build phase UUID.
+    # Anchored to "isa = PBXNativeTarget" to avoid accidentally matching a
+    # PBXGroup or other block with the same name comment.
     target_block_re = re.compile(
-        r"(/\*\s*Timbers Matchday Extension\s*\*/\s*=\s*\{.*?buildPhases\s*=\s*\((.*?)\))",
+        r"(/\*\s*Timbers Matchday Extension\s*\*/\s*=\s*\{.*?isa\s*=\s*PBXNativeTarget.*?buildPhases\s*=\s*\((.*?)\))",
         re.DOTALL,
     )
     target_match = target_block_re.search(content)
     if not target_match:
         print("Warning: could not find 'Timbers Matchday Extension' target — no changes made.")
-        sys.exit(0)
+        sys.exit(1)
 
     build_phases_block = target_match.group(2)
     # Extract UUID + comment pairs from the buildPhases list
@@ -114,7 +116,7 @@ def main():
 
     if not resources_uuid:
         print("Warning: could not locate Resources build phase UUID — no changes made.")
-        sys.exit(0)
+        sys.exit(1)
 
     print(f"  Extension Resources build phase: {resources_uuid}")
 
@@ -126,7 +128,7 @@ def main():
     phase_match = phase_block_re.search(content)
     if not phase_match:
         print("Warning: could not locate the Resources build phase block — no changes made.")
-        sys.exit(0)
+        sys.exit(1)
 
     files_block = phase_match.group(2)
     # Each entry is like: "UUID /* filename in Resources */,"
@@ -160,7 +162,7 @@ def main():
     with open(pbxproj_path, "w", encoding="utf-8") as f:
         f.write(new_content)
 
-    print(f"  Wrote cleaned project.pbxproj")
+    print("  Wrote cleaned project.pbxproj")
 
 
 if __name__ == "__main__":
