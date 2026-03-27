@@ -115,20 +115,26 @@ timbers-chrome-ext/
 ├── popup.js                  # Popup logic — countdown, voting, data display
 ├── styles.css                # Popup stylesheet (CSS custom properties design system)
 ├── manifest.json             # Extension manifest (MV3)
+├── telemetry.js              # GA4 Measurement Protocol telemetry module
+├── telemetry.example.js      # Telemetry config template (copy to telemetry.local.js)
 ├── icon.png                  # Source icon (640×668)
 ├── icons/                    # Generated extension icons
 │   ├── icon-16.png
 │   ├── icon-48.png
 │   └── icon-128.png
+├── data/
+│   └── fallback.json         # Bundled match fixture (last-resort fallback)
 ├── scripts/
 │   ├── generate-icons.js     # Sharp-based icon generator
-│   └── convert-safari.sh     # Safari Web Extension converter wrapper
+│   ├── convert-safari.sh     # Safari Web Extension converter wrapper
+│   └── cleanup-safari-resources.py  # Post-conversion Xcode bundle cleaner
 ├── tests/
 │   ├── scraper.test.js       # Background scraper unit tests
 │   ├── popup.test.js         # Popup UI and integration tests
 │   └── mocks/
 │       └── styleMock.js      # Jest CSS mock
 ├── .github/workflows/ci.yml  # GitHub Actions CI pipeline
+├── CONTRIBUTING.md           # Contribution guidelines
 ├── PRIVACY.md                # Privacy policy
 └── LICENSE                   # ISC License
 ```
