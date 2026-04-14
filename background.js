@@ -21,7 +21,7 @@ async function fetchAndParseSchedule() {
         !comp.status?.type?.completed &&
         new Date(e.date).getTime() > now;
     });
-    if (!next) return null;
+    if (!next) return { noMatch: true };
 
     const comp = next.competitions[0];
     const competitors = comp.competitors || [];
@@ -80,7 +80,8 @@ async function getMatchDataWithFallback() {
   }
 
   const live = await fetchAndParseSchedule();
-  if (live) {
+  const apiHealthy = live && live.noMatch;   // ESPN responded but no fixture published yet
+  if (live && !live.noMatch) {
     chrome.storage.local.set({ latestMatchData: live });
     if (typeof Telemetry !== 'undefined') {
       Telemetry.sendEvent('match_fetch_live_success', {
@@ -120,7 +121,7 @@ async function getMatchDataWithFallback() {
   if (typeof Telemetry !== 'undefined') {
     Telemetry.sendEvent('match_fetch_failed', { has_match_data: false, ui_surface: 'background' });
   }
-  return { matchData: null, source: null };
+  return { matchData: null, source: apiHealthy ? 'no_match' : null };
 }
 
 if (typeof chrome !== 'undefined' && chrome.runtime) {
@@ -139,11 +140,19 @@ if (typeof chrome !== 'undefined' && chrome.alarms) {
   chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === 'fetchDataAlarm') {
       fetchAndParseSchedule().then((matchData) => {
-        if (matchData) {
+        if (matchData && !matchData.noMatch) {
           chrome.storage.local.set({ latestMatchData: matchData });
         }
       });
     }
+  });
+}
+
+if (typeof chrome !== 'undefined' && chrome.runtime) {
+  chrome.runtime.onInstalled.addListener(() => {
+    getMatchDataWithFallback().then(({ matchData }) => {
+      if (matchData) chrome.storage.local.set({ latestMatchData: matchData });
+    });
   });
 }
 
