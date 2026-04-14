@@ -83,19 +83,20 @@ describe('Background scraper logic', () => {
     expect(matchData).toBeNull();
   });
 
-  test('returns null when no upcoming events exist', async () => {
-    // All events marked as completed
+  test('returns { noMatch: true } when API responds but all events are completed', async () => {
+    // API is healthy but every event is in the past — no upcoming fixture yet
     mockFetch(makeEspnResponse({ completed: true }));
 
     const matchData = await background.fetchAndParseSchedule();
-    expect(matchData).toBeNull();
+    expect(matchData).toEqual({ noMatch: true });
   });
 
-  test('returns null when events array is empty', async () => {
+  test('returns { noMatch: true } when events array is empty', async () => {
+    // API responded successfully but schedule has no events (between seasons or not yet published)
     mockFetch({ events: [] });
 
     const matchData = await background.fetchAndParseSchedule();
-    expect(matchData).toBeNull();
+    expect(matchData).toEqual({ noMatch: true });
   });
 
   test('returns null when fetch throws a network error', async () => {
@@ -214,10 +215,10 @@ describe('Fallback data flow', () => {
 
     const result = await background.getMatchDataWithFallback();
     expect(result.source).toBe('fallback');
-    expect(result.matchData.opponent).toBe('Vancouver Whitecaps FC');
+    expect(result.matchData.opponent).toBe('Minnesota United FC');
   });
 
-  test('returns null matchData when all tiers fail', async () => {
+  test('returns null matchData and null source when all tiers fail due to network error', async () => {
     global.fetch = jest.fn(() => Promise.reject(new Error('Everything broken')));
 
     global.chrome.storage.local.get = jest.fn((_key, cb) => {
@@ -227,5 +228,29 @@ describe('Fallback data flow', () => {
     const result = await background.getMatchDataWithFallback();
     expect(result.matchData).toBeNull();
     expect(result.source).toBeNull();
+  });
+
+  test('returns source "no_match" when ESPN is healthy but has no fixture and cache/fallback are empty', async () => {
+    let callCount = 0;
+    global.fetch = jest.fn((_url) => {
+      if (callCount === 0) {
+        callCount++;
+        // ESPN responds successfully but no upcoming match
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(makeEspnResponse({ completed: true })),
+        });
+      }
+      // Bundled fallback fetch fails
+      return Promise.reject(new Error('Fallback unavailable'));
+    });
+
+    global.chrome.storage.local.get = jest.fn((_key, cb) => {
+      cb({});
+    });
+
+    const result = await background.getMatchDataWithFallback();
+    expect(result.matchData).toBeNull();
+    expect(result.source).toBe('no_match');
   });
 });

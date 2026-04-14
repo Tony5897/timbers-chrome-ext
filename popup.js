@@ -42,10 +42,15 @@ document.addEventListener('DOMContentLoaded', () => {
           ui_surface: 'popup',
         });
       }
+    } else if (response && response.source === 'no_match') {
+      showError('No upcoming match scheduled. Check the full schedule below.');
+      if (typeof Telemetry !== 'undefined') {
+        Telemetry.sendEvent('match_fetch_failed', { has_match_data: false, source: 'no_match', ui_surface: 'popup' });
+      }
     } else {
       showError('Could not retrieve match data at this time.');
       if (typeof Telemetry !== 'undefined') {
-        Telemetry.sendEvent('match_fetch_failed', { has_match_data: false, ui_surface: 'popup' });
+        Telemetry.sendEvent('match_fetch_failed', { has_match_data: false, source: 'none', ui_surface: 'popup' });
       }
     }
   });
