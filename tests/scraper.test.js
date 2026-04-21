@@ -197,6 +197,17 @@ describe('Fallback data flow', () => {
   });
 
   test('falls back to bundled JSON with source "fallback" when live and cache fail', async () => {
+    // Use a far-future fixture so this test never fails when the real match date passes.
+    // The actual fallback.json content is tested by the integration smoke test below.
+    const stableFallbackFixture = {
+      opponent: 'FC Future',
+      date: '01-01-2099',
+      time: '7:00 PM PT',
+      location: 'Future Stadium',
+      tv: 'Apple TV',
+      matchTimestamp: new Date('2099-01-01T03:00:00Z').getTime(),
+    };
+
     let callCount = 0;
     global.fetch = jest.fn((_url) => {
       if (callCount === 0) {
@@ -205,7 +216,7 @@ describe('Fallback data flow', () => {
       }
       return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve(fallbackFixture),
+        json: () => Promise.resolve(stableFallbackFixture),
       });
     });
 
@@ -215,7 +226,12 @@ describe('Fallback data flow', () => {
 
     const result = await background.getMatchDataWithFallback();
     expect(result.source).toBe('fallback');
-    expect(result.matchData.opponent).toBe('Minnesota United FC');
+    expect(result.matchData.opponent).toBe('FC Future');
+  });
+
+  test('bundled fallback.json fixture has a future matchTimestamp', () => {
+    // Smoke test: catch stale fallback.json before it hits production.
+    expect(fallbackFixture.matchTimestamp).toBeGreaterThan(Date.now());
   });
 
   test('returns null matchData and null source when all tiers fail due to network error', async () => {

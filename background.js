@@ -1,8 +1,10 @@
 try { importScripts('telemetry.local.js'); } catch (_e) {}
 try { importScripts('telemetry.js'); } catch (_e) {}
 
+// Season year is computed at service-worker startup so it automatically
+// advances each calendar year without any manual updates.
 const ESPN_SCHEDULE_URL =
-  'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/teams/9723/schedule';
+  `https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/teams/9723/schedule?season=${new Date().getFullYear()}`;
 const TIMBERS_ESPN_ID = '9723';
 
 async function fetchAndParseSchedule() {
