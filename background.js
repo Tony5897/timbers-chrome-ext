@@ -15,8 +15,12 @@ async function fetchAndParseSchedule() {
     if (!response.ok) return null;
     const data = await response.json();
 
+    // Guard against malformed payloads — a missing/non-array events field
+    // means ESPN changed shape, not that there are legitimately no matches.
+    if (!Array.isArray(data.events)) return null;
+
     const now = Date.now();
-    const events = data.events || [];
+    const events = data.events;
     const next = events.find((e) => {
       const comp = e.competitions && e.competitions[0];
       return comp &&
@@ -152,9 +156,11 @@ if (typeof chrome !== 'undefined' && chrome.alarms) {
 
 if (typeof chrome !== 'undefined' && chrome.runtime) {
   chrome.runtime.onInstalled.addListener(() => {
-    getMatchDataWithFallback().then(({ matchData }) => {
-      if (matchData) chrome.storage.local.set({ latestMatchData: matchData });
-    });
+    // Warm the cache immediately on install.  getMatchDataWithFallback()
+    // already writes live data to storage internally (see line ~87), so no
+    // extra write is needed here — promoting fallback/cache data back into
+    // latestMatchData would make stale data indistinguishable from live data.
+    getMatchDataWithFallback();
   });
 }
 
