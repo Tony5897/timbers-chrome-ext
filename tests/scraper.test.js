@@ -99,6 +99,15 @@ describe('Background scraper logic', () => {
     expect(matchData).toEqual({ noMatch: true });
   });
 
+  test('returns null when ESPN payload is malformed (missing events key)', async () => {
+    // If ESPN changes their API shape we must treat it as an API failure,
+    // not as a legitimate "no upcoming fixture" — guards against false no_match.
+    mockFetch({ someOtherKey: 'unexpected' });
+
+    const matchData = await background.fetchAndParseSchedule();
+    expect(matchData).toBeNull();
+  });
+
   test('returns null when fetch throws a network error', async () => {
     global.fetch = jest.fn(() => Promise.reject(new Error('Network failure')));
 
