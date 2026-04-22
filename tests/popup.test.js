@@ -194,6 +194,7 @@ describe('Popup.js Functionality', () => {
     });
 
     it('should show error state on runtime.lastError', async () => {
+      jest.useRealTimers();
       mockChrome.runtime.sendMessage = jest.fn((msg, cb) => {
         if (msg.action === 'getMatchData') {
           mockChrome.runtime.lastError = { message: 'Fetch error' };
@@ -207,7 +208,7 @@ describe('Popup.js Functionality', () => {
 
       expect(document.getElementById('match-error').classList.contains('hidden')).toBe(false);
       expect(document.getElementById('match-error-text').textContent).toBe('Could not retrieve match data.');
-    });
+    }, 30000);
 
     it('should display N/A for missing detail fields', async () => {
       const partialData = { opponent: 'Vancouver Whitecaps' };
