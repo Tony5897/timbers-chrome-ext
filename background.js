@@ -1,8 +1,10 @@
 try { importScripts('telemetry.local.js'); } catch (_e) {}
 try { importScripts('telemetry.js'); } catch (_e) {}
 
+// Season year is computed at service-worker startup so it automatically
+// advances each calendar year without any manual updates.
 const ESPN_SCHEDULE_URL =
-  'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/teams/9723/schedule';
+  `https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/teams/9723/schedule?season=${new Date().getFullYear()}`;
 const TIMBERS_ESPN_ID = '9723';
 
 async function fetchAndParseSchedule() {
@@ -13,15 +15,19 @@ async function fetchAndParseSchedule() {
     if (!response.ok) return null;
     const data = await response.json();
 
+    // Guard against malformed payloads — a missing/non-array events field
+    // means ESPN changed shape, not that there are legitimately no matches.
+    if (!Array.isArray(data.events)) return null;
+
     const now = Date.now();
-    const events = data.events || [];
+    const events = data.events;
     const next = events.find((e) => {
       const comp = e.competitions && e.competitions[0];
       return comp &&
         !comp.status?.type?.completed &&
         new Date(e.date).getTime() > now;
     });
-    if (!next) return null;
+    if (!next) return { noMatch: true };
 
     const comp = next.competitions[0];
     const competitors = comp.competitors || [];
@@ -80,7 +86,8 @@ async function getMatchDataWithFallback() {
   }
 
   const live = await fetchAndParseSchedule();
-  if (live) {
+  const apiHealthy = live && live.noMatch;   // ESPN responded but no fixture published yet
+  if (live && !live.noMatch) {
     chrome.storage.local.set({ latestMatchData: live });
     if (typeof Telemetry !== 'undefined') {
       Telemetry.sendEvent('match_fetch_live_success', {
@@ -120,7 +127,7 @@ async function getMatchDataWithFallback() {
   if (typeof Telemetry !== 'undefined') {
     Telemetry.sendEvent('match_fetch_failed', { has_match_data: false, ui_surface: 'background' });
   }
-  return { matchData: null, source: null };
+  return { matchData: null, source: apiHealthy ? 'no_match' : null };
 }
 
 if (typeof chrome !== 'undefined' && chrome.runtime) {
@@ -139,11 +146,21 @@ if (typeof chrome !== 'undefined' && chrome.alarms) {
   chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === 'fetchDataAlarm') {
       fetchAndParseSchedule().then((matchData) => {
-        if (matchData) {
+        if (matchData && !matchData.noMatch) {
           chrome.storage.local.set({ latestMatchData: matchData });
         }
       });
     }
+  });
+}
+
+if (typeof chrome !== 'undefined' && chrome.runtime) {
+  chrome.runtime.onInstalled.addListener(() => {
+    // Warm the cache immediately on install.  getMatchDataWithFallback()
+    // already writes live data to storage internally (see line ~87), so no
+    // extra write is needed here — promoting fallback/cache data back into
+    // latestMatchData would make stale data indistinguishable from live data.
+    getMatchDataWithFallback();
   });
 }
 

@@ -83,16 +83,26 @@ describe('Background scraper logic', () => {
     expect(matchData).toBeNull();
   });
 
-  test('returns null when no upcoming events exist', async () => {
-    // All events marked as completed
+  test('returns { noMatch: true } when API responds but all events are completed', async () => {
+    // API is healthy but every event is in the past — no upcoming fixture yet
     mockFetch(makeEspnResponse({ completed: true }));
 
     const matchData = await background.fetchAndParseSchedule();
-    expect(matchData).toBeNull();
+    expect(matchData).toEqual({ noMatch: true });
   });
 
-  test('returns null when events array is empty', async () => {
+  test('returns { noMatch: true } when events array is empty', async () => {
+    // API responded successfully but schedule has no events (between seasons or not yet published)
     mockFetch({ events: [] });
+
+    const matchData = await background.fetchAndParseSchedule();
+    expect(matchData).toEqual({ noMatch: true });
+  });
+
+  test('returns null when ESPN payload is malformed (missing events key)', async () => {
+    // If ESPN changes their API shape we must treat it as an API failure,
+    // not as a legitimate "no upcoming fixture" — guards against false no_match.
+    mockFetch({ someOtherKey: 'unexpected' });
 
     const matchData = await background.fetchAndParseSchedule();
     expect(matchData).toBeNull();
@@ -196,6 +206,17 @@ describe('Fallback data flow', () => {
   });
 
   test('falls back to bundled JSON with source "fallback" when live and cache fail', async () => {
+    // Use a far-future fixture so this test never fails when the real match date passes.
+    // The actual fallback.json content is tested by the integration smoke test below.
+    const stableFallbackFixture = {
+      opponent: 'FC Future',
+      date: '01-01-2099',
+      time: '7:00 PM PT',
+      location: 'Future Stadium',
+      tv: 'Apple TV',
+      matchTimestamp: new Date('2099-01-01T03:00:00Z').getTime(),
+    };
+
     let callCount = 0;
     global.fetch = jest.fn((_url) => {
       if (callCount === 0) {
@@ -204,7 +225,7 @@ describe('Fallback data flow', () => {
       }
       return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve(fallbackFixture),
+        json: () => Promise.resolve(stableFallbackFixture),
       });
     });
 
@@ -214,10 +235,15 @@ describe('Fallback data flow', () => {
 
     const result = await background.getMatchDataWithFallback();
     expect(result.source).toBe('fallback');
-    expect(result.matchData.opponent).toBe('Vancouver Whitecaps FC');
+    expect(result.matchData.opponent).toBe('FC Future');
   });
 
-  test('returns null matchData when all tiers fail', async () => {
+  test('bundled fallback.json fixture has a future matchTimestamp', () => {
+    // Smoke test: catch stale fallback.json before it hits production.
+    expect(fallbackFixture.matchTimestamp).toBeGreaterThan(Date.now());
+  });
+
+  test('returns null matchData and null source when all tiers fail due to network error', async () => {
     global.fetch = jest.fn(() => Promise.reject(new Error('Everything broken')));
 
     global.chrome.storage.local.get = jest.fn((_key, cb) => {
@@ -227,5 +253,29 @@ describe('Fallback data flow', () => {
     const result = await background.getMatchDataWithFallback();
     expect(result.matchData).toBeNull();
     expect(result.source).toBeNull();
+  });
+
+  test('returns source "no_match" when ESPN is healthy but has no fixture and cache/fallback are empty', async () => {
+    let callCount = 0;
+    global.fetch = jest.fn((_url) => {
+      if (callCount === 0) {
+        callCount++;
+        // ESPN responds successfully but no upcoming match
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(makeEspnResponse({ completed: true })),
+        });
+      }
+      // Bundled fallback fetch fails
+      return Promise.reject(new Error('Fallback unavailable'));
+    });
+
+    global.chrome.storage.local.get = jest.fn((_key, cb) => {
+      cb({});
+    });
+
+    const result = await background.getMatchDataWithFallback();
+    expect(result.matchData).toBeNull();
+    expect(result.source).toBe('no_match');
   });
 });
