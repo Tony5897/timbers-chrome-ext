@@ -238,9 +238,22 @@ describe('Fallback data flow', () => {
     expect(result.matchData.opponent).toBe('FC Future');
   });
 
-  test('bundled fallback.json fixture has a future matchTimestamp', () => {
-    // Smoke test: catch stale fallback.json before it hits production.
-    expect(fallbackFixture.matchTimestamp).toBeGreaterThan(Date.now());
+  test('bundled fallback.json is a valid season schedule array with future fixtures', () => {
+    // Smoke test: the full-season array is well-formed and not expired.
+    expect(Array.isArray(fallbackFixture)).toBe(true);
+    expect(fallbackFixture.length).toBeGreaterThan(0);
+    // Every entry has required fields.
+    fallbackFixture.forEach((m) => {
+      expect(typeof m.opponent).toBe('string');
+      expect(typeof m.matchTimestamp).toBe('number');
+    });
+    // Array is sorted chronologically.
+    for (let i = 1; i < fallbackFixture.length; i++) {
+      expect(fallbackFixture[i].matchTimestamp).toBeGreaterThan(fallbackFixture[i - 1].matchTimestamp);
+    }
+    // At least the final entry (end of season) is still in the future.
+    const lastEntry = fallbackFixture[fallbackFixture.length - 1];
+    expect(lastEntry.matchTimestamp).toBeGreaterThan(Date.now());
   });
 
   test('returns null matchData and null source when all tiers fail due to network error', async () => {
@@ -277,5 +290,37 @@ describe('Fallback data flow', () => {
     const result = await background.getMatchDataWithFallback();
     expect(result.matchData).toBeNull();
     expect(result.source).toBe('no_match');
+  });
+
+  test('skips stale cached entry and falls through to no_match after match ends', async () => {
+    // Simulates what happens the moment the match timestamp passes:
+    // ESPN has no upcoming matches, and the cache holds the just-finished game.
+    global.fetch = jest.fn((_url) =>
+      Promise.resolve({ ok: true, json: () => Promise.resolve({ events: [] }) })
+    );
+    global.chrome.storage.local.get = jest.fn((_key, cb) => {
+      // Past matchTimestamp — the match has already been played
+      cb({ latestMatchData: { opponent: 'San Diego FC', matchTimestamp: 1 } });
+    });
+
+    const result = await background.getMatchDataWithFallback();
+    // Stale cache must NOT be served; ESPN was healthy (noMatch), so source = no_match
+    expect(result.source).toBe('no_match');
+    expect(result.matchData).toBeNull();
+  });
+
+  test('getBundledFallback selects first future entry from season schedule array', async () => {
+    const now = Date.now();
+    const scheduleArray = [
+      { opponent: 'Past Team',   matchTimestamp: 1 },                   // epoch — stale
+      { opponent: 'Next Match',  matchTimestamp: now + 86400000 },      // tomorrow ← pick this
+      { opponent: 'Later Match', matchTimestamp: now + 172800000 },     // day after
+    ];
+    global.fetch = jest.fn(() =>
+      Promise.resolve({ ok: true, json: () => Promise.resolve(scheduleArray) })
+    );
+
+    const result = await background.getBundledFallback();
+    expect(result.opponent).toBe('Next Match');
   });
 });
