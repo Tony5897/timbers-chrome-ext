@@ -75,6 +75,15 @@ function getCachedMatchData() {
 function getBundledFallback() {
   return fetch(chrome.runtime.getURL('data/fallback.json'))
     .then((res) => res.json())
+    .then((data) => {
+      // Support full-season schedule array: pick the first fixture still in the future.
+      // Also supports legacy single-object format for backwards compatibility.
+      if (Array.isArray(data)) {
+        const now = Date.now();
+        return data.find((m) => m.matchTimestamp > now) || null;
+      }
+      return data;
+    })
     .catch(() => null);
 }
 
@@ -101,7 +110,7 @@ async function getMatchDataWithFallback() {
   }
 
   const cached = await getCachedMatchData();
-  if (cached) {
+  if (cached && cached.matchTimestamp > Date.now()) {
     if (typeof Telemetry !== 'undefined') {
       Telemetry.sendEvent('match_fetch_cache_used', {
         source: 'cache',
@@ -165,5 +174,5 @@ if (typeof chrome !== 'undefined' && chrome.runtime) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { fetchAndParseSchedule, getMatchDataWithFallback };
+  module.exports = { fetchAndParseSchedule, getMatchDataWithFallback, getBundledFallback };
 }
