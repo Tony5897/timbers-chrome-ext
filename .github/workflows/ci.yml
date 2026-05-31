@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop, "feat/*" ]
+    branches: [ main, develop, "feature/*" ]
   pull_request:
     branches: [ main, develop ]
 
@@ -15,7 +15,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
 
       - name: Install dependencies
@@ -36,7 +36,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
 
       - name: Install dependencies
@@ -50,3 +50,21 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
+
+  package-artifact:
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package extension
+        run: |
+          zip -r timbers-matchday.zip \
+            manifest.json popup.html popup.js styles.css \
+            background.js telemetry.js data/ icons/
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: timbers-matchday-${{ github.sha }}
+          path: timbers-matchday.zip
+          retention-days: 30
