@@ -53,7 +53,7 @@ describe('Background scraper logic', () => {
         onMessage: { addListener: jest.fn() },
         getURL: jest.fn((p) => 'chrome-extension://fake-id/' + p),
       },
-      alarms: { create: jest.fn(), onAlarm: { addListener: jest.fn() } },
+      alarms: { create: jest.fn(), onAlarm: { addListener: jest.fn() }, get: jest.fn((_name, cb) => cb(null)) },
       storage: { local: { set: jest.fn(), get: jest.fn() } },
     };
   });
@@ -167,7 +167,7 @@ describe('Fallback data flow', () => {
         onMessage: { addListener: jest.fn() },
         getURL: jest.fn((p) => 'chrome-extension://fake-id/' + p),
       },
-      alarms: { create: jest.fn(), onAlarm: { addListener: jest.fn() } },
+      alarms: { create: jest.fn(), onAlarm: { addListener: jest.fn() }, get: jest.fn((_name, cb) => cb(null)) },
       storage: {
         local: {
           set: jest.fn(),
