@@ -27,7 +27,6 @@ ALLOWED = {
     "icons",
     "data",
     "telemetry.js",
-    "telemetry.example.js",
 }
 
 # ── Explicit deny list (belt + suspenders) ───────────────────────────────────
@@ -42,6 +41,7 @@ DENIED = {
     ".vscode",
     "safari",
     "safari-staging",
+    "telemetry.example.js",
     "telemetry.local.js",
     "package.json",
     "package-lock.json",
