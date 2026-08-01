@@ -88,55 +88,24 @@ function getBundledFallback() {
 }
 
 async function getMatchDataWithFallback() {
-  const fetchStart = Date.now();
-
-  if (typeof Telemetry !== 'undefined') {
-    Telemetry.sendEvent('match_fetch_started', { ui_surface: 'background' });
-  }
-
   const live = await fetchAndParseSchedule();
-  const apiHealthy = live && live.noMatch;   // ESPN responded but no fixture published yet
+  const apiRespondedNoMatch = live && live.noMatch;
   if (live && !live.noMatch) {
     chrome.storage.local.set({ latestMatchData: live });
-    if (typeof Telemetry !== 'undefined') {
-      Telemetry.sendEvent('match_fetch_live_success', {
-        source: 'live',
-        has_match_data: true,
-        fetch_duration_ms: Date.now() - fetchStart,
-        ui_surface: 'background',
-      });
-    }
     return { matchData: live, source: 'live' };
   }
 
   const cached = await getCachedMatchData();
   if (cached && cached.matchTimestamp > Date.now()) {
-    if (typeof Telemetry !== 'undefined') {
-      Telemetry.sendEvent('match_fetch_cache_used', {
-        source: 'cache',
-        has_match_data: true,
-        ui_surface: 'background',
-      });
-    }
     return { matchData: cached, source: 'cache' };
   }
 
   const fallback = await getBundledFallback();
   if (fallback && fallback.matchTimestamp > Date.now()) {
-    if (typeof Telemetry !== 'undefined') {
-      Telemetry.sendEvent('match_fetch_fallback_used', {
-        source: 'fallback',
-        has_match_data: true,
-        ui_surface: 'background',
-      });
-    }
     return { matchData: fallback, source: 'fallback' };
   }
 
-  if (typeof Telemetry !== 'undefined') {
-    Telemetry.sendEvent('match_fetch_failed', { has_match_data: false, ui_surface: 'background' });
-  }
-  return { matchData: null, source: apiHealthy ? 'no_match' : null };
+  return { matchData: null, source: apiRespondedNoMatch ? 'no_match' : null };
 }
 
 if (typeof chrome !== 'undefined' && chrome.runtime) {
@@ -151,7 +120,9 @@ if (typeof chrome !== 'undefined' && chrome.runtime) {
 }
 
 if (typeof chrome !== 'undefined' && chrome.alarms) {
-  chrome.alarms.create('fetchDataAlarm', { periodInMinutes: 60 });
+  chrome.alarms.get('fetchDataAlarm', (existing) => {
+    if (!existing) chrome.alarms.create('fetchDataAlarm', { periodInMinutes: 60 });
+  });
   chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === 'fetchDataAlarm') {
       fetchAndParseSchedule().then((matchData) => {

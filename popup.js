@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const voteResults = document.getElementById('vote-results');
   const voteThanks = document.getElementById('vote-thanks');
   let timerInterval;
+  let currentMatchTimestamp = null;
 
   const dataNotice = document.getElementById('data-notice');
 
@@ -28,6 +29,17 @@ document.addEventListener('DOMContentLoaded', () => {
       displayMatchData(response.matchData, response.source);
       if (response.source === 'cache' || response.source === 'fallback') {
         dataNotice.classList.remove('hidden');
+      }
+      if (typeof response.matchData.matchTimestamp === 'number') {
+        currentMatchTimestamp = response.matchData.matchTimestamp;
+        const hasVotedKey = `hasVoted_${currentMatchTimestamp}`;
+        const votesKey = `votes_${currentMatchTimestamp}`;
+        chrome.storage.local.get([hasVotedKey, votesKey], (res) => {
+          if (chrome.runtime.lastError) return;
+          if (res[hasVotedKey]) {
+            showVoteResults(res[votesKey] || { high: 0, medium: 0, low: 0 });
+          }
+        });
       }
       if (typeof Telemetry !== 'undefined') {
         const evt = response.source === 'live'
@@ -144,13 +156,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Voting ──────────────────────────────────────────────
 
-  chrome.storage.local.get(['hasVoted', 'votes'], (result) => {
-    if (chrome.runtime.lastError) return;
-    if (result.hasVoted) {
-      showVoteResults(result.votes || { high: 0, medium: 0, low: 0 });
-    }
-  });
-
   const scheduleLink = document.querySelector('.schedule-link');
   if (scheduleLink) {
     scheduleLink.addEventListener('click', () => {
@@ -162,19 +167,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.querySelectorAll('.vote-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
+      if (!currentMatchTimestamp) return;
       const vote = btn.getAttribute('data-vote');
+      const votesKey = `votes_${currentMatchTimestamp}`;
+      const hasVotedKey = `hasVoted_${currentMatchTimestamp}`;
 
       btn.classList.add('selected');
 
-      chrome.storage.local.get(['votes'], (result) => {
+      chrome.storage.local.get([votesKey], (result) => {
         if (chrome.runtime.lastError) {
           console.error('Error reading votes:', chrome.runtime.lastError.message);
           return;
         }
-        const votes = result.votes || { high: 0, medium: 0, low: 0 };
+        const votes = result[votesKey] || { high: 0, medium: 0, low: 0 };
         votes[vote] = (votes[vote] || 0) + 1;
 
-        chrome.storage.local.set({ votes, hasVoted: true }, () => {
+        chrome.storage.local.set({ [votesKey]: votes, [hasVotedKey]: true }, () => {
           if (chrome.runtime.lastError) {
             console.error('Error saving vote:', chrome.runtime.lastError.message);
             return;

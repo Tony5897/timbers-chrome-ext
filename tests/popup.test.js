@@ -337,9 +337,12 @@ describe('Popup.js Functionality', () => {
     });
 
     it('should persist vote and show results when a vote button is clicked', async () => {
+      const ts = FIXED_TIME + (3 * 24 * 60 * 60 * 1000);
+      const votesKey = `votes_${ts}`;
+      const hasVotedKey = `hasVoted_${ts}`;
       mockChrome.runtime.sendMessage = jest.fn((msg, cb) => {
         if (msg.action === 'getMatchData') {
-          setTimeout(() => cb({ matchData: null }), 0);
+          setTimeout(() => cb({ matchData: { opponent: 'LAFC', matchTimestamp: ts }, source: 'live' }), 0);
         }
       });
 
@@ -351,17 +354,18 @@ describe('Popup.js Functionality', () => {
       highButton.click();
       await flushAsync();
 
-      expect(mockChrome.storage.local.get).toHaveBeenCalledWith(['votes'], expect.any(Function));
+      expect(mockChrome.storage.local.get).toHaveBeenCalledWith([votesKey], expect.any(Function));
       expect(mockChrome.storage.local.set).toHaveBeenCalledWith(
-        { votes: { high: 1, medium: 0, low: 0 }, hasVoted: true },
+        { [votesKey]: { high: 1, medium: 0, low: 0 }, [hasVotedKey]: true },
         expect.any(Function)
       );
     });
 
     it('should display vote results with thanks message after casting a vote', async () => {
+      const ts = FIXED_TIME + (3 * 24 * 60 * 60 * 1000);
       mockChrome.runtime.sendMessage = jest.fn((msg, cb) => {
         if (msg.action === 'getMatchData') {
-          setTimeout(() => cb({ matchData: null }), 0);
+          setTimeout(() => cb({ matchData: { opponent: 'LAFC', matchTimestamp: ts }, source: 'live' }), 0);
         }
       });
 
