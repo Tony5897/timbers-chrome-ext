@@ -1,6 +1,6 @@
 {
   "name": "timbers-chrome-ext",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Track Portland Timbers matches and engage with other fans",
   "scripts": {
     "test": "jest --ci --coverage",
