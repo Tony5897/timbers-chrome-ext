@@ -398,6 +398,17 @@ body::-webkit-scrollbar-thumb {
   color: var(--tc-green);
 }
 
+/* ── Community Count ───────────────────────────────────── */
+
+.community-count {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--tc-text-muted);
+  margin-top: calc(var(--tc-space) * 1.25);
+}
+
 /* ── Vote Results ──────────────────────────────────────── */
 
 .vote-results {
