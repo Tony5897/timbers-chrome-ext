@@ -1,6 +1,6 @@
 {
   "name": "timbers-chrome-ext",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "Track Portland Timbers matches and engage with other fans",
   "scripts": {
     "test": "jest --ci --coverage",
@@ -19,7 +19,7 @@
   "devDependencies": {
     "@babel/core": "^7.27.1",
     "@babel/preset-env": "^7.27.2",
-    "@testing-library/jest-dom": "^5.16.5",
+    "@testing-library/jest-dom": "^6.9.1",
     "babel-jest": "^30.3.0",
     "eslint": "^9.39.3",
     "globals": "^17.4.0",

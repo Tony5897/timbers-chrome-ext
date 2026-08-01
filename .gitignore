@@ -37,3 +37,6 @@ telemetry.local.js
 
 # Local tool data
 .local/
+
+# AI/editor tool data
+.claude/
