@@ -20,7 +20,8 @@
     ],
     "host_permissions": [
         "https://site.api.espn.com/*",
-        "https://www.google-analytics.com/*"
+        "https://www.google-analytics.com/*",
+        "https://firestore.googleapis.com/*"
     ],
     "icons": {
         "16": "icons/icon-16.png",

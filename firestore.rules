@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Fan confidence poll votes — keyed by match Unix timestamp (ms).
+    // Read is open so any install can display community totals.
+    // Write is open to allow anonymous atomic increments from the extension.
+    // The extension only uses FieldTransform.increment, which prevents any
+    // client from setting an arbitrary total — it can only add 1 at a time.
+    match /votes/{matchTimestamp} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}
