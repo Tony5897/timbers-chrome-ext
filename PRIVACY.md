@@ -14,7 +14,7 @@ Timbers Matchday does **not** collect any personally identifiable information (P
 
 | Data | Purpose | Stored where |
 |------|---------|-------------|
-| MLS schedule page (`mlssoccer.com`) | Fetches upcoming Portland Timbers match info (opponent, date, time, venue) | Cached locally via `chrome.storage.local`; refreshed hourly |
+| ESPN schedule API (`site.api.espn.com`) | Fetches upcoming Portland Timbers match info (opponent, date, time, venue) | Cached locally via `chrome.storage.local`; refreshed hourly |
 | Fan confidence vote | Records your High / Medium / Low vote | Stored locally via `chrome.storage.local` on your device only |
 | Anonymous client ID (`_tc_cid`) | A randomly generated UUID created once per browser profile. Used to distinguish unique installations in aggregate analytics — contains no personal information | Stored locally via `chrome.storage.local` |
 
@@ -62,7 +62,7 @@ The telemetry system requires a local configuration file (`telemetry.local.js`) 
 |------------|----------------|
 | `storage` | Save cached match data, your poll vote, and the anonymous client ID locally on your device |
 | `alarms` | Schedule hourly background refreshes of match data |
-| `host_permissions` (`mlssoccer.com`) | Fetch the Portland Timbers schedule page to parse upcoming match details |
+| `host_permissions` (`site.api.espn.com`) | Fetch the Portland Timbers schedule from the ESPN API |
 | `host_permissions` (`google-analytics.com`) | Send anonymous usage events via the GA4 Measurement Protocol |
 
 ---
@@ -77,7 +77,7 @@ All data is stored locally on your device using the browser's extension storage 
 
 | Service | Purpose | Data sent |
 |---------|---------|-----------|
-| [mlssoccer.com](https://www.mlssoccer.com) | Source of Portland Timbers schedule data | No user data — outbound fetch only |
+| [site.api.espn.com](https://site.api.espn.com) | Source of Portland Timbers schedule data via ESPN API | No user data — outbound fetch only |
 | [Google Analytics 4](https://developers.google.com/analytics/devguides/collection/protocol/ga4) | Anonymous usage analytics via Measurement Protocol | Anonymous UUID, session ID, event name, surface label |
 
 No authentication or user credentials are sent in any of these requests.

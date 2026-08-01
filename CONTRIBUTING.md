@@ -61,13 +61,13 @@ Direct pushes to `main` or `develop` are forbidden. All changes go through a pul
 
 | File | Purpose |
 |---|---|
-| `manifest.json` | MV3, v1.0.1, service worker, storage + alarms |
+| `manifest.json` | MV3, v1.0.3, service worker, storage + alarms |
 | `background.js` | Three-tier fetch: live → cache → fallback |
 | `popup.js / popup.html / styles.css` | Popup UI, countdown, confidence poll |
 | `telemetry.js` | GA4 Measurement Protocol (never breaks extension) |
 | `telemetry.local.js` | **Never commit. Never ship in ZIP.** Lives in `.gitignore` |
 | `data/fallback.json` | Bundled fallback match data — keep current |
-| `tests/` | Jest, 27 tests — must stay green before any PR |
+| `tests/` | Jest, 37 tests — must stay green before any PR |
 
 ---
 
