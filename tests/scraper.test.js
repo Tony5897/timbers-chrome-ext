@@ -158,7 +158,7 @@ describe('Fallback data flow', () => {
     time: '8:00 PM PT',
     location: 'Providence Park',
     tv: 'Apple TV',
-    matchTimestamp: 1782043200000,
+    matchTimestamp: new Date('2099-01-01T00:00:00Z').getTime(),
   };
 
   beforeEach(() => {
