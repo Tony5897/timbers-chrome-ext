@@ -16,6 +16,7 @@
   ],
   "author": "Tony Martinez",
   "license": "ISC",
+  "private": true,
   "devDependencies": {
     "@babel/core": "^7.27.1",
     "@babel/preset-env": "^7.27.2",
