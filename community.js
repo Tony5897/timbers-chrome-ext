@@ -11,8 +11,8 @@
 //      (Project Settings → General → Your apps → Web app → SDK setup and config)
 
 const COMMUNITY_CONFIG = {
-  projectId: 'YOUR_FIREBASE_PROJECT_ID',
-  apiKey:    'YOUR_FIREBASE_API_KEY',
+  projectId: 'timbers-matchday',
+  apiKey:    'AIzaSyAncw7DRTPa_Ff8pM_5h7Dhqijqiu6Yo40',
 };
 
 const _fsProject = COMMUNITY_CONFIG.projectId;
