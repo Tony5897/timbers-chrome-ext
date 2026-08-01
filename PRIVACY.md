@@ -15,7 +15,8 @@ Timbers Matchday does **not** collect any personally identifiable information (P
 | Data | Purpose | Stored where |
 |------|---------|-------------|
 | ESPN schedule API (`site.api.espn.com`) | Fetches upcoming Portland Timbers match info (opponent, date, time, venue) | Cached locally via `chrome.storage.local`; refreshed hourly |
-| Fan confidence vote | Records your High / Medium / Low vote | Stored locally via `chrome.storage.local` on your device only |
+| Fan confidence vote | Records your High / Medium / Low vote for the current match | Stored locally via `chrome.storage.local` on your device; vote choice (High / Medium / Low) also sent to Firebase Firestore to power the community aggregate display |
+| Community vote totals | Aggregate High / Medium / Low counts across all users for the current match | Read from Firebase Firestore on popup open; no personal information is included |
 | Anonymous client ID (`_tc_cid`) | A randomly generated UUID created once per browser profile. Used to distinguish unique installations in aggregate analytics — contains no personal information | Stored locally via `chrome.storage.local` |
 
 ---
@@ -64,12 +65,15 @@ The telemetry system requires a local configuration file (`telemetry.local.js`) 
 | `alarms` | Schedule hourly background refreshes of match data |
 | `host_permissions` (`site.api.espn.com`) | Fetch the Portland Timbers schedule from the ESPN API |
 | `host_permissions` (`google-analytics.com`) | Send anonymous usage events via the GA4 Measurement Protocol |
+| `host_permissions` (`firestore.googleapis.com`) | Read community vote totals and submit your vote to the shared Firebase Firestore database |
 
 ---
 
 ## Data Retention
 
-All data is stored locally on your device using the browser's extension storage API. Uninstalling the extension removes all stored data. There is no server-side storage operated by this extension.
+Local data (cached match info, your vote choice, anonymous client ID) is stored on your device via the browser's extension storage API. Uninstalling the extension removes all locally stored data.
+
+Community vote counts (aggregate High / Medium / Low tallies per match) are stored server-side in Firebase Firestore. Only the vote category is recorded — no identifier, IP address, or personal information is sent or stored. These aggregated counts are retained until manually deleted from the Firebase project.
 
 ---
 
@@ -79,6 +83,7 @@ All data is stored locally on your device using the browser's extension storage 
 |---------|---------|-----------|
 | [site.api.espn.com](https://site.api.espn.com) | Source of Portland Timbers schedule data via ESPN API | No user data — outbound fetch only |
 | [Google Analytics 4](https://developers.google.com/analytics/devguides/collection/protocol/ga4) | Anonymous usage analytics via Measurement Protocol | Anonymous UUID, session ID, event name, surface label |
+| [Firebase Firestore](https://firebase.google.com/products/firestore) (Google) | Stores and serves community vote aggregates (High / Medium / Low counts per match) | Vote category only (High, Medium, or Low) — no identifier or personal data |
 
 No authentication or user credentials are sent in any of these requests.
 

@@ -12,6 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const voteThanks = document.getElementById('vote-thanks');
   let timerInterval;
   let currentMatchTimestamp = null;
+  let communityData = null;
+  let hasVotedThisSession = false;
 
   const dataNotice = document.getElementById('data-notice');
 
@@ -34,12 +36,35 @@ document.addEventListener('DOMContentLoaded', () => {
         currentMatchTimestamp = response.matchData.matchTimestamp;
         const hasVotedKey = `hasVoted_${currentMatchTimestamp}`;
         const votesKey = `votes_${currentMatchTimestamp}`;
+
+        // Check local vote state.
         chrome.storage.local.get([hasVotedKey, votesKey], (res) => {
           if (chrome.runtime.lastError) return;
           if (res[hasVotedKey]) {
-            showVoteResults(res[votesKey] || { high: 0, medium: 0, low: 0 });
+            hasVotedThisSession = true;
+            showVoteResults(communityData || res[votesKey] || { high: 0, medium: 0, low: 0 });
           }
         });
+
+        // Fetch community totals in background — updates UI when resolved.
+        if (typeof CommunityVotes !== 'undefined') {
+          CommunityVotes.get(currentMatchTimestamp).then((data) => {
+            communityData = data;
+            if (!data) return;
+            const countEl = document.getElementById('community-count');
+            if (!hasVotedThisSession) {
+              // Show participation count alongside the vote buttons.
+              const total = data.high + data.medium + data.low;
+              if (total > 0 && countEl) {
+                countEl.textContent = `${total} fan${total === 1 ? '' : 's'} have already voted`;
+                countEl.classList.remove('hidden');
+              }
+            } else if (!voteResults.classList.contains('hidden')) {
+              // User already voted — refresh results with community totals.
+              showVoteResults(data);
+            }
+          });
+        }
       }
       if (typeof Telemetry !== 'undefined') {
         const evt = response.source === 'live'
@@ -173,6 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const hasVotedKey = `hasVoted_${currentMatchTimestamp}`;
 
       btn.classList.add('selected');
+      hasVotedThisSession = true;
 
       chrome.storage.local.get([votesKey], (result) => {
         if (chrome.runtime.lastError) {
@@ -187,7 +213,15 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error saving vote:', chrome.runtime.lastError.message);
             return;
           }
-          showVoteResults(votes);
+          // Sync vote to Firestore community backend (fire-and-forget).
+          if (typeof CommunityVotes !== 'undefined') {
+            CommunityVotes.increment(currentMatchTimestamp, vote);
+          }
+          // Optimistically apply this vote to community totals for immediate display.
+          const displayVotes = communityData
+            ? { ...communityData, [vote]: (communityData[vote] || 0) + 1 }
+            : votes;
+          showVoteResults(displayVotes);
         });
       });
     });
@@ -196,6 +230,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function showVoteResults(votes) {
     voteButtons.classList.add('hidden');
     voteResults.classList.remove('hidden');
+    const countEl = document.getElementById('community-count');
+    if (countEl) countEl.classList.add('hidden');
 
     const total = (votes.high || 0) + (votes.medium || 0) + (votes.low || 0);
 
@@ -212,7 +248,9 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    const totalVotes = total === 1 ? '1 vote' : total + ' votes';
-    voteThanks.textContent = 'Thanks for voting! ' + totalVotes + ' cast.';
+    const isCommunity = communityData !== null;
+    const label = total === 1 ? '1 vote' : `${total} votes`;
+    const suffix = isCommunity ? ' from the community' : '';
+    voteThanks.textContent = `Thanks for voting! ${label} cast${suffix}.`;
   }
 });

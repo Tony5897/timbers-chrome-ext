@@ -27,6 +27,7 @@ ALLOWED = {
     "icons",
     "data",
     "telemetry.js",
+    "community.js",
 }
 
 # ── Explicit deny list (belt + suspenders) ───────────────────────────────────
@@ -55,6 +56,7 @@ DENIED = {
     "LICENSE",
     ".gitignore",
     ".mailmap",
+    "firestore.rules",
 }
 
 

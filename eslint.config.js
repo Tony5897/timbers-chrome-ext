@@ -11,6 +11,7 @@ module.exports = [
         ...globals.browser,
         chrome: 'readonly',
         Telemetry: 'readonly',
+        CommunityVotes: 'readonly',
       },
     },
     rules: {
@@ -20,7 +21,7 @@ module.exports = [
     },
   },
   {
-    files: ['background.js', 'telemetry.js'],
+    files: ['background.js', 'telemetry.js', 'community.js'],
     languageOptions: {
       globals: {
         module: 'readonly',
