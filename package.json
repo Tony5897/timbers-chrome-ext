@@ -26,6 +26,6 @@
     "globals": "^17.4.0",
     "jest": "^30.3.0",
     "jest-environment-jsdom": "^30.3.0",
-    "sharp": "^0.34.5"
+    "sharp": "^0.35.3"
   }
 }
