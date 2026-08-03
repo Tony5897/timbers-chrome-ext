@@ -27,6 +27,7 @@ describe('PublicReadService', () => {
       generatedAt: '2026-08-03T12:00:00.000Z',
       features: expect.objectContaining({
         canonicalMatches: true,
+        canonicalPolls: true,
         multiTeamSelection: false,
         liveEvents: false,
       }),
@@ -53,7 +54,19 @@ describe('PublicReadService', () => {
     ]);
     const service = new PublicReadService(fetchMatches, () => now);
 
-    await expect(service.getNextMatch('timbers')).resolves.toEqual({ match: nextMatch });
+    await expect(service.getNextMatch('timbers')).resolves.toEqual({
+      match: nextMatch,
+      polls: [{
+        id: 'poll-espn-401999001-confidence-v1',
+        matchId: 'espn-401999001',
+        teamId: 'timbers',
+        kind: 'confidence',
+        version: 1,
+        state: 'scheduled',
+        opensAt: '2026-08-05T02:30:00.000Z',
+        closesAt: '2026-08-08T02:30:00.000Z',
+      }],
+    });
     expect(fetchMatches).toHaveBeenCalledWith('timbers');
   });
 

@@ -20,3 +20,11 @@ This file is the template for the production migration record. Do not add the vo
 | Final-rule deployment | Pending |
 
 Legacy totals are historical, unverified community counts. They are not unique-person data and must remain separate from the `integrity_controlled` namespace.
+
+## Canonical Read Alias
+
+The compatibility collection continues to use `legacy-{matchTimestamp}-confidence-v1` document IDs during the migration window so released clients, retained responses, aggregate shards, and deletion correction remain stable. Public platform clients do not receive or construct those storage IDs.
+
+Newly synchronized poll windows persist a canonical alias in the form `poll-{matchId}-confidence-v1`, along with the stable match ID, team ID, and current match status. `GET /v1/polls/{pollId}/aggregate` resolves that alias inside the repository and returns only the canonical poll contract; postponed and cancelled matches are represented as void polls. Records created before the alias field existed remain readable through an exact, single-result provider-event fallback; multiple matches are treated as ambiguous and fail closed.
+
+This alias is a compatibility bridge, not permission to merge `legacy_unverified` totals into `integrity_controlled` aggregates. Data classification remains determined by the collection and submission path described above.

@@ -34,6 +34,7 @@ export const publicConfigSchema = z.object({
   teams: z.array(teamSchema),
   features: z.object({
     canonicalMatches: z.boolean(),
+    canonicalPolls: z.boolean(),
     multiTeamSelection: z.boolean(),
     liveEvents: z.boolean(),
     notifications: z.boolean(),
@@ -59,8 +60,31 @@ export const canonicalMatchSchema = z.object({
 }).strict();
 export type CanonicalMatch = z.infer<typeof canonicalMatchSchema>;
 
+export const identityClassSchema = z.literal('integrity_controlled');
+
+export const pollIdSchema = z.string().regex(
+  /^poll-[a-z0-9]+-[A-Za-z0-9_-]+-confidence-v1$/,
+);
+export const pollStateSchema = z.enum(['scheduled', 'open', 'closed', 'void']);
+
+export const confidencePollSchema = z.object({
+  id: pollIdSchema,
+  matchId: matchIdSchema,
+  teamId: teamIdSchema,
+  kind: z.literal('confidence'),
+  version: z.literal(1),
+  state: pollStateSchema,
+  opensAt: z.iso.datetime({ offset: true }),
+  closesAt: z.iso.datetime({ offset: true }),
+}).strict().refine(
+  (poll) => Date.parse(poll.opensAt) < Date.parse(poll.closesAt),
+  { message: 'Poll opening time must precede closing time.' },
+);
+export type ConfidencePoll = z.infer<typeof confidencePollSchema>;
+
 export const nextMatchResponseSchema = z.object({
   match: canonicalMatchSchema,
+  polls: z.array(confidencePollSchema).max(1),
 }).strict();
 
 export const voteChoiceSchema = z.enum(['high', 'medium', 'low']);
@@ -80,6 +104,18 @@ export const aggregateSchema = z.object({
   { message: 'Aggregate choices must sum to total.' },
 );
 export type Aggregate = z.infer<typeof aggregateSchema>;
+
+export const pollAggregateResponseSchema = z.object({
+  poll: confidencePollSchema,
+  identityClass: identityClassSchema,
+  acceptedResponses: z.number().int().nonnegative(),
+  choices: aggregateSchema,
+  generatedAt: z.iso.datetime({ offset: true }),
+}).strict().refine(
+  (response) => response.acceptedResponses === response.choices.total,
+  { message: 'Accepted response count must match aggregate total.' },
+);
+export type PollAggregateResponse = z.infer<typeof pollAggregateResponseSchema>;
 
 export const apiErrorSchema = z.object({
   type: z.literal('about:blank'),

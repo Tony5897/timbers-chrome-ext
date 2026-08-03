@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import type { CompatibilityPollService } from '../src/service.js';
 import type { PublicReadService } from '../src/public-read-service.js';
+import type { PollReadService } from '../src/poll-read-service.js';
 import { createApiHandler } from '../src/http.js';
 
 type CapturedResponse = {
@@ -53,8 +54,9 @@ function apiHandler(
   service: CompatibilityPollService,
   verifyIdToken = vi.fn(),
   publicReadService = {} as PublicReadService,
+  pollReadService = {} as PollReadService,
 ) {
-  return createApiHandler({ service, publicReadService, verifyIdToken });
+  return createApiHandler({ service, publicReadService, pollReadService, verifyIdToken });
 }
 
 function anonymousToken(): DecodedIdToken {
@@ -93,6 +95,7 @@ describe('compatibility HTTP API', () => {
         teams: [],
         features: {
           canonicalMatches: true,
+          canonicalPolls: true,
           multiTeamSelection: false,
           liveEvents: false,
           notifications: false,
@@ -163,8 +166,9 @@ describe('compatibility HTTP API', () => {
       teamId: 'timbers',
       competitionId: 'mls',
     };
+    const polls = [{ id: 'poll-espn-401999001-confidence-v1' }];
     const publicReadService = {
-      getNextMatch: vi.fn(async () => ({ match: canonicalMatch })),
+      getNextMatch: vi.fn(async () => ({ match: canonicalMatch, polls })),
     } as unknown as PublicReadService;
     const handler = apiHandler(service, vi.fn(), publicReadService);
     const { response, captured } = responseCapture();
@@ -176,7 +180,7 @@ describe('compatibility HTTP API', () => {
     }), response);
 
     expect(captured.statusCode).toBe(200);
-    expect(captured.body).toEqual({ match: canonicalMatch });
+    expect(captured.body).toEqual({ match: canonicalMatch, polls });
     expect(publicReadService.getNextMatch).toHaveBeenCalledWith('timbers');
     expect(captured.headers['Cache-Control']).toContain('max-age=60');
   });
@@ -216,6 +220,88 @@ describe('compatibility HTTP API', () => {
     expect(captured.statusCode).toBe(504);
     expect(captured.body).toEqual(expect.objectContaining({ code: 'provider_unavailable' }));
   });
+
+  it('serves integrity-controlled aggregates through canonical poll IDs', async () => {
+    const service = {} as CompatibilityPollService;
+    const aggregateResponse = {
+      poll: { id: 'poll-espn-401999001-confidence-v1' },
+      identityClass: 'integrity_controlled',
+      acceptedResponses: 6,
+      choices: { high: 3, medium: 2, low: 1, total: 6 },
+    };
+    const pollReadService = {
+      getAggregate: vi.fn(async () => aggregateResponse),
+    } as unknown as PollReadService;
+    const handler = apiHandler(
+      service,
+      vi.fn(),
+      {} as PublicReadService,
+      pollReadService,
+    );
+    const { response, captured } = responseCapture();
+
+    await handler(request({
+      method: 'GET',
+      path: '/v1/polls/poll-espn-401999001-confidence-v1/aggregate',
+    }), response);
+
+    expect(captured.statusCode).toBe(200);
+    expect(captured.body).toEqual(aggregateResponse);
+    expect(pollReadService.getAggregate).toHaveBeenCalledWith(
+      'poll-espn-401999001-confidence-v1',
+    );
+    expect(captured.headers['Cache-Control']).toContain('max-age=15');
+  });
+
+  it('rejects malformed canonical poll IDs without exposing parser details', async () => {
+    const service = {} as CompatibilityPollService;
+    const pollReadService = {
+      getAggregate: vi.fn(async () => { throw new Error('poll_not_found'); }),
+    } as unknown as PollReadService;
+    const handler = apiHandler(
+      service,
+      vi.fn(),
+      {} as PublicReadService,
+      pollReadService,
+    );
+    const { response, captured } = responseCapture();
+
+    await handler(request({
+      method: 'GET',
+      path: '/v1/polls/legacy-1786156200000-confidence-v1/aggregate',
+    }), response);
+
+    expect(captured.statusCode).toBe(404);
+    expect(captured.body).toEqual(expect.objectContaining({ code: 'poll_not_found' }));
+  });
+
+  it.each(['poll_alias_ambiguous', 'invalid_poll_window'])(
+    'fails closed with a stable unavailable response for %s',
+    async (errorCode) => {
+      const service = {} as CompatibilityPollService;
+      const pollReadService = {
+        getAggregate: vi.fn(async () => { throw new Error(errorCode); }),
+      } as unknown as PollReadService;
+      const handler = apiHandler(
+        service,
+        vi.fn(),
+        {} as PublicReadService,
+        pollReadService,
+      );
+      const { response, captured } = responseCapture();
+
+      await handler(request({
+        method: 'GET',
+        path: '/v1/polls/poll-espn-401999001-confidence-v1/aggregate',
+      }), response);
+
+      expect(captured.statusCode).toBe(503);
+      expect(captured.body).toEqual(expect.objectContaining({
+        code: 'poll_unavailable',
+        detail: 'The poll aggregate is temporarily unavailable.',
+      }));
+    },
+  );
 
   it('requires authentication for response submissions', async () => {
     const service = { submit: vi.fn() } as unknown as CompatibilityPollService;

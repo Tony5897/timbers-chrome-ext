@@ -6,6 +6,7 @@ import {
   responseBodySchema,
 } from './domain.js';
 import type { PublicReadService } from './public-read-service.js';
+import type { PollReadService } from './poll-read-service.js';
 import type { CompatibilityPollService } from './service.js';
 
 type RequestLike = {
@@ -28,11 +29,13 @@ type AuthVerifier = (token: string) => Promise<DecodedIdToken>;
 type ApiDependencies = {
   service: CompatibilityPollService;
   publicReadService: PublicReadService;
+  pollReadService: PollReadService;
   verifyIdToken: AuthVerifier;
 };
 
 const routePattern = /^\/v1\/legacy-polls\/(\d{13})\/(aggregate|responses)$/;
 const teamRoutePattern = /^\/v1\/teams\/([^/]+)$/;
+const pollAggregateRoutePattern = /^\/v1\/polls\/([^/]+)\/aggregate$/;
 
 export function createApiHandler(dependencies: ApiDependencies) {
   return async (request: RequestLike, response: ResponseLike): Promise<void> => {
@@ -80,6 +83,20 @@ export function createApiHandler(dependencies: ApiDependencies) {
       try {
         const result = await dependencies.publicReadService.getNextMatch(request.query?.teamId);
         response.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=180');
+        response.status(200).json(result);
+      } catch (error) {
+        const code = error instanceof Error ? error.message : 'internal_error';
+        const mapped = mapError(code);
+        problem(response, requestId, mapped.status, mapped.code, mapped.detail);
+      }
+      return;
+    }
+
+    const pollAggregateRoute = pollAggregateRoutePattern.exec(request.path);
+    if (request.method === 'GET' && pollAggregateRoute) {
+      try {
+        const result = await dependencies.pollReadService.getAggregate(pollAggregateRoute[1]);
+        response.setHeader('Cache-Control', 'public, max-age=15, stale-while-revalidate=45');
         response.status(200).json(result);
       } catch (error) {
         const code = error instanceof Error ? error.message : 'internal_error';
@@ -209,6 +226,8 @@ function mapError(code: string): { status: number; code: string; detail: string 
     anonymous_installation_required: { status: 403, code, detail: 'An anonymous installation identity is required.' },
     unsupported_client: { status: 426, code, detail: 'This extension version is no longer supported for community submissions.' },
     poll_not_found: { status: 404, code, detail: 'No eligible poll exists for this match.' },
+    poll_alias_ambiguous: { status: 503, code: 'poll_unavailable', detail: 'The poll aggregate is temporarily unavailable.' },
+    invalid_poll_window: { status: 503, code: 'poll_unavailable', detail: 'The poll aggregate is temporarily unavailable.' },
     poll_not_open: { status: 409, code, detail: 'This poll is not open yet.' },
     poll_closed: { status: 409, code, detail: 'This poll is closed.' },
     rate_limited: { status: 429, code, detail: 'The anonymous installation has reached the daily response limit.' },

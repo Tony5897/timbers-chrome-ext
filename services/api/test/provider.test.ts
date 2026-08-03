@@ -37,7 +37,11 @@ describe('ESPN compatibility adapter', () => {
     );
     expect(windows).toEqual([{
       pollId: 'legacy-1786156200000-confidence-v1',
+      canonicalPollId: 'poll-espn-401999001-confidence-v1',
+      matchId: 'espn-401999001',
+      teamId: 'timbers',
       matchTimestamp: 1786156200000,
+      matchStatus: 'scheduled',
       providerEventId: '401999001',
       opensAtMs: 1785897000000,
       closesAtMs: 1786156200000,

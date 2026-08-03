@@ -1,6 +1,7 @@
 import {
   isSupportedClientVersion,
   type Aggregate,
+  type PollWindow,
   type VoteChoice,
 } from './domain.js';
 import { fetchCompatibilityPollWindows } from './provider.js';
@@ -35,6 +36,22 @@ export class CompatibilityPollService {
       aggregate,
       pollId: window.pollId,
       matchTimestamp: window.matchTimestamp,
+    };
+  }
+
+  async getCanonicalAggregateResult(canonicalPollId: string): Promise<{
+    aggregate: Aggregate;
+    window: PollWindow;
+  }> {
+    let window = await this.repository.getPollWindowByCanonicalId(canonicalPollId);
+    if (!window) {
+      await this.syncPollWindows();
+      window = await this.repository.getPollWindowByCanonicalId(canonicalPollId);
+    }
+    if (!window) throw new Error('poll_not_found');
+    return {
+      aggregate: await this.repository.getAggregate(window.matchTimestamp),
+      window,
     };
   }
 
