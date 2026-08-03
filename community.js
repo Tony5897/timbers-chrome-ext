@@ -1,73 +1,177 @@
-// Community vote aggregation via Firebase Firestore REST API.
-// Firebase API keys for client-side access are intentionally public — security
-// comes from Firestore security rules, not key secrecy (same model as GA4 keys).
-//
-// Setup:
-//   1. Create a Firebase project at https://console.firebase.google.com
-//   2. Enable Firestore Database (start in production mode)
-//   3. Deploy the rules:  firebase deploy --only firestore:rules
-//      (rules file: firestore.rules in this repo)
-//   4. Replace the placeholder values below with your project config
-//      (Project Settings → General → Your apps → Web app → SDK setup and config)
+(function () {
+  const REQUEST_TIMEOUT_MS = 6_000;
+  const PENDING_PREFIX = '_matchday_pending_vote_';
 
-const COMMUNITY_CONFIG = {
-  projectId: 'timbers-matchday',
-  apiKey:    'AIzaSyAncw7DRTPa_Ff8pM_5h7Dhqijqiu6Yo40',
-};
+  function config() {
+    const value = globalThis.MATCHDAY_RUNTIME_CONFIG;
+    if (!value?.apiBaseUrl || !value?.clientVersion) throw new Error('community_not_configured');
+    return value;
+  }
 
-const _fsProject = COMMUNITY_CONFIG.projectId;
-const _fsKey     = COMMUNITY_CONFIG.apiKey;
-const _fsBase    = `https://firestore.googleapis.com/v1/projects/${_fsProject}/databases/(default)/documents`;
-const _fsEnabled = _fsProject !== 'YOUR_FIREBASE_PROJECT_ID';
-const _timeout   = 4000;
+  function storageGet(key) {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.get(key, (result) => {
+        if (chrome.runtime.lastError) {
+          reject(new Error('community_storage_read_failed'));
+          return;
+        }
+        resolve(result[key] ?? null);
+      });
+    });
+  }
 
-globalThis.CommunityVotes = {
-  // Returns {high, medium, low} counts from Firestore, or null on error/disabled.
-  async get(matchTimestamp) {
-    if (!_fsEnabled) return null;
+  function storageSet(key, value) {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.set({ [key]: value }, () => {
+        if (chrome.runtime.lastError) {
+          reject(new Error('community_storage_write_failed'));
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+
+  function storageGetAll() {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.get(null, (result) => {
+        if (chrome.runtime.lastError) {
+          reject(new Error('community_storage_read_failed'));
+          return;
+        }
+        resolve(result);
+      });
+    });
+  }
+
+  function storageRemove(key) {
+    return new Promise((resolve) => chrome.storage.local.remove(key, resolve));
+  }
+
+  function pendingKey(matchTimestamp) {
+    return `${PENDING_PREFIX}${matchTimestamp}`;
+  }
+
+  function createIdempotencyKey() {
+    if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    return Array.from(bytes, (value) => value.toString(16).padStart(2, '0')).join('');
+  }
+
+  async function apiFetch(path, options = {}) {
+    const currentConfig = config();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
-      const res = await fetch(
-        `${_fsBase}/votes/${matchTimestamp}?key=${_fsKey}`,
-        { signal: AbortSignal.timeout(_timeout) }
-      );
-      if (res.status === 404) return { high: 0, medium: 0, low: 0 };
-      if (!res.ok) return null;
-      const doc = await res.json();
-      const f = doc.fields || {};
-      return {
-        high:   Number(f.high?.integerValue   ?? 0),
-        medium: Number(f.medium?.integerValue ?? 0),
-        low:    Number(f.low?.integerValue    ?? 0),
-      };
+      return await fetch(`${currentConfig.apiBaseUrl}${path}`, {
+        ...options,
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  function aggregateFromPayload(payload) {
+    const choices = payload?.choices;
+    if (!choices) return null;
+    return {
+      high: Number(choices.high ?? 0),
+      medium: Number(choices.medium ?? 0),
+      low: Number(choices.low ?? 0),
+    };
+  }
+
+  async function submitPending(pending, forceRefresh = false) {
+    const currentConfig = config();
+    const idToken = await globalThis.MatchdayAuth.getIdToken(forceRefresh);
+    const response = await apiFetch(
+      `/v1/legacy-polls/${pending.matchTimestamp}/responses`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+          'Content-Type': 'application/json',
+          'X-Client-Version': currentConfig.clientVersion,
+          'X-Idempotency-Key': pending.idempotencyKey,
+        },
+        body: JSON.stringify({ choice: pending.choice }),
+      },
+    );
+
+    if (response.status === 401 && !forceRefresh) return submitPending(pending, true);
+    if (!response.ok) throw new Error(`community_submit_${response.status}`);
+
+    const payload = await response.json();
+    await storageRemove(pendingKey(pending.matchTimestamp));
+    return aggregateFromPayload(payload);
+  }
+
+  async function get(matchTimestamp) {
+    try {
+      const pending = await storageGet(pendingKey(matchTimestamp));
+      if (pending) {
+        try {
+          const submittedAggregate = await submitPending(pending);
+          if (submittedAggregate) return submittedAggregate;
+        } catch {}
+      }
+
+      const response = await apiFetch(`/v1/legacy-polls/${matchTimestamp}/aggregate`);
+      if (!response.ok) return null;
+      return aggregateFromPayload(await response.json());
     } catch {
       return null;
     }
-  },
+  }
 
-  // Atomically increments one vote field in Firestore. Silent on failure —
-  // the local vote is already saved before this is called.
-  async increment(matchTimestamp, vote) {
-    if (!_fsEnabled) return;
-    const docPath = `projects/${_fsProject}/databases/(default)/documents/votes/${matchTimestamp}`;
+  async function increment(matchTimestamp, choice) {
+    const key = pendingKey(matchTimestamp);
     try {
-      await fetch(
-        `https://firestore.googleapis.com/v1/projects/${_fsProject}/databases/(default)/documents:commit?key=${_fsKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            writes: [{
-              transform: {
-                document: docPath,
-                fieldTransforms: [{ fieldPath: vote, increment: { integerValue: '1' } }],
-              },
-            }],
-          }),
-          signal: AbortSignal.timeout(_timeout),
-        }
-      );
+      let pending = await storageGet(key);
+      if (!pending) {
+        pending = {
+          matchTimestamp,
+          choice,
+          idempotencyKey: createIdempotencyKey(),
+          createdAt: Date.now(),
+        };
+        await storageSet(key, pending);
+      }
+      const aggregate = await submitPending(pending);
+      return { synced: true, aggregate };
     } catch {
-      // Silent fail — local vote is already saved; community sync is best-effort.
+      return { synced: false, aggregate: null };
     }
-  },
-};
+  }
+
+  async function clearCommunityState() {
+    const values = await storageGetAll();
+    const keys = Object.keys(values).filter((key) => (
+      key.startsWith(PENDING_PREFIX) || key.startsWith('hasVoted_') || key.startsWith('votes_')
+    ));
+    if (keys.length > 0) await storageRemove(keys);
+  }
+
+  async function deleteInstallation(forceRefresh = false) {
+    try {
+      const idToken = await globalThis.MatchdayAuth.getIdToken(forceRefresh);
+      const response = await apiFetch('/v1/installations/me', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
+      if (response.status === 401 && !forceRefresh) return deleteInstallation(true);
+      if (!response.ok) throw new Error(`community_delete_${response.status}`);
+      const receipt = await response.json();
+      await globalThis.MatchdayAuth.clearSession();
+      await clearCommunityState();
+      return { deleted: true, receiptId: receipt.receiptId ?? null };
+    } catch {
+      return { deleted: false, receiptId: null };
+    }
+  }
+
+  const communityVotes = { get, increment, deleteInstallation };
+  globalThis.CommunityVotes = communityVotes;
+  if (typeof module !== 'undefined' && module.exports) module.exports = communityVotes;
+})();

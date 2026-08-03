@@ -1,106 +1,68 @@
 # Privacy Policy — Timbers Matchday
 
-**Effective date:** March 2026
+**Effective date:** August 3, 2026
 
----
+## Summary
 
-## Data Collection
+Timbers Matchday does not request your name, email address, precise location, browsing history, visited URLs, or page content. Community polling uses a pseudonymous Firebase anonymous account so the backend can accept at most one response from that anonymous installation for a match poll. An anonymous installation is not proof of one unique person.
 
-Timbers Matchday does **not** collect any personally identifiable information (PII). The extension uses anonymous, non-identifying usage analytics to monitor reliability and improve the user experience.
+## Data the extension handles
 
----
+| Data | Purpose | Storage and access |
+|---|---|---|
+| Upcoming match data | Show the next Portland Timbers match and countdown | Cached in `chrome.storage.local`; fetched from the ESPN schedule endpoint |
+| Local vote state | Remember that this browser installation already responded | Stored in `chrome.storage.local` |
+| Firebase anonymous UID and auth session | Authenticate the community submission without requesting a personal account | Auth tokens and UID are stored in extension-local storage; the ID token is sent only to the Matchday API |
+| Confidence choice | Add High, Medium, or Low to the current match aggregate | Stored server-side in a restricted raw response record keyed by the anonymous UID; never exposed by the public aggregate API |
+| Pending submission and idempotency key | Retry safely after a temporary network or service failure | Stored locally until the backend accepts the response |
+| Daily abuse-control counter | Limit one anonymous UID to ten newly accepted poll responses per UTC day | Stored under a SHA-256-derived daily key without the raw UID and deleted within 72 hours |
+| Deletion request | Make deletion retry-safe and schedule removal of the Firebase anonymous account | Temporarily stores the anonymous UID, a random receipt, and deletion timestamps in a server-only record until account removal succeeds |
+| Aggregate response counts | Display community High, Medium, and Low totals | Returned by the Matchday API without UIDs or raw response records |
 
-## What the extension accesses
+## Community response integrity
 
-| Data | Purpose | Stored where |
-|------|---------|-------------|
-| ESPN schedule API (`site.api.espn.com`) | Fetches upcoming Portland Timbers match info (opponent, date, time, venue) | Cached locally via `chrome.storage.local`; refreshed hourly |
-| Fan confidence vote | Records your High / Medium / Low vote for the current match | Stored locally via `chrome.storage.local` on your device; vote choice (High / Medium / Low) also sent to Firebase Firestore to power the community aggregate display |
-| Community vote totals | Aggregate High / Medium / Low counts across all users for the current match | Read from Firebase Firestore on popup open; no personal information is included |
-| Anonymous client ID (`_tc_cid`) | A randomly generated UUID created once per browser profile. Used to distinguish unique installations in aggregate analytics — contains no personal information | Stored locally via `chrome.storage.local` |
+The backend verifies the Firebase ID token, confirms that the identity is anonymous, checks the provider-backed poll window and extension version, validates the choice, and creates at most one response document for that UID and poll. Clearing extension data or reinstalling can create a new anonymous UID, so the product does not describe responses as verified people or representative fan research.
 
----
+## Analytics and browsing data
 
-## Analytics & Telemetry
+The public extension package does not include analytics code or analytics credentials and does not send product analytics. It does not request tab, browsing-history, page-content, geolocation, or broad website access.
 
-Timbers Matchday uses the **Google Analytics 4 (GA4) Measurement Protocol** to collect anonymous usage events. No personal information is included in any event payload.
+Infrastructure providers may process standard network metadata such as an IP address in transient request and security logs. The application does not add raw IP addresses to poll records or product analytics.
 
-### How it works
+## Host access
 
-- A random UUID (`_tc_cid`) is generated on first use and stored locally. It is never linked to any personal identity.
-- A session ID (`Date.now()` timestamp) is created per popup open or service worker startup. It is not persisted.
-- Events are sent via a direct `POST` request to `https://www.google-analytics.com/mp/collect`. No third-party scripts are loaded.
+| Host | Purpose |
+|---|---|
+| `site.api.espn.com` | Retrieve upcoming Timbers schedule data |
+| `identitytoolkit.googleapis.com` | Create a Firebase anonymous account when community polling is first used |
+| `securetoken.googleapis.com` | Refresh the anonymous Firebase ID token |
+| `us-west1-timbers-matchday.cloudfunctions.net` | Read integrity-controlled aggregates and submit an authenticated response |
 
-### Events collected
+## Retention and deletion
 
-| Event | When it fires | Data included |
-|-------|--------------|---------------|
-| `popup_open` | User opens the extension popup | Surface: `popup` |
-| `match_fetch_started` | Background worker begins a data fetch | Surface: `background` |
-| `match_fetch_live_success` | Live MLS data fetched successfully | Source, fetch duration (ms), surface |
-| `match_fetch_cache_used` | Cached data served (live fetch failed) | Source, surface |
-| `match_fetch_fallback_used` | Bundled fallback data served | Source, surface |
-| `match_fetch_failed` | All three data sources failed | Surface |
-| `schedule_link_clicked` | User taps "View Full Schedule" | Surface: `popup` |
+- Match data, local response state, pending submissions, and anonymous auth state remain in extension storage until removed by the extension or browser. Uninstalling the extension removes extension-local storage.
+- The extension's **Delete my community data** control immediately removes retained raw poll responses, clears community response state from extension storage, and adjusts affected aggregate shards. It then schedules deletion of the Firebase anonymous account after a one-hour retry window; the hourly cleanup normally completes account removal within two hours.
+- The server retains the anonymous UID only in the restricted deletion request until account deletion succeeds. A service incident can extend that interval and is an operational alert condition.
+- Raw integrity-controlled response records are scheduled for deletion 90 days after the match. Aggregate counts remain as historical community product data.
+- Once a raw response reaches scheduled retention deletion, its contribution is no longer linked to an anonymous UID and cannot be selectively removed from historical aggregate counts.
+- Pseudonymous daily abuse-control counters are scheduled for deletion within 72 hours.
+- Legacy totals created before the authenticated migration are retained separately as `legacy_unverified` and are never merged into integrity-controlled totals.
+- The compatibility release does not collect passive usage or regional analytics.
 
-### What is never collected
+## Data sharing and advertising
 
-- Name, email address, or any personally identifiable information
-- IP address (not included in the event payload; standard HTTP headers are transmitted as part of normal web traffic)
-- Browsing history, page content, or visited URLs
-- Location data
-- Any data from pages you visit outside the extension
+Raw responses, Firebase UIDs, auth tokens, and pending submissions are not sold, used for personalized advertising, or shared with clubs, sponsors, data brokers, or advertisers. Public aggregate community counts are a user-facing extension feature.
 
-### Public build behavior
+## Security
 
-The telemetry system requires a local configuration file (`telemetry.local.js`) to activate. This file is **never distributed** in the published Chrome Web Store package. For all public users, every telemetry call exits silently before any network request is made and no UUID is created or stored.
+Raw responses and authentication data are server-only. Public clients can read aggregate counts but cannot read raw response documents. Firebase web API configuration is public client configuration and is not treated as a secret; authorization relies on verified ID tokens, server validation, IAM, and deny-by-default Firestore rules.
 
----
+## Children
 
-## Permissions Explained
+Timbers Matchday is not directed to children under 13 and does not knowingly request personal information from children.
 
-| Permission | Why it's needed |
-|------------|----------------|
-| `storage` | Save cached match data, your poll vote, and the anonymous client ID locally on your device |
-| `alarms` | Schedule hourly background refreshes of match data |
-| `host_permissions` (`site.api.espn.com`) | Fetch the Portland Timbers schedule from the ESPN API |
-| `host_permissions` (`google-analytics.com`) | Send anonymous usage events via the GA4 Measurement Protocol |
-| `host_permissions` (`firestore.googleapis.com`) | Read community vote totals and submit your vote to the shared Firebase Firestore database |
+## Changes and contact
 
----
+Behavior changes that affect data handling require an updated extension disclosure and privacy policy in the same release. Use the in-extension deletion control for community data. For questions, deletion failures, or deletion requests when the extension is unavailable, open an issue in the project repository until the dedicated support route is live.
 
-## Data Retention
-
-Local data (cached match info, your vote choice, anonymous client ID) is stored on your device via the browser's extension storage API. Uninstalling the extension removes all locally stored data.
-
-Community vote counts (aggregate High / Medium / Low tallies per match) are stored server-side in Firebase Firestore. Only the vote category is recorded — no identifier, IP address, or personal information is sent or stored. These aggregated counts are retained until manually deleted from the Firebase project.
-
----
-
-## Third-Party Services
-
-| Service | Purpose | Data sent |
-|---------|---------|-----------|
-| [site.api.espn.com](https://site.api.espn.com) | Source of Portland Timbers schedule data via ESPN API | No user data — outbound fetch only |
-| [Google Analytics 4](https://developers.google.com/analytics/devguides/collection/protocol/ga4) | Anonymous usage analytics via Measurement Protocol | Anonymous UUID, session ID, event name, surface label |
-| [Firebase Firestore](https://firebase.google.com/products/firestore) (Google) | Stores and serves community vote aggregates (High / Medium / Low counts per match) | Vote category only (High, Medium, or Low) — no identifier or personal data |
-
-No authentication or user credentials are sent in any of these requests.
-
----
-
-## Children's Privacy
-
-This extension does not knowingly collect information from children under 13.
-
----
-
-## Changes to This Policy
-
-Updates to this policy will be reflected in this file with a revised effective date.
-
----
-
-## Contact
-
-For questions about this privacy policy, open an issue on the project's GitHub repository.
+Timbers Matchday's use of information received from Chrome APIs adheres to the Chrome Web Store User Data Policy, including the Limited Use requirements.

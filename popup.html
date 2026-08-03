@@ -71,6 +71,7 @@
   <section class="vote-card">
     <h2 class="card-title">Confidence Poll</h2>
     <p class="vote-prompt">How confident are you in today's result?</p>
+    <p class="vote-disclosure">Your choice is tied to an anonymous installation and contributes to public community totals. It does not verify a unique person.</p>
 
     <div class="vote-buttons" id="vote-buttons">
       <button class="vote-btn" data-vote="high">
@@ -88,6 +89,7 @@
     </div>
 
     <p class="community-count hidden" id="community-count"></p>
+    <p class="community-sync hidden" id="community-sync" aria-live="polite"></p>
 
     <div class="vote-results hidden" id="vote-results" aria-live="polite">
       <p class="results-title">Community Vote</p>
@@ -108,6 +110,11 @@
       </div>
       <p class="vote-thanks" id="vote-thanks"></p>
     </div>
+
+    <div class="community-delete-control hidden" id="community-delete-control">
+      <button class="community-delete" id="community-delete" type="button">Delete my community data</button>
+      <p class="community-delete-status hidden" id="community-delete-status" aria-live="polite"></p>
+    </div>
   </section>
 
   <footer class="ext-footer">
@@ -116,8 +123,8 @@
     <a href="https://www.mlssoccer.com" target="_blank" rel="noopener noreferrer">MLS</a>
   </footer>
 
-  <script src="telemetry.local.js"></script>
-  <script src="telemetry.js"></script>
+  <script src="runtime-config.js"></script>
+  <script src="auth.js"></script>
   <script src="community.js"></script>
   <script src="popup.js"></script>
 </body>

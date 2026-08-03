@@ -4,11 +4,16 @@
 
 A cross-browser extension (Chrome and Safari) that displays upcoming Portland Timbers matches with a live countdown, TV/streaming info, and a fan confidence poll.
 
+## Strategic Roadmap
+
+The Chrome-first, multi-team platform architecture and phased implementation plan is documented in [docs/STRATEGIC_IMPLEMENTATION_PLAN.md](docs/STRATEGIC_IMPLEMENTATION_PLAN.md). Its independent requirement, platform, and readiness audit is in [docs/STRATEGIC_IMPLEMENTATION_PLAN_REVIEW.md](docs/STRATEGIC_IMPLEMENTATION_PLAN_REVIEW.md). Current Phase 0 implementation and production gates are tracked in [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md), with the ordered cutover in [docs/runbooks/phase-0-deployment.md](docs/runbooks/phase-0-deployment.md).
+
 ## Features
 
 - Live countdown to the next Timbers match
 - Match date/time, venue, and TV/streaming details
 - Fan confidence poll with community vote breakdown
+- Self-service deletion for retained community responses and anonymous identity
 - One-click access to the official MLS schedule
 - Hourly background refresh via service worker
 - Timbers-branded dark-green and gold UI
@@ -102,7 +107,12 @@ Use the **Confidence Poll** section to vote on your confidence level and see how
 |---------|-------------|
 | `npm test` | Run Jest test suite with coverage |
 | `npm run test:watch` | Run tests in watch mode |
-| `npm run lint` | Run ESLint |
+| `npm run lint` | Run ESLint and API type checking |
+| `npm run test:api` | Run compatibility API unit tests |
+| `npm run test:rules` | Build the API and run Firestore emulator suites |
+| `npm run package:extension` | Build the exact Chrome Web Store ZIP |
+| `npm run verify:extension` | Verify ZIP inventory and secret exclusions |
+| `npm run verify:phase0` | Run the complete Phase 0 verification pipeline |
 | `npm run build:icons` | Generate 16/48/128px icons from `icon.png` |
 | `npm run build:safari` | Convert to Safari Web Extension (requires Xcode) |
 
@@ -115,8 +125,9 @@ timbers-chrome-ext/
 ├── popup.js                  # Popup logic — countdown, voting, data display
 ├── styles.css                # Popup stylesheet (CSS custom properties design system)
 ├── manifest.json             # Extension manifest (MV3)
-├── telemetry.js              # GA4 Measurement Protocol telemetry module
-├── telemetry.example.js      # Telemetry config template (copy to telemetry.local.js)
+├── runtime-config.js         # Public Firebase and API runtime configuration
+├── auth.js                   # Firebase anonymous authentication client
+├── community.js              # Authenticated compatibility API client
 ├── icon.png                  # Source icon (640×668)
 ├── icons/                    # Generated extension icons
 │   ├── icon-16.png
@@ -127,7 +138,11 @@ timbers-chrome-ext/
 ├── scripts/
 │   ├── generate-icons.js     # Sharp-based icon generator
 │   ├── convert-safari.sh     # Safari Web Extension converter wrapper
+│   ├── package-extension.mjs # Exact Chrome ZIP builder
 │   └── cleanup-safari-resources.py  # Post-conversion Xcode bundle cleaner
+├── services/api/             # Firebase Functions compatibility backend
+├── emulator-tests/           # Firestore rules tests
+├── docs/                     # Strategy, ADRs, provider evidence, and runbooks
 ├── tests/
 │   ├── scraper.test.js       # Background scraper unit tests
 │   ├── popup.test.js         # Popup UI and integration tests
@@ -195,7 +210,7 @@ The extension is live on the Chrome Web Store and installable via direct link. I
 
 - **Manifest V3** compliant
 - Icons at 16px, 48px, and 128px
-- Minimal permissions (`storage`, `alarms`, two specific host permissions: `site.api.espn.com` and `google-analytics.com`)
+- Minimal permissions (`storage`, `alarms`, and specific hosts for ESPN schedule data, Firebase anonymous authentication, token refresh, and the Matchday API)
 - Privacy policy included (`PRIVACY.md`)
 - No remote code execution; all logic is bundled locally
 
@@ -203,44 +218,11 @@ The extension is live on the Chrome Web Store and installable via direct link. I
 
 See [PRIVACY.md](PRIVACY.md) for the full privacy policy.
 
-**Summary:** Match data and poll state are stored locally on your device. The extension fetches publicly available schedule data from the ESPN sports API and sends usage events to Google Analytics via the GA4 Measurement Protocol. The extension does not intentionally collect directly identifying personal information; standard telemetry metadata (such as IP address, user agent, and a randomly generated client ID) is processed by Google Analytics as part of normal event delivery.
+**Summary:** Match data and local poll state are stored in extension-local browser storage. Community polling uses a Firebase anonymous account and the authenticated Matchday API. The public package does not send passive product analytics or regional analytics.
 
-## Telemetry
+## Analytics
 
-Product analytics use **GA4 Measurement Protocol** via direct `fetch()` — no gtag.js, no Google Tag Manager, no remotely hosted scripts. MV3-safe and Chrome Web Store-compliant.
-
-### Secret handling
-
-| File | Committed | Purpose |
-|------|-----------|---------|
-| `telemetry.example.js` | ✅ Yes | Template — copy this to get started |
-| `telemetry.local.js` | ❌ Gitignored | Your real Measurement ID + API Secret |
-
-To set up locally after cloning:
-
-```bash
-cp telemetry.example.js telemetry.local.js
-# Edit telemetry.local.js and replace placeholder values with your GA4 credentials
-```
-
-### Events tracked
-
-| Event | Fired from | Key params |
-|-------|-----------|-----------|
-| `popup_open` | popup | `ui_surface` |
-| `match_fetch_started` | background | `ui_surface` |
-| `match_fetch_live_success` | background | `source`, `has_match_data`, `fetch_duration_ms` |
-| `match_fetch_cache_used` | background | `source`, `has_match_data` |
-| `match_fetch_fallback_used` | background | `source`, `has_match_data` |
-| `match_fetch_failed` | popup + background | `has_match_data` |
-| `schedule_link_clicked` | popup | `ui_surface` |
-
-### Verifying in GA4 Realtime
-
-1. Load the extension unpacked with `telemetry.local.js` present
-2. Open GA4 → Reports → Realtime
-3. Click the extension popup — `popup_open` should appear within ~30 seconds
-4. Use the DebugView (`Admin → DebugView`) for event-level parameter inspection
+Passive product analytics and regional analytics are disabled in the compatibility release. Any future analytics implementation requires a separate opt-in, updated runtime behavior, updated store disclosures, and a matching privacy-policy release.
 
 ## Contributing
 

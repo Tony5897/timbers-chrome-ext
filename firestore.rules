@@ -1,14 +1,44 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Fan confidence poll votes — keyed by match Unix timestamp (ms).
-    // Read is open so any install can display community totals.
-    // Write is open to allow anonymous atomic increments from the extension.
-    // The extension only uses FieldTransform.increment, which prevents any
-    // client from setting an arbitrary total — it can only add 1 at a time.
+    function hasValidLegacyFields(data) {
+      return data.keys().hasOnly(['high', 'medium', 'low']) &&
+        data.get('high', 0) is int && data.get('high', 0) >= 0 &&
+        data.get('medium', 0) is int && data.get('medium', 0) >= 0 &&
+        data.get('low', 0) is int && data.get('low', 0) >= 0;
+    }
+
+    function isSingleLegacyVoteCreate(data) {
+      return hasValidLegacyFields(data) &&
+        data.keys().size() == 1 &&
+        (
+          (data.get('high', 0) == 1 && data.get('medium', 0) == 0 && data.get('low', 0) == 0) ||
+          (data.get('high', 0) == 0 && data.get('medium', 0) == 1 && data.get('low', 0) == 0) ||
+          (data.get('high', 0) == 0 && data.get('medium', 0) == 0 && data.get('low', 0) == 1)
+        );
+    }
+
+    function isSingleLegacyVoteIncrement(before, after) {
+      return hasValidLegacyFields(before) &&
+        hasValidLegacyFields(after) &&
+        after.diff(before).affectedKeys().size() == 1 &&
+        after.diff(before).affectedKeys().hasOnly(['high', 'medium', 'low']) &&
+        (
+          after.get('high', 0) == before.get('high', 0) + 1 ||
+          after.get('medium', 0) == before.get('medium', 0) + 1 ||
+          after.get('low', 0) == before.get('low', 0) + 1
+        );
+    }
+
     match /votes/{matchTimestamp} {
       allow read: if true;
-      allow write: if true;
+      allow create: if isSingleLegacyVoteCreate(request.resource.data);
+      allow update: if isSingleLegacyVoteIncrement(resource.data, request.resource.data);
+      allow delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
