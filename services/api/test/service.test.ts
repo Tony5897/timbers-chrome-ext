@@ -142,6 +142,44 @@ describe('CompatibilityPollService', () => {
     expect(data.upsertPollWindows).toHaveBeenCalledWith([pollWindow]);
   });
 
+  it('throttles provider refreshes across repeated canonical poll misses', async () => {
+    const data = repository({
+      getPollWindowByCanonicalId: vi.fn(async () => null),
+    });
+    const fetchWindows = vi.fn(async () => []);
+    const service = new CompatibilityPollService(data, fetchWindows, () => matchTimestamp);
+
+    await expect(service.getCanonicalAggregateResult(
+      'poll-espn-fabricated-001-confidence-v1',
+    )).rejects.toThrow('poll_not_found');
+    await expect(service.getCanonicalAggregateResult(
+      'poll-espn-fabricated-002-confidence-v1',
+    )).rejects.toThrow('poll_not_found');
+
+    expect(fetchWindows).toHaveBeenCalledOnce();
+    expect(data.upsertPollWindows).toHaveBeenCalledOnce();
+  });
+
+  it('replays a throttled provider failure without issuing another refresh', async () => {
+    const data = repository({
+      getPollWindowByCanonicalId: vi.fn(async () => null),
+    });
+    const fetchWindows = vi.fn(async () => {
+      throw new Error('provider_unavailable');
+    });
+    const service = new CompatibilityPollService(data, fetchWindows, () => matchTimestamp);
+
+    await expect(service.getCanonicalAggregateResult(
+      'poll-espn-fabricated-001-confidence-v1',
+    )).rejects.toThrow('provider_unavailable');
+    await expect(service.getCanonicalAggregateResult(
+      'poll-espn-fabricated-002-confidence-v1',
+    )).rejects.toThrow('provider_unavailable');
+
+    expect(fetchWindows).toHaveBeenCalledOnce();
+    expect(data.upsertPollWindows).not.toHaveBeenCalled();
+  });
+
   it('rejects timestamps absent from a refreshed provider schedule', async () => {
     const data = repository({ getPollWindow: vi.fn(async () => null) });
     const service = new CompatibilityPollService(data, vi.fn(async () => []));

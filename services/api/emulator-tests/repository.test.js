@@ -159,6 +159,12 @@ test('fails closed when a stored canonical poll alias disagrees with its match I
   );
 });
 
+test('treats unsupported canonical poll providers as not found', async () => {
+  await expect(repository.getPollWindowByCanonicalId(
+    'poll-other-fixture-unsupported-001-confidence-v1',
+  )).resolves.toBeNull();
+});
+
 test('limits one anonymous UID to ten accepted responses per UTC day', async () => {
   const baseTimestamp = 1787000000000;
   for (let index = 0; index < 11; index += 1) {

@@ -97,7 +97,13 @@ export class FirestoreCompatibilityRepository implements CompatibilityRepository
     if (canonical.size > 1) throw new Error('poll_alias_ambiguous');
 
     const matchId = matchIdFromConfidencePollId(canonicalPollId);
-    const { providerEventId } = providerReferenceForMatchId(matchId);
+    let providerEventId: string;
+    try {
+      ({ providerEventId } = providerReferenceForMatchId(matchId));
+    } catch (error) {
+      if (error instanceof Error && error.message === 'unsupported_match_provider') return null;
+      throw error;
+    }
     const compatibility = await this.firestore
       .collection('compatibilityPolls')
       .where('providerEventId', '==', providerEventId)

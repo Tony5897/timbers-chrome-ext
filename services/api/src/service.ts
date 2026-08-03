@@ -7,18 +7,43 @@ import {
 import { fetchCompatibilityPollWindows } from './provider.js';
 import type { CompatibilityRepository, DeletionReceipt, SubmissionResult } from './repository.js';
 
+const POLL_WINDOW_REFRESH_COOLDOWN_MS = 60_000;
+
 export class CompatibilityPollService {
+  private pollWindowSyncInFlight: Promise<number> | null = null;
+  private lastPollWindowSyncAtMs = Number.NEGATIVE_INFINITY;
+  private lastPollWindowSyncError: Error | null = null;
+
   constructor(
     private readonly repository: CompatibilityRepository,
     private readonly fetchWindows: () => Promise<Awaited<ReturnType<typeof fetchCompatibilityPollWindows>>> =
       () => fetchCompatibilityPollWindows(),
     private readonly now: () => number = Date.now,
+    private readonly pollWindowRefreshCooldownMs = POLL_WINDOW_REFRESH_COOLDOWN_MS,
   ) {}
 
   async syncPollWindows(): Promise<number> {
-    const windows = await this.fetchWindows();
-    await this.repository.upsertPollWindows(windows);
-    return windows.length;
+    if (this.pollWindowSyncInFlight) return this.pollWindowSyncInFlight;
+
+    this.lastPollWindowSyncAtMs = this.now();
+    const sync = Promise.resolve().then(async () => {
+      const windows = await this.fetchWindows();
+      await this.repository.upsertPollWindows(windows);
+      return windows.length;
+    });
+    this.pollWindowSyncInFlight = sync;
+    try {
+      const count = await sync;
+      this.lastPollWindowSyncError = null;
+      return count;
+    } catch (error) {
+      this.lastPollWindowSyncError = error instanceof Error
+        ? error
+        : new Error('provider_unavailable');
+      throw error;
+    } finally {
+      if (this.pollWindowSyncInFlight === sync) this.pollWindowSyncInFlight = null;
+    }
   }
 
   async getAggregate(matchTimestamp: number): Promise<Aggregate> {
@@ -45,7 +70,7 @@ export class CompatibilityPollService {
   }> {
     let window = await this.repository.getPollWindowByCanonicalId(canonicalPollId);
     if (!window) {
-      await this.syncPollWindows();
+      await this.refreshPollWindowsIfDue();
       window = await this.repository.getPollWindowByCanonicalId(canonicalPollId);
     }
     if (!window) throw new Error('poll_not_found');
@@ -85,9 +110,21 @@ export class CompatibilityPollService {
     let window = await this.repository.getPollWindow(matchTimestamp);
     if (window) return window;
 
-    await this.syncPollWindows();
+    await this.refreshPollWindowsIfDue();
     window = await this.repository.getPollWindow(matchTimestamp);
     if (!window) throw new Error('poll_not_found');
     return window;
+  }
+
+  private async refreshPollWindowsIfDue(): Promise<void> {
+    if (this.pollWindowSyncInFlight) {
+      await this.pollWindowSyncInFlight;
+      return;
+    }
+    if (this.now() - this.lastPollWindowSyncAtMs < this.pollWindowRefreshCooldownMs) {
+      if (this.lastPollWindowSyncError) throw new Error(this.lastPollWindowSyncError.message);
+      return;
+    }
+    await this.syncPollWindows();
   }
 }
