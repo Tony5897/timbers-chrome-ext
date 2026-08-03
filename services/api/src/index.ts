@@ -7,6 +7,7 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { createApiHandler } from './http.js';
 import { deleteScheduledAnonymousAccounts } from './account-cleanup.js';
 import { PublicReadService } from './public-read-service.js';
+import { PollReadService } from './poll-read-service.js';
 import { FirestoreCompatibilityRepository } from './repository.js';
 import { CompatibilityPollService } from './service.js';
 
@@ -22,9 +23,11 @@ setGlobalOptions({
 const repository = new FirestoreCompatibilityRepository(getFirestore());
 const service = new CompatibilityPollService(repository);
 const publicReadService = new PublicReadService();
+const pollReadService = new PollReadService(service);
 const handler = createApiHandler({
   service,
   publicReadService,
+  pollReadService,
   verifyIdToken: (token) => getAuth().verifyIdToken(token, true),
 });
 

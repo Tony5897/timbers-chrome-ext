@@ -14,7 +14,7 @@ Use an incremental monorepo migration:
 
 1. Keep the Chrome compatibility release deployable from the repository root through the legacy polling grace period.
 2. Establish the backend under `services/api` without changing the existing extension entry points.
-3. Introduce `apps/extension`, `apps/web`, and shared `packages/*` only after the authenticated API is live and the rollback package is retained.
+3. Introduce shared contract and domain packages while the root extension remains deployable; defer `apps/extension` and `apps/web` moves until the authenticated API is live and the rollback package is retained.
 4. Move code by deployable boundary, not by file type. Each move must preserve an independently buildable artifact and a documented rollback.
 5. Share contracts, canonical match models, provider fixtures, design tokens, and telemetry schemas. Do not share browser-specific storage or UI implementation by abstraction alone.
 6. Keep iOS outside the active workspace until Chrome and web contracts are stable and measured.
@@ -26,6 +26,7 @@ apps/extension
 apps/web
 services/api
 packages/contracts
+packages/domain
 packages/providers
 packages/design-tokens
 packages/test-fixtures
@@ -34,7 +35,7 @@ packages/test-fixtures
 ## Consequences
 
 - Phase 0 has temporary root-level extension files and a nested API service.
-- CI must validate both dependency trees during the transition.
+- One root npm lockfile governs all current workspaces, and CI installs and validates the complete workspace graph from the repository root.
 - Repository cleanup is deferred, but production migration risk is lower.
 - Shared packages require explicit consumers and tests; they are not created merely to satisfy a target diagram.
 

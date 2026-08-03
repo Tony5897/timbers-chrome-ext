@@ -202,9 +202,10 @@ The npm workspace foundation introduces shared Zod contracts and domain configur
 | `GET /v1/config` | Public API version, minimum client version, team capabilities, and feature flags |
 | `GET /v1/teams` | Active and planned team configurations |
 | `GET /v1/teams/{teamId}` | One team configuration and capability document |
-| `GET /v1/matches/next?teamId=timbers` | Next canonical scheduled match for an enabled team |
+| `GET /v1/matches/next?teamId=timbers` | Next canonical scheduled match plus discoverable confidence poll for an enabled team |
+| `GET /v1/polls/{pollId}/aggregate` | Integrity-controlled confidence aggregate addressed by a stable match-qualified poll ID |
 
-Timbers schedule reads are enabled behind the canonical adapter. Thorns is visible as `planned`, with schedule and polling capabilities disabled until provider, product, and release gates are satisfied.
+Public poll IDs use `poll-{matchId}-confidence-v1`, for example `poll-espn-401999001-confidence-v1`. Legacy timestamp document IDs remain private compatibility storage details and are resolved behind the repository boundary. Timbers schedule and aggregate reads are enabled behind capability gates. Thorns is visible as `planned`, with schedule and polling capabilities disabled until provider, product, and release gates are satisfied.
 
 ## Security Considerations
 

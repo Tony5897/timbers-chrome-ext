@@ -9,7 +9,11 @@ import { CompatibilityPollService } from '../src/service.js';
 const matchTimestamp = 1786156200000;
 const pollWindow: PollWindow = {
   pollId: 'legacy-1786156200000-confidence-v1',
+  canonicalPollId: 'poll-espn-401999001-confidence-v1',
+  matchId: 'espn-401999001',
+  teamId: 'timbers',
   matchTimestamp,
+  matchStatus: 'scheduled',
   providerEventId: '401999001',
   opensAtMs: matchTimestamp - (72 * 60 * 60 * 1000),
   closesAtMs: matchTimestamp,
@@ -19,6 +23,7 @@ const aggregate: Aggregate = { high: 2, medium: 1, low: 0, total: 3 };
 function repository(overrides: Partial<CompatibilityRepository> = {}): CompatibilityRepository {
   return {
     getPollWindow: vi.fn(async () => pollWindow),
+    getPollWindowByCanonicalId: vi.fn(async () => pollWindow),
     upsertPollWindows: vi.fn(async () => undefined),
     submitResponse: vi.fn(async (): Promise<SubmissionResult> => ({ status: 'accepted', choice: 'high' })),
     getAggregate: vi.fn(async () => aggregate),
@@ -108,6 +113,71 @@ describe('CompatibilityPollService', () => {
       pollId: pollWindow.pollId,
       matchTimestamp,
     });
+  });
+
+  it('resolves a canonical poll ID without exposing the timestamp storage key', async () => {
+    const data = repository();
+    const service = new CompatibilityPollService(data);
+
+    const result = await service.getCanonicalAggregateResult(pollWindow.canonicalPollId);
+
+    expect(data.getPollWindowByCanonicalId).toHaveBeenCalledWith(pollWindow.canonicalPollId);
+    expect(data.getAggregate).toHaveBeenCalledWith(matchTimestamp);
+    expect(result).toEqual({ aggregate, window: pollWindow });
+  });
+
+  it('refreshes compatibility windows before rejecting an unknown canonical poll', async () => {
+    const getPollWindowByCanonicalId = vi.fn()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(pollWindow);
+    const data = repository({ getPollWindowByCanonicalId });
+    const fetchWindows = vi.fn(async () => [pollWindow]);
+    const service = new CompatibilityPollService(data, fetchWindows);
+
+    await expect(service.getCanonicalAggregateResult(pollWindow.canonicalPollId)).resolves.toEqual({
+      aggregate,
+      window: pollWindow,
+    });
+    expect(fetchWindows).toHaveBeenCalledOnce();
+    expect(data.upsertPollWindows).toHaveBeenCalledWith([pollWindow]);
+  });
+
+  it('throttles provider refreshes across repeated canonical poll misses', async () => {
+    const data = repository({
+      getPollWindowByCanonicalId: vi.fn(async () => null),
+    });
+    const fetchWindows = vi.fn(async () => []);
+    const service = new CompatibilityPollService(data, fetchWindows, () => matchTimestamp);
+
+    await expect(service.getCanonicalAggregateResult(
+      'poll-espn-fabricated-001-confidence-v1',
+    )).rejects.toThrow('poll_not_found');
+    await expect(service.getCanonicalAggregateResult(
+      'poll-espn-fabricated-002-confidence-v1',
+    )).rejects.toThrow('poll_not_found');
+
+    expect(fetchWindows).toHaveBeenCalledOnce();
+    expect(data.upsertPollWindows).toHaveBeenCalledOnce();
+  });
+
+  it('replays a throttled provider failure without issuing another refresh', async () => {
+    const data = repository({
+      getPollWindowByCanonicalId: vi.fn(async () => null),
+    });
+    const fetchWindows = vi.fn(async () => {
+      throw new Error('provider_unavailable');
+    });
+    const service = new CompatibilityPollService(data, fetchWindows, () => matchTimestamp);
+
+    await expect(service.getCanonicalAggregateResult(
+      'poll-espn-fabricated-001-confidence-v1',
+    )).rejects.toThrow('provider_unavailable');
+    await expect(service.getCanonicalAggregateResult(
+      'poll-espn-fabricated-002-confidence-v1',
+    )).rejects.toThrow('provider_unavailable');
+
+    expect(fetchWindows).toHaveBeenCalledOnce();
+    expect(data.upsertPollWindows).not.toHaveBeenCalled();
   });
 
   it('rejects timestamps absent from a refreshed provider schedule', async () => {

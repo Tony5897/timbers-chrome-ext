@@ -20,17 +20,18 @@
 - Timbers MLS and Leagues Cup fixtures are merged and deduplicated; a bounded one-hour legacy timestamp alias prevents small schedule corrections from splitting compatibility polls.
 - CI uses Node 22 and validates extension tests, API tests, Firestore rules, and the release artifact.
 - The repository uses npm workspaces with one root lockfile for the extension, shared packages, and Firebase API.
-- `packages/contracts` defines runtime-validated team, capability, canonical match, aggregate, and problem-details contracts.
-- `packages/domain` provides independent Timbers and Thorns configuration, stable provider-qualified match IDs, and capability gates.
-- Public read routes expose config, team lists, team detail, and the next enabled canonical match. Timbers schedule reads are active locally; Thorns is visible as planned with schedule and polling disabled.
+- `packages/contracts` defines runtime-validated team, capability, canonical match, confidence poll, aggregate response, and problem-details contracts.
+- `packages/domain` provides independent Timbers and Thorns configuration, stable provider-qualified match IDs, match-qualified confidence poll IDs, poll-state policy, and capability gates.
+- Public read routes expose config, team lists, team detail, the next enabled canonical match with poll discovery, and integrity-controlled aggregate reads by canonical poll ID. Timbers schedule and polling reads are active locally; Thorns is visible as planned with schedule and polling disabled.
+- Canonical poll IDs map to existing timestamp-keyed compatibility records inside the repository. New synchronization writes persist the alias and current match status, while provider-event fallback keeps pre-alias records readable without exposing legacy keys publicly. Postponed and cancelled matches resolve to void polls after synchronization. Miss-triggered provider refreshes are coalesced and globally throttled to prevent fabricated public IDs from amplifying provider reads and Firestore writes.
 - Provider timeouts, network failures, HTTP failures, and malformed payloads map to stable public error responses rather than leaking implementation details.
 - Generated workspace builds, coverage, packages, and emulator logs are removed through `npm run clean`; historical root release ZIPs are intentionally preserved.
 
 ## Verified Locally
 
-- Forty-nine extension tests and 56 API unit and contract tests pass under Node 22; all workspace TypeScript builds, type checks, and lint checks pass.
-- Fourteen temporary and final Firestore security-rule cases pass in the Firestore emulator, alongside four repository integration cases and two anonymous-account cleanup cases.
-- The repository integration suite exercises duplicate response handling, aggregate sharding, rate limits, canonical timestamp aliases, retention timestamps, self-service deletion, and aggregate correction against the Firestore emulator.
+- Forty-nine extension tests and 76 API unit, contract, and shared-domain tests pass under Node 22; all workspace TypeScript builds, type checks, and lint checks pass.
+- Fourteen temporary and final Firestore security-rule cases pass in the Firestore emulator, alongside nine repository integration cases and two anonymous-account cleanup cases.
+- The repository integration suite exercises duplicate response handling, aggregate sharding, rate limits, canonical timestamp aliases, canonical poll alias persistence, pre-alias fallback, unsupported-provider rejection, alias and provider-reference consistency rejection, retention timestamps, self-service deletion, and aggregate correction against the Firestore emulator.
 - The verified extension ZIP contains exactly 13 runtime files and excludes tests, provider observations, environment files, and server-only code.
 - The root lockfile pins patched `uuid` releases for affected Google request-library paths while preserving unrelated modern versions. A current-registry audit remains part of branch verification; offline audit output is not treated as current evidence.
 

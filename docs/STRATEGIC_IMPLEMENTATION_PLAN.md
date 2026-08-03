@@ -325,7 +325,7 @@ Aggregate writes use one decided mechanism:
 
 Publish an OpenAPI 3.1 contract generated from the shared Zod schemas. The first stable API is `/v1`. Breaking changes require a new version or an additive migration window.
 
-The current local foundation implements `GET /v1/config`, `GET /v1/teams`, `GET /v1/teams/{teamId}`, and `GET /v1/matches/next?teamId=` against shared Zod contracts. These are additive foundation routes, not a claim that the complete target surface below is deployed. OpenAPI generation, richer match queries, canonical poll aggregates, and the remaining target routes stay in the backlog.
+The current local foundation implements `GET /v1/config`, `GET /v1/teams`, `GET /v1/teams/{teamId}`, `GET /v1/matches/next?teamId=`, and `GET /v1/polls/{pollId}/aggregate` against shared Zod contracts. Next-match responses discover stable match-qualified confidence poll IDs, while repository aliases resolve existing timestamp-keyed compatibility data. These are additive foundation routes, not a claim that the complete target surface below is deployed. OpenAPI generation, richer match queries, materialized canonical roll-ups, and the remaining target routes stay in the backlog.
 
 ### 6.1 Read endpoints
 
@@ -1159,8 +1159,8 @@ The first executable backlog, in order:
 6. Create local/staging/production Firebase environment definitions, IAM roles, Secret Manager entries, budgets, and redacted logging.
 7. Build provider scorecard tooling and capture Timbers/Thorns schedule and match fixtures.
 8. Scaffold npm workspaces, `packages/contracts`, and `packages/domain`. **Local foundation complete:** one root lockfile now governs both shared packages and `services/api`.
-9. Define canonical team, match, alias, event, poll, aggregate, consent, and error schemas. **In progress:** team, capability, canonical match, compatibility aggregate, and error contracts exist; alias, event, canonical poll, and consent contracts remain.
-10. Implement `/v1/config`, team, match, and aggregate read endpoints against the compatibility data source. **In progress:** config, team list/detail, and next-match reads exist; canonical aggregate reads remain separate from the legacy compatibility aggregate.
+9. Define canonical team, match, alias, event, poll, aggregate, consent, and error schemas. **In progress:** team, capability, canonical match, confidence poll, poll aggregate, legacy poll alias, and error contracts exist; general match alias, event, and consent contracts remain.
+10. Implement `/v1/config`, team, match, and aggregate read endpoints against the compatibility data source. **Local compatibility foundation complete:** config, team list/detail, next-match poll discovery, and canonical poll aggregate reads exist. Rich match queries and materialized canonical roll-ups remain in the target surface.
 11. Deploy the minimal production web foundation and required compliance/support routes.
 12. Scaffold WXT/React/TypeScript extension and port the existing Timbers experience behind shared contracts.
 13. Add installed-extension Playwright smoke tests and artifact checks.

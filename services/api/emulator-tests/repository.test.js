@@ -81,11 +81,104 @@ test('resolves one nearby legacy kickoff timestamp to the canonical poll window'
 
   await expect(repository.getPollWindow(matchTimestamp + 30 * 60 * 1000)).resolves.toEqual({
     pollId,
+    canonicalPollId: 'poll-espn-fixture-nearby-001-confidence-v1',
+    matchId: 'espn-fixture-nearby-001',
+    teamId: 'timbers',
     matchTimestamp,
+    matchStatus: 'scheduled',
     providerEventId: 'fixture-nearby-001',
     opensAtMs: matchTimestamp - 72 * 60 * 60 * 1000,
     closesAtMs: matchTimestamp,
   });
+});
+
+test('persists and resolves canonical poll aliases without changing legacy storage IDs', async () => {
+  const matchTimestamp = 1786600000000;
+  const window = {
+    pollId: pollIdForTimestamp(matchTimestamp),
+    canonicalPollId: 'poll-espn-fixture-canonical-001-confidence-v1',
+    matchId: 'espn-fixture-canonical-001',
+    teamId: 'timbers',
+    matchTimestamp,
+    matchStatus: 'scheduled',
+    providerEventId: 'fixture-canonical-001',
+    opensAtMs: matchTimestamp - 72 * 60 * 60 * 1000,
+    closesAtMs: matchTimestamp,
+  };
+
+  await repository.upsertPollWindows([window]);
+
+  await expect(repository.getPollWindowByCanonicalId(window.canonicalPollId)).resolves.toEqual(window);
+  const stored = await firestore.collection('compatibilityPolls').doc(window.pollId).get();
+  expect(stored.get('canonicalPollId')).toBe(window.canonicalPollId);
+  expect(stored.get('matchId')).toBe(window.matchId);
+  expect(stored.get('teamId')).toBe('timbers');
+  expect(stored.get('matchStatus')).toBe('scheduled');
+});
+
+test('resolves canonical poll IDs against pre-alias compatibility documents', async () => {
+  const matchTimestamp = 1786700000000;
+  const pollId = pollIdForTimestamp(matchTimestamp);
+  await firestore.collection('compatibilityPolls').doc(pollId).set({
+    matchTimestamp,
+    providerEventId: 'fixture-legacy-alias-001',
+    opensAt: Timestamp.fromMillis(matchTimestamp - 72 * 60 * 60 * 1000),
+    closesAt: Timestamp.fromMillis(matchTimestamp),
+  });
+
+  await expect(repository.getPollWindowByCanonicalId(
+    'poll-espn-fixture-legacy-alias-001-confidence-v1',
+  )).resolves.toEqual({
+    pollId,
+    canonicalPollId: 'poll-espn-fixture-legacy-alias-001-confidence-v1',
+    matchId: 'espn-fixture-legacy-alias-001',
+    teamId: 'timbers',
+    matchTimestamp,
+    matchStatus: 'scheduled',
+    providerEventId: 'fixture-legacy-alias-001',
+    opensAtMs: matchTimestamp - 72 * 60 * 60 * 1000,
+    closesAtMs: matchTimestamp,
+  });
+});
+
+test('fails closed when a stored canonical poll alias disagrees with its match ID', async () => {
+  const matchTimestamp = 1786800000000;
+  const canonicalPollId = 'poll-espn-fixture-mismatch-001-confidence-v1';
+  await firestore.collection('compatibilityPolls').doc(pollIdForTimestamp(matchTimestamp)).set({
+    canonicalPollId,
+    matchId: 'espn-different-match-001',
+    teamId: 'timbers',
+    matchTimestamp,
+    providerEventId: 'fixture-mismatch-001',
+    opensAt: Timestamp.fromMillis(matchTimestamp - 72 * 60 * 60 * 1000),
+    closesAt: Timestamp.fromMillis(matchTimestamp),
+  });
+
+  await expect(repository.getPollWindowByCanonicalId(canonicalPollId)).rejects.toThrow(
+    'invalid_poll_window',
+  );
+});
+
+test('fails closed when a stored match ID disagrees with its provider event ID', async () => {
+  const matchTimestamp = 1786900000000;
+  await firestore.collection('compatibilityPolls').doc(pollIdForTimestamp(matchTimestamp)).set({
+    matchId: 'espn-different-match-001',
+    teamId: 'timbers',
+    matchTimestamp,
+    providerEventId: 'fixture-provider-mismatch-001',
+    opensAt: Timestamp.fromMillis(matchTimestamp - 72 * 60 * 60 * 1000),
+    closesAt: Timestamp.fromMillis(matchTimestamp),
+  });
+
+  await expect(repository.getPollWindowByCanonicalId(
+    'poll-espn-fixture-provider-mismatch-001-confidence-v1',
+  )).rejects.toThrow('invalid_poll_window');
+});
+
+test('treats unsupported canonical poll providers as not found', async () => {
+  await expect(repository.getPollWindowByCanonicalId(
+    'poll-other-fixture-unsupported-001-confidence-v1',
+  )).resolves.toBeNull();
 });
 
 test('limits one anonymous UID to ten accepted responses per UTC day', async () => {

@@ -7,6 +7,18 @@ import {
   Timestamp,
 } from 'firebase-admin/firestore';
 import {
+  matchIdSchema,
+  matchStatusSchema,
+  pollIdSchema,
+  teamIdSchema,
+} from '@matchday/contracts';
+import {
+  confidencePollIdForMatch,
+  matchIdForProvider,
+  matchIdFromConfidencePollId,
+  providerReferenceForMatchId,
+} from '@matchday/domain';
+import {
   AUTH_DELETION_DELAY_MS,
   DAILY_RESPONSE_LIMIT,
   dailyRateLimit,
@@ -14,6 +26,7 @@ import {
   hashIdempotencyKey,
   hashIdentity,
   LEGACY_TIMESTAMP_TOLERANCE_MS,
+  matchTimestampSchema,
   pollIdForTimestamp,
   RAW_RESPONSE_RETENTION_MS,
   shardForUid,
@@ -35,6 +48,7 @@ export type DeletionReceipt = {
 
 export interface CompatibilityRepository {
   getPollWindow(matchTimestamp: number): Promise<PollWindow | null>;
+  getPollWindowByCanonicalId(canonicalPollId: string): Promise<PollWindow | null>;
   upsertPollWindows(windows: PollWindow[]): Promise<void>;
   submitResponse(input: {
     matchTimestamp: number;
@@ -70,11 +84,45 @@ export class FirestoreCompatibilityRepository implements CompatibilityRepository
     return pollWindowFromSnapshot(nearbySnapshot);
   }
 
+  async getPollWindowByCanonicalId(canonicalPollId: string): Promise<PollWindow | null> {
+    const canonical = await this.firestore
+      .collection('compatibilityPolls')
+      .where('canonicalPollId', '==', canonicalPollId)
+      .limit(2)
+      .get();
+    if (canonical.size === 1) {
+      const snapshot = canonical.docs[0];
+      return snapshot ? pollWindowFromSnapshot(snapshot) : null;
+    }
+    if (canonical.size > 1) throw new Error('poll_alias_ambiguous');
+
+    const matchId = matchIdFromConfidencePollId(canonicalPollId);
+    let providerEventId: string;
+    try {
+      ({ providerEventId } = providerReferenceForMatchId(matchId));
+    } catch (error) {
+      if (error instanceof Error && error.message === 'unsupported_match_provider') return null;
+      throw error;
+    }
+    const compatibility = await this.firestore
+      .collection('compatibilityPolls')
+      .where('providerEventId', '==', providerEventId)
+      .limit(2)
+      .get();
+    if (compatibility.size > 1) throw new Error('poll_alias_ambiguous');
+    if (compatibility.size !== 1) return null;
+    const snapshot = compatibility.docs[0];
+    return snapshot ? pollWindowFromSnapshot(snapshot) : null;
+  }
+
   async upsertPollWindows(windows: PollWindow[]): Promise<void> {
     const writes: Promise<FirebaseFirestore.WriteResult>[] = [];
     for (const window of windows) {
       writes.push(this.firestore.collection('compatibilityPolls').doc(window.pollId).set({
-        teamId: 'timbers',
+        teamId: window.teamId,
+        matchId: window.matchId,
+        canonicalPollId: window.canonicalPollId,
+        matchStatus: window.matchStatus,
         pollType: 'confidence',
         pollVersion: 1,
         identityClass: 'integrity_controlled',
@@ -252,11 +300,34 @@ export class FirestoreCompatibilityRepository implements CompatibilityRepository
 function pollWindowFromSnapshot(snapshot: FirebaseFirestore.DocumentSnapshot): PollWindow | null {
   const data = snapshot.data();
   if (!data) return null;
+  if (typeof data.providerEventId !== 'string' || data.providerEventId.length === 0) {
+    throw new Error('invalid_poll_window');
+  }
+  const providerEventId = data.providerEventId;
+  const matchId = matchIdSchema.parse(typeof data.matchId === 'string'
+    ? data.matchId
+    : matchIdForProvider('espn', providerEventId));
+  if (matchId !== matchIdForProvider('espn', providerEventId)) {
+    throw new Error('invalid_poll_window');
+  }
+  const canonicalPollId = pollIdSchema.parse(typeof data.canonicalPollId === 'string'
+    ? data.canonicalPollId
+    : confidencePollIdForMatch(matchId));
+  if (canonicalPollId !== confidencePollIdForMatch(matchId)) {
+    throw new Error('invalid_poll_window');
+  }
+  if (!(data.opensAt instanceof Timestamp) || !(data.closesAt instanceof Timestamp)) {
+    throw new Error('invalid_poll_window');
+  }
   return {
     pollId: snapshot.id,
-    matchTimestamp: data.matchTimestamp,
-    providerEventId: data.providerEventId,
-    opensAtMs: (data.opensAt as Timestamp).toMillis(),
-    closesAtMs: (data.closesAt as Timestamp).toMillis(),
+    canonicalPollId,
+    matchId,
+    teamId: teamIdSchema.parse(data.teamId ?? 'timbers'),
+    matchTimestamp: matchTimestampSchema.parse(data.matchTimestamp),
+    matchStatus: matchStatusSchema.parse(data.matchStatus ?? 'scheduled'),
+    providerEventId,
+    opensAtMs: data.opensAt.toMillis(),
+    closesAtMs: data.closesAt.toMillis(),
   };
 }
