@@ -30,8 +30,8 @@
 ## Verified Locally
 
 - Forty-nine extension tests and 76 API unit, contract, and shared-domain tests pass under Node 22; all workspace TypeScript builds, type checks, and lint checks pass.
-- Fourteen temporary and final Firestore security-rule cases pass in the Firestore emulator, alongside eight repository integration cases and two anonymous-account cleanup cases.
-- The repository integration suite exercises duplicate response handling, aggregate sharding, rate limits, canonical timestamp aliases, canonical poll alias persistence, pre-alias fallback, unsupported-provider rejection, alias consistency rejection, retention timestamps, self-service deletion, and aggregate correction against the Firestore emulator.
+- Fourteen temporary and final Firestore security-rule cases pass in the Firestore emulator, alongside nine repository integration cases and two anonymous-account cleanup cases.
+- The repository integration suite exercises duplicate response handling, aggregate sharding, rate limits, canonical timestamp aliases, canonical poll alias persistence, pre-alias fallback, unsupported-provider rejection, alias and provider-reference consistency rejection, retention timestamps, self-service deletion, and aggregate correction against the Firestore emulator.
 - The verified extension ZIP contains exactly 13 runtime files and excludes tests, provider observations, environment files, and server-only code.
 - The root lockfile pins patched `uuid` releases for affected Google request-library paths while preserving unrelated modern versions. A current-registry audit remains part of branch verification; offline audit output is not treated as current evidence.
 

@@ -159,6 +159,22 @@ test('fails closed when a stored canonical poll alias disagrees with its match I
   );
 });
 
+test('fails closed when a stored match ID disagrees with its provider event ID', async () => {
+  const matchTimestamp = 1786900000000;
+  await firestore.collection('compatibilityPolls').doc(pollIdForTimestamp(matchTimestamp)).set({
+    matchId: 'espn-different-match-001',
+    teamId: 'timbers',
+    matchTimestamp,
+    providerEventId: 'fixture-provider-mismatch-001',
+    opensAt: Timestamp.fromMillis(matchTimestamp - 72 * 60 * 60 * 1000),
+    closesAt: Timestamp.fromMillis(matchTimestamp),
+  });
+
+  await expect(repository.getPollWindowByCanonicalId(
+    'poll-espn-fixture-provider-mismatch-001-confidence-v1',
+  )).rejects.toThrow('invalid_poll_window');
+});
+
 test('treats unsupported canonical poll providers as not found', async () => {
   await expect(repository.getPollWindowByCanonicalId(
     'poll-other-fixture-unsupported-001-confidence-v1',

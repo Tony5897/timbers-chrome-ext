@@ -307,6 +307,9 @@ function pollWindowFromSnapshot(snapshot: FirebaseFirestore.DocumentSnapshot): P
   const matchId = matchIdSchema.parse(typeof data.matchId === 'string'
     ? data.matchId
     : matchIdForProvider('espn', providerEventId));
+  if (matchId !== matchIdForProvider('espn', providerEventId)) {
+    throw new Error('invalid_poll_window');
+  }
   const canonicalPollId = pollIdSchema.parse(typeof data.canonicalPollId === 'string'
     ? data.canonicalPollId
     : confidencePollIdForMatch(matchId));
