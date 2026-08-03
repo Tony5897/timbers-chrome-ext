@@ -67,6 +67,11 @@ describe('Background scraper logic', () => {
     mockFetch(makeEspnResponse());
 
     const matchData = await background.fetchAndParseSchedule();
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('&fixture=true'),
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+    expect(global.fetch).toHaveBeenCalledTimes(2);
     expect(matchData.opponent).toBe('Vancouver Whitecaps FC');
     expect(matchData.date).toBe('04-04-2030');
     expect(matchData.time).toBe('7:30 PM PT');
@@ -74,6 +79,57 @@ describe('Background scraper logic', () => {
     expect(matchData.tv).toBe('Apple TV');
     expect(typeof matchData.matchTimestamp).toBe('number');
     expect(matchData.matchTimestamp).toBeGreaterThan(0);
+  });
+
+  test('selects the earliest upcoming match when provider events are out of order', async () => {
+    const later = makeEspnResponse({
+      date: '2030-04-12T02:30:00Z',
+      opponent: 'Later Opponent',
+    }).events[0];
+    const sooner = makeEspnResponse({
+      date: '2030-04-05T02:30:00Z',
+      opponent: 'Sooner Opponent',
+    }).events[0];
+    mockFetch({ events: [later, sooner] });
+
+    const matchData = await background.fetchAndParseSchedule();
+
+    expect(matchData.opponent).toBe('Sooner Opponent');
+    expect(matchData.matchTimestamp).toBe(Date.parse('2030-04-05T02:30:00Z'));
+  });
+
+  test('merges league and cup fixtures before selecting the next match', async () => {
+    const league = makeEspnResponse({
+      date: '2030-04-12T02:30:00Z',
+      opponent: 'League Opponent',
+    });
+    const cup = makeEspnResponse({
+      date: '2030-04-05T02:30:00Z',
+      opponent: 'Cup Opponent',
+    });
+    global.fetch = jest.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => league })
+      .mockResolvedValueOnce({ ok: true, json: async () => cup });
+
+    const matchData = await background.fetchAndParseSchedule();
+
+    expect(matchData.opponent).toBe('Cup Opponent');
+  });
+
+  test('prefers the fallback when the same match kickoff differs materially', () => {
+    const live = {
+      opponent: 'Chicago Fire FC',
+      matchTimestamp: Date.parse('2030-08-16T22:00:00Z'),
+    };
+    const fallback = {
+      opponent: 'Chicago Fire FC',
+      matchTimestamp: Date.parse('2030-08-16T22:30:00Z'),
+    };
+
+    expect(background.chooseLiveOrFallback(live, fallback)).toEqual({
+      matchData: fallback,
+      source: 'fallback',
+    });
   });
 
   test('returns null when response.ok is false', async () => {
@@ -219,7 +275,7 @@ describe('Fallback data flow', () => {
 
     let callCount = 0;
     global.fetch = jest.fn((_url) => {
-      if (callCount === 0) {
+      if (callCount < 2) {
         callCount++;
         return Promise.reject(new Error('Network down'));
       }
@@ -246,6 +302,21 @@ describe('Fallback data flow', () => {
     fallbackFixture.forEach((m) => {
       expect(typeof m.opponent).toBe('string');
       expect(typeof m.matchTimestamp).toBe('number');
+      const kickoff = new Date(m.matchTimestamp);
+      const formattedDate = kickoff.toLocaleDateString('en-US', {
+        timeZone: 'America/Los_Angeles',
+        month: '2-digit',
+        day: '2-digit',
+        year: 'numeric',
+      }).replace(/\//g, '-');
+      const formattedTime = kickoff.toLocaleTimeString('en-US', {
+        timeZone: 'America/Los_Angeles',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      }) + ' PT';
+      expect(m.date).toBe(formattedDate);
+      expect(m.time).toBe(formattedTime);
     });
     // Array is sorted chronologically.
     for (let i = 1; i < fallbackFixture.length; i++) {
@@ -271,7 +342,7 @@ describe('Fallback data flow', () => {
   test('returns source "no_match" when ESPN is healthy but has no fixture and cache/fallback are empty', async () => {
     let callCount = 0;
     global.fetch = jest.fn((_url) => {
-      if (callCount === 0) {
+      if (callCount < 2) {
         callCount++;
         // ESPN responds successfully but no upcoming match
         return Promise.resolve({

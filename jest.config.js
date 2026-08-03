@@ -9,4 +9,5 @@ module.exports = {
   },
   collectCoverageFrom: ['background.js', 'popup.js'],
   reporters: ['default'],
+  testPathIgnorePatterns: ['/node_modules/', '/emulator-tests/', '/services/api/'],
 };

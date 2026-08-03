@@ -26,7 +26,8 @@ ALLOWED = {
     "icon.png",
     "icons",
     "data",
-    "telemetry.js",
+    "runtime-config.js",
+    "auth.js",
     "community.js",
 }
 
@@ -44,6 +45,7 @@ DENIED = {
     "safari-staging",
     "telemetry.example.js",
     "telemetry.local.js",
+    "telemetry.js",
     "package.json",
     "package-lock.json",
     "babel.config.js",

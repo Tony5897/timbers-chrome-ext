@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const voteButtons = document.getElementById('vote-buttons');
   const voteResults = document.getElementById('vote-results');
   const voteThanks = document.getElementById('vote-thanks');
+  const deleteControl = document.getElementById('community-delete-control');
+  const deleteButton = document.getElementById('community-delete');
+  const deleteStatus = document.getElementById('community-delete-status');
   let timerInterval;
   let currentMatchTimestamp = null;
   let communityData = null;
@@ -17,8 +20,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const dataNotice = document.getElementById('data-notice');
 
-  if (typeof Telemetry !== 'undefined') {
-    Telemetry.sendEvent('popup_open', { ui_surface: 'popup' });
+  if (typeof MatchdayAuth !== 'undefined' && typeof MatchdayAuth.hasSession === 'function') {
+    MatchdayAuth.hasSession().then((hasSession) => {
+      if (hasSession) deleteControl.classList.remove('hidden');
+    }).catch(() => undefined);
   }
 
   chrome.runtime.sendMessage({ action: 'getMatchData' }, (response) => {
@@ -56,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
               // Show participation count alongside the vote buttons.
               const total = data.high + data.medium + data.low;
               if (total > 0 && countEl) {
-                countEl.textContent = `${total} fan${total === 1 ? '' : 's'} have already voted`;
+                countEl.textContent = `${total} accepted community response${total === 1 ? '' : 's'}`;
                 countEl.classList.remove('hidden');
               }
             } else if (!voteResults.classList.contains('hidden')) {
@@ -66,29 +71,10 @@ document.addEventListener('DOMContentLoaded', () => {
           });
         }
       }
-      if (typeof Telemetry !== 'undefined') {
-        const evt = response.source === 'live'
-          ? 'match_fetch_live_success'
-          : response.source === 'cache'
-            ? 'match_fetch_cache_used'
-            : 'match_fetch_fallback_used';
-        Telemetry.sendEvent(evt, {
-          source: response.source,
-          has_match_data: true,
-          stale_notice_shown: response.source !== 'live',
-          ui_surface: 'popup',
-        });
-      }
     } else if (response && response.source === 'no_match') {
       showError('No upcoming match scheduled. Check the full schedule below.');
-      if (typeof Telemetry !== 'undefined') {
-        Telemetry.sendEvent('match_fetch_failed', { has_match_data: false, source: 'no_match', ui_surface: 'popup' });
-      }
     } else {
       showError('Could not retrieve match data at this time.');
-      if (typeof Telemetry !== 'undefined') {
-        Telemetry.sendEvent('match_fetch_failed', { has_match_data: false, source: 'none', ui_surface: 'popup' });
-      }
     }
   });
 
@@ -181,15 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Voting ──────────────────────────────────────────────
 
-  const scheduleLink = document.querySelector('.schedule-link');
-  if (scheduleLink) {
-    scheduleLink.addEventListener('click', () => {
-      if (typeof Telemetry !== 'undefined') {
-        Telemetry.sendEvent('schedule_link_clicked', { ui_surface: 'popup' });
-      }
-    });
-  }
-
   document.querySelectorAll('.vote-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       if (!currentMatchTimestamp) return;
@@ -213,9 +190,22 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error saving vote:', chrome.runtime.lastError.message);
             return;
           }
-          // Sync vote to Firestore community backend (fire-and-forget).
+          const syncEl = document.getElementById('community-sync');
           if (typeof CommunityVotes !== 'undefined') {
-            CommunityVotes.increment(currentMatchTimestamp, vote);
+            CommunityVotes.increment(currentMatchTimestamp, vote).then((result) => {
+              if (!syncEl) return;
+              syncEl.classList.remove('hidden');
+              if (!result?.synced) {
+                syncEl.textContent = 'Saved on this device. Community sync will retry.';
+                return;
+              }
+              syncEl.textContent = 'Response accepted for the anonymous-installation community total.';
+              deleteControl.classList.remove('hidden');
+              if (result.aggregate) {
+                communityData = result.aggregate;
+                showVoteResults(result.aggregate);
+              }
+            });
           }
           // Optimistically apply this vote to community totals for immediate display.
           const displayVotes = communityData
@@ -225,6 +215,33 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       });
     });
+  });
+
+  deleteButton.addEventListener('click', async () => {
+    const confirmed = window.confirm(
+      'Delete retained community responses and this anonymous community identity? This cannot be undone.',
+    );
+    if (!confirmed || typeof CommunityVotes === 'undefined') return;
+
+    deleteButton.disabled = true;
+    deleteStatus.textContent = 'Deleting retained community data…';
+    deleteStatus.classList.remove('hidden');
+    const result = await CommunityVotes.deleteInstallation();
+    if (!result?.deleted) {
+      deleteStatus.textContent = 'Deletion could not be completed. Please try again.';
+      deleteButton.disabled = false;
+      return;
+    }
+
+    communityData = null;
+    hasVotedThisSession = false;
+    voteResults.classList.add('hidden');
+    voteButtons.classList.remove('hidden');
+    document.querySelectorAll('.vote-btn').forEach((button) => button.classList.remove('selected'));
+    document.getElementById('community-count').classList.add('hidden');
+    document.getElementById('community-sync').classList.add('hidden');
+    deleteButton.classList.add('hidden');
+    deleteStatus.textContent = 'Retained responses were deleted. Anonymous account removal is scheduled.';
   });
 
   function showVoteResults(votes) {
@@ -250,7 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const isCommunity = communityData !== null;
     const label = total === 1 ? '1 vote' : `${total} votes`;
-    const suffix = isCommunity ? ' from the community' : '';
+    const suffix = isCommunity ? ' accepted in the community total' : '';
     voteThanks.textContent = `Thanks for voting! ${label} cast${suffix}.`;
   }
 });
