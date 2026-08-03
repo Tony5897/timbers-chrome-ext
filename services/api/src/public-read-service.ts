@@ -11,6 +11,7 @@ import {
 } from '@matchday/contracts';
 import {
   assertScheduleAvailable,
+  confidencePollForMatch,
   createPublicConfig,
   getTeam,
   listTeams,
@@ -45,7 +46,10 @@ export class PublicReadService {
     }
   }
 
-  async getNextMatch(value: unknown): Promise<{ match: CanonicalMatch }> {
+  async getNextMatch(value: unknown): Promise<{
+    match: CanonicalMatch;
+    polls: ReturnType<typeof confidencePollForMatch>[];
+  }> {
     const team = this.getTeam(value);
     assertScheduleAvailable(team.id);
     const matches = await this.fetchMatches(team.id);
@@ -54,6 +58,9 @@ export class PublicReadService {
       Date.parse(candidate.kickoff) > now && candidate.status === 'scheduled'
     ));
     if (!match) throw new Error('match_not_found');
-    return nextMatchResponseSchema.parse({ match: canonicalMatchSchema.parse(match) });
+    return nextMatchResponseSchema.parse({
+      match: canonicalMatchSchema.parse(match),
+      polls: team.capabilities.polling ? [confidencePollForMatch(match, now)] : [],
+    });
   }
 }

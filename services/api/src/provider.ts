@@ -4,7 +4,7 @@ import {
   type CompetitionId,
   type TeamId,
 } from '@matchday/contracts';
-import { matchIdForProvider } from '@matchday/domain';
+import { confidencePollIdForMatch, matchIdForProvider } from '@matchday/domain';
 import { z } from 'zod';
 import { POLL_OPEN_LEAD_MS, pollIdForTimestamp, type PollWindow } from './domain.js';
 
@@ -182,7 +182,11 @@ export async function fetchCompatibilityPollWindows(
     const matchTimestamp = Date.parse(match.kickoff);
     return {
       pollId: pollIdForTimestamp(matchTimestamp),
+      canonicalPollId: confidencePollIdForMatch(match.id),
+      matchId: match.id,
+      teamId: match.teamId,
       matchTimestamp,
+      matchStatus: match.status,
       providerEventId: match.providerEventId,
       opensAtMs: matchTimestamp - POLL_OPEN_LEAD_MS,
       closesAtMs: matchTimestamp,

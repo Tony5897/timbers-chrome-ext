@@ -3,8 +3,11 @@ import {
   compatibilityResponseBodySchema,
   voteChoiceSchema,
   type Aggregate,
+  type CanonicalMatch,
+  type TeamId,
   type VoteChoice,
 } from '@matchday/contracts';
+import { POLL_OPEN_LEAD_MS } from '@matchday/domain';
 import { z } from 'zod';
 
 export const TEAM_ID = 'timbers';
@@ -12,7 +15,6 @@ export const POLL_TYPE = 'confidence';
 export const POLL_VERSION = 1;
 export const SHARD_COUNT = 32;
 export const MINIMUM_CLIENT_VERSION = '1.0.5';
-export const POLL_OPEN_LEAD_MS = 72 * 60 * 60 * 1000;
 export const RAW_RESPONSE_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 export const DAILY_RESPONSE_LIMIT = 10;
 export const RATE_LIMIT_RETENTION_MS = 2 * 24 * 60 * 60 * 1000;
@@ -28,11 +30,17 @@ export const matchTimestampSchema = z.coerce.number().int().min(1_600_000_000_00
 
 export type PollWindow = {
   pollId: string;
+  canonicalPollId: string;
+  matchId: string;
+  teamId: TeamId;
   matchTimestamp: number;
+  matchStatus: CanonicalMatch['status'];
   providerEventId: string;
   opensAtMs: number;
   closesAtMs: number;
 };
+
+export { POLL_OPEN_LEAD_MS };
 
 export function pollIdForTimestamp(matchTimestamp: number): string {
   return `legacy-${matchTimestamp}-${POLL_TYPE}-v${POLL_VERSION}`;
