@@ -1,32 +1,32 @@
-try { importScripts('telemetry.local.js'); } catch (_e) {}
-try { importScripts('telemetry.js'); } catch (_e) {}
-
 // Season year is computed at service-worker startup so it automatically
 // advances each calendar year without any manual updates.
-const ESPN_SCHEDULE_URL =
-  `https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/teams/9723/schedule?season=${new Date().getFullYear()}`;
+const ESPN_SCHEDULE_URLS = [
+  `https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/teams/9723/schedule?season=${new Date().getFullYear()}&fixture=true`,
+  `https://site.api.espn.com/apis/site/v2/sports/soccer/concacaf.leagues.cup/teams/9723/schedule?season=${new Date().getFullYear()}&fixture=true`,
+];
 const TIMBERS_ESPN_ID = '9723';
 
 async function fetchAndParseSchedule() {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 5000);
   try {
-    const response = await fetch(ESPN_SCHEDULE_URL, { signal: controller.signal });
-    if (!response.ok) return null;
-    const data = await response.json();
-
-    // Guard against malformed payloads — a missing/non-array events field
-    // means ESPN changed shape, not that there are legitimately no matches.
-    if (!Array.isArray(data.events)) return null;
+    const responses = await Promise.all(
+      ESPN_SCHEDULE_URLS.map((url) => fetch(url, { signal: controller.signal })),
+    );
+    if (responses.some((response) => !response.ok)) return null;
+    const payloads = await Promise.all(responses.map((response) => response.json()));
+    if (payloads.some((payload) => !Array.isArray(payload.events))) return null;
 
     const now = Date.now();
-    const events = data.events;
-    const next = events.find((e) => {
-      const comp = e.competitions && e.competitions[0];
-      return comp &&
-        !comp.status?.type?.completed &&
-        new Date(e.date).getTime() > now;
-    });
+    const events = payloads.flatMap((payload) => payload.events);
+    const next = events
+      .filter((event) => {
+        const competition = event.competitions && event.competitions[0];
+        return competition &&
+          !competition.status?.type?.completed &&
+          new Date(event.date).getTime() > now;
+      })
+      .sort((left, right) => new Date(left.date).getTime() - new Date(right.date).getTime())[0];
     if (!next) return { noMatch: true };
 
     const comp = next.competitions[0];
@@ -91,8 +91,10 @@ async function getMatchDataWithFallback() {
   const live = await fetchAndParseSchedule();
   const apiRespondedNoMatch = live && live.noMatch;
   if (live && !live.noMatch) {
-    chrome.storage.local.set({ latestMatchData: live });
-    return { matchData: live, source: 'live' };
+    const fallback = await getBundledFallback();
+    const selected = chooseLiveOrFallback(live, fallback);
+    if (selected.source === 'live') chrome.storage.local.set({ latestMatchData: live });
+    return selected;
   }
 
   const cached = await getCachedMatchData();
@@ -106,6 +108,27 @@ async function getMatchDataWithFallback() {
   }
 
   return { matchData: null, source: apiRespondedNoMatch ? 'no_match' : null };
+}
+
+function chooseLiveOrFallback(live, fallback) {
+  if (!fallback || fallback.matchTimestamp <= Date.now()) {
+    return { matchData: live, source: 'live' };
+  }
+
+  const sameOpponent = normalizeOpponent(live.opponent) === normalizeOpponent(fallback.opponent);
+  const kickoffDifference = Math.abs(live.matchTimestamp - fallback.matchTimestamp);
+  if (sameOpponent && kickoffDifference <= 24 * 60 * 60 * 1000) {
+    if (kickoffDifference > 5 * 60 * 1000) return { matchData: fallback, source: 'fallback' };
+    return { matchData: live, source: 'live' };
+  }
+
+  return fallback.matchTimestamp < live.matchTimestamp
+    ? { matchData: fallback, source: 'fallback' }
+    : { matchData: live, source: 'live' };
+}
+
+function normalizeOpponent(value) {
+  return String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
 if (typeof chrome !== 'undefined' && chrome.runtime) {
@@ -145,5 +168,10 @@ if (typeof chrome !== 'undefined' && chrome.runtime) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { fetchAndParseSchedule, getMatchDataWithFallback, getBundledFallback };
+  module.exports = {
+    chooseLiveOrFallback,
+    fetchAndParseSchedule,
+    getMatchDataWithFallback,
+    getBundledFallback,
+  };
 }

@@ -10,8 +10,9 @@ module.exports = [
       globals: {
         ...globals.browser,
         chrome: 'readonly',
-        Telemetry: 'readonly',
         CommunityVotes: 'readonly',
+        MatchdayAuth: 'readonly',
+        MATCHDAY_RUNTIME_CONFIG: 'readonly',
       },
     },
     rules: {
@@ -21,7 +22,7 @@ module.exports = [
     },
   },
   {
-    files: ['background.js', 'telemetry.js', 'community.js'],
+    files: ['background.js', 'runtime-config.js', 'auth.js', 'community.js'],
     languageOptions: {
       globals: {
         module: 'readonly',
@@ -37,7 +38,7 @@ module.exports = [
     },
   },
   {
-    files: ['tests/**/*.js', 'jest.setup.js'],
+    files: ['tests/**/*.js', 'emulator-tests/**/*.js', 'jest.setup.js'],
     languageOptions: {
       globals: {
         ...globals.node,
@@ -60,6 +61,6 @@ module.exports = [
     },
   },
   {
-    ignores: ['coverage/', 'node_modules/', 'scripts/', 'safari/'],
+    ignores: ['coverage/', 'dist/', 'node_modules/', 'packages/', 'scripts/', 'safari/', 'services/api/'],
   },
 ];

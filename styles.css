@@ -409,6 +409,52 @@ body::-webkit-scrollbar-thumb {
   margin-top: calc(var(--tc-space) * 1.25);
 }
 
+.vote-disclosure,
+.community-sync {
+  margin: 8px 0 0;
+  color: #aab6ad;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.community-sync {
+  color: #d7c88b;
+}
+
+.community-delete-control {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--tc-green-mid);
+  text-align: center;
+}
+
+.community-delete {
+  border: 0;
+  background: transparent;
+  color: #c8a7a7;
+  cursor: pointer;
+  font-family: var(--tc-font);
+  font-size: 10px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.community-delete:hover {
+  color: #f0c3c3;
+}
+
+.community-delete:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.community-delete-status {
+  margin-top: 8px;
+  color: var(--tc-text-muted);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
 /* ── Vote Results ──────────────────────────────────────── */
 
 .vote-results {

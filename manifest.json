@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Timbers Matchday",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "description": "Track Portland Timbers matches and engage with other fans",
     "action": {
         "default_popup": "popup.html",
@@ -20,8 +20,9 @@
     ],
     "host_permissions": [
         "https://site.api.espn.com/*",
-        "https://www.google-analytics.com/*",
-        "https://firestore.googleapis.com/*"
+        "https://identitytoolkit.googleapis.com/*",
+        "https://securetoken.googleapis.com/*",
+        "https://us-west1-timbers-matchday.cloudfunctions.net/*"
     ],
     "icons": {
         "16": "icons/icon-16.png",

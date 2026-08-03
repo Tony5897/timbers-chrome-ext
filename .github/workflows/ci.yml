@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop, "feature/*" ]
+    branches: [main, develop]
   pull_request:
     branches: [ main, develop ]
 
@@ -15,8 +15,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -36,14 +37,27 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
 
       - name: Install dependencies
         run: npm ci
 
       - name: Run tests
         run: npm test
+
+      - name: Run API tests
+        run: npm run test:api
+
+      - name: Run Firestore rules tests
+        run: npm run test:rules
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
@@ -57,14 +71,24 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm ci
+
       - name: Package extension
-        run: |
-          zip -r timbers-matchday.zip \
-            manifest.json popup.html popup.js styles.css \
-            background.js telemetry.js data/ icons/
+        run: npm run package:extension
+
+      - name: Verify extension package
+        run: npm run verify:extension
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: timbers-matchday-${{ github.sha }}
-          path: timbers-matchday.zip
+          path: dist/timbers-matchday-v*.zip
           retention-days: 30

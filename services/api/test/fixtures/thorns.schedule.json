@@ -1,0 +1,24 @@
+{
+  "events": [
+    {
+      "id": "fixture-thorns-001",
+      "date": "2026-08-09T20:00:00Z",
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "away",
+              "team": { "id": "15362", "displayName": "Portland Thorns FC" }
+            },
+            {
+              "homeAway": "home",
+              "team": { "id": "8888", "displayName": "Fixture Opponent" }
+            }
+          ],
+          "venue": { "fullName": "Fixture Stadium" },
+          "status": { "type": { "state": "pre", "completed": false, "name": "STATUS_SCHEDULED" } }
+        }
+      ]
+    }
+  ]
+}

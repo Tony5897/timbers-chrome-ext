@@ -4,6 +4,12 @@ node_modules/
 # Build artifacts
 dist/
 build/
+services/api/lib/
+packages/*/lib/
+
+# Local migration exports
+backups/
+provider-observations/
 
 # OS files
 .DS_Store

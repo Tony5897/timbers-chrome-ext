@@ -12,7 +12,7 @@ Direct pushes to `main` or `develop` are forbidden. All changes go through a pul
    ```bash
    git checkout develop
    git pull origin develop
-   git checkout -b fix/short-description
+   git checkout -b feature/short-description
    ```
 
 2. **Commit to the feature branch only**
@@ -23,7 +23,7 @@ Direct pushes to `main` or `develop` are forbidden. All changes go through a pul
 
 3. **Push the feature branch**
    ```bash
-   git push origin fix/short-description
+   git push origin feature/short-description
    ```
 
 4. **Open a PR targeting `develop`**
@@ -42,7 +42,7 @@ Direct pushes to `main` or `develop` are forbidden. All changes go through a pul
 | Type | Pattern | Example |
 |---|---|---|
 | Bug fix | `fix/...` | `fix/team-name-wrapping` |
-| Feature | `feat/...` | `feat/next-match-api` |
+| Feature | `feature/...` | `feature/next-match-api` |
 | Data update | `data/...` | `data/fallback-mar-match` |
 | Chore / config | `chore/...` | `chore/update-mailmap` |
 
@@ -61,30 +61,49 @@ Direct pushes to `main` or `develop` are forbidden. All changes go through a pul
 
 | File | Purpose |
 |---|---|
-| `manifest.json` | MV3, v1.0.3, service worker, storage + alarms |
+| `manifest.json` | MV3, current release version, service worker, storage + alarms |
 | `background.js` | Three-tier fetch: live → cache → fallback |
 | `popup.js / popup.html / styles.css` | Popup UI, countdown, confidence poll |
-| `telemetry.js` | GA4 Measurement Protocol (never breaks extension) |
-| `telemetry.local.js` | **Never commit. Never ship in ZIP.** Lives in `.gitignore` |
+| `runtime-config.js / auth.js / community.js` | Public runtime config, anonymous auth, compatibility API client |
+| `packages/contracts/` | Shared Zod schemas and API/domain DTOs |
+| `packages/domain/` | Shared team configuration, capabilities, and stable identifier rules |
+| `services/api/` | Firebase Functions compatibility API and scheduled cleanup |
 | `data/fallback.json` | Bundled fallback match data — keep current |
-| `tests/` | Jest, 37 tests — must stay green before any PR |
+| `tests/` | Extension Jest tests — must stay green before any PR |
+
+The repository uses npm workspaces with one root lockfile. Use Node 22 and install from the repository root:
+
+```bash
+npm ci
+```
+
+Do not create or maintain workspace-specific lockfiles.
 
 ---
 
 ## ZIP Packaging (Chrome Web Store)
 
 ```bash
-zip timbers-matchday-v<version>.zip \
-  manifest.json popup.html popup.js background.js \
-  telemetry.js styles.css icon.png \
-  icons/icon-16.png icons/icon-48.png icons/icon-128.png \
-  data/fallback.json
+npm run package:extension
+npm run verify:extension
 ```
 
-`telemetry.local.js` is never included.
+Packaging follows runtime dependencies and fails on missing files, local telemetry configuration, source maps, service-account material, or secret-like content.
+
+Remove generated build, package, coverage, and emulator output before final review:
+
+```bash
+npm run clean
+```
 
 ---
 
 ## CI
 
-GitHub Actions runs ESLint + Jest on every push. Both must pass before any PR can merge.
+GitHub Actions runs linting, type checks, extension tests, API tests, emulator tests, and exact artifact verification. All must pass before merge.
+
+Run the complete local verification pipeline with Node 22 and Java 21 or later:
+
+```bash
+npm run verify:phase0
+```

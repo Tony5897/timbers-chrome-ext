@@ -1,11 +1,25 @@
 {
   "name": "timbers-chrome-ext",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Track Portland Timbers matches and engage with other fans",
+  "workspaces": [
+    "packages/*",
+    "services/*"
+  ],
   "scripts": {
     "test": "jest --ci --coverage",
     "test:watch": "jest --watch",
-    "lint": "eslint .",
+    "lint": "eslint . && npm run typecheck:workspaces",
+    "build:packages": "npm run build --workspace @matchday/contracts && npm run build --workspace @matchday/domain",
+    "typecheck:workspaces": "npm run build:packages && npm run typecheck --workspace @matchday/contracts && npm run typecheck --workspace @matchday/domain && npm run typecheck --workspace @matchday/compatibility-api",
+    "test:api": "npm run build:packages && npm test --workspace @matchday/compatibility-api",
+    "test:rules": "npm run build:api && bash scripts/run-firestore-rules-tests.sh",
+    "build:api": "npm run build:packages && npm run build --workspace @matchday/compatibility-api",
+    "export:legacy": "node scripts/export-legacy-votes.mjs",
+    "package:extension": "node scripts/package-extension.mjs",
+    "verify:extension": "node scripts/verify-extension-package.mjs",
+    "verify:phase0": "npm run lint && npm test -- --runInBand && npm run test:api && npm run test:rules && npm run package:extension && npm run verify:extension",
+    "clean": "node scripts/clean-generated.mjs",
     "build:icons": "node scripts/generate-icons.js",
     "build:safari": "bash scripts/convert-safari.sh"
   },
@@ -17,12 +31,26 @@
   "author": "Tony Martinez",
   "license": "ISC",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "overrides": {
+    "gaxios": {
+      "uuid": "11.1.1"
+    },
+    "teeny-request": {
+      "uuid": "11.1.1"
+    }
+  },
   "devDependencies": {
     "@babel/core": "^7.27.1",
     "@babel/preset-env": "^7.27.2",
+    "@firebase/rules-unit-testing": "^5.0.1",
     "@testing-library/jest-dom": "^6.9.1",
     "babel-jest": "^30.3.0",
     "eslint": "^9.39.3",
+    "firebase": "^12.17.0",
+    "firebase-tools": "15.25.1",
     "globals": "^17.4.0",
     "jest": "^30.3.0",
     "jest-environment-jsdom": "^30.3.0",
