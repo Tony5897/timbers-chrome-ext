@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import type { CompatibilityPollService } from '../src/service.js';
+import type { PublicReadService } from '../src/public-read-service.js';
 import { createApiHandler } from '../src/http.js';
 
 type CapturedResponse = {
@@ -34,16 +35,26 @@ function request(input: {
   method: string;
   path: string;
   body?: unknown;
+  query?: Record<string, unknown>;
   headers?: Record<string, string>;
 }) {
   return {
     method: input.method,
     path: input.path,
     body: input.body,
+    query: input.query,
     get(name: string) {
       return input.headers?.[name];
     },
   };
+}
+
+function apiHandler(
+  service: CompatibilityPollService,
+  verifyIdToken = vi.fn(),
+  publicReadService = {} as PublicReadService,
+) {
+  return createApiHandler({ service, publicReadService, verifyIdToken });
 }
 
 function anonymousToken(): DecodedIdToken {
@@ -62,7 +73,7 @@ function anonymousToken(): DecodedIdToken {
 describe('compatibility HTTP API', () => {
   it('returns a minimal health response', async () => {
     const service = {} as CompatibilityPollService;
-    const handler = createApiHandler({ service, verifyIdToken: vi.fn() });
+    const handler = apiHandler(service);
     const { response, captured } = responseCapture();
 
     await handler(request({ method: 'GET', path: '/v1/health' }), response);
@@ -72,9 +83,143 @@ describe('compatibility HTTP API', () => {
     expect(captured.headers['X-Request-Id']).toBeTruthy();
   });
 
+  it('serves public configuration with cache metadata', async () => {
+    const service = {} as CompatibilityPollService;
+    const publicReadService = {
+      getConfig: vi.fn(() => ({
+        apiVersion: 'v1',
+        generatedAt: '2026-08-03T12:00:00.000Z',
+        minimumClientVersion: '1.0.5',
+        teams: [],
+        features: {
+          canonicalMatches: true,
+          multiTeamSelection: false,
+          liveEvents: false,
+          notifications: false,
+        },
+      })),
+    } as unknown as PublicReadService;
+    const handler = apiHandler(service, vi.fn(), publicReadService);
+    const { response, captured } = responseCapture();
+
+    await handler(request({ method: 'GET', path: '/v1/config' }), response);
+
+    expect(captured.statusCode).toBe(200);
+    expect(captured.body).toEqual(expect.objectContaining({ apiVersion: 'v1' }));
+    expect(captured.headers['Cache-Control']).toContain('max-age=300');
+  });
+
+  it('lists teams with active and planned availability', async () => {
+    const service = {} as CompatibilityPollService;
+    const teams = [
+      { id: 'timbers', status: 'active' },
+      { id: 'thorns', status: 'planned' },
+    ];
+    const publicReadService = {
+      listTeams: vi.fn(() => teams),
+    } as unknown as PublicReadService;
+    const handler = apiHandler(service, vi.fn(), publicReadService);
+    const { response, captured } = responseCapture();
+
+    await handler(request({ method: 'GET', path: '/v1/teams' }), response);
+
+    expect(captured.body).toEqual({ teams });
+  });
+
+  it('serves a team capability document by stable team ID', async () => {
+    const service = {} as CompatibilityPollService;
+    const team = { id: 'timbers', status: 'active', capabilities: { schedule: true } };
+    const publicReadService = {
+      getTeam: vi.fn(() => team),
+    } as unknown as PublicReadService;
+    const handler = apiHandler(service, vi.fn(), publicReadService);
+    const { response, captured } = responseCapture();
+
+    await handler(request({ method: 'GET', path: '/v1/teams/timbers' }), response);
+
+    expect(captured.statusCode).toBe(200);
+    expect(captured.body).toEqual({ team });
+    expect(publicReadService.getTeam).toHaveBeenCalledWith('timbers');
+  });
+
+  it('returns a stable not-found error for an unknown team ID', async () => {
+    const service = {} as CompatibilityPollService;
+    const publicReadService = {
+      getTeam: vi.fn(() => { throw new Error('team_not_found'); }),
+    } as unknown as PublicReadService;
+    const handler = apiHandler(service, vi.fn(), publicReadService);
+    const { response, captured } = responseCapture();
+
+    await handler(request({ method: 'GET', path: '/v1/teams/unknown' }), response);
+
+    expect(captured.statusCode).toBe(404);
+    expect(captured.body).toEqual(expect.objectContaining({ code: 'team_not_found' }));
+  });
+
+  it('serves a canonical next match for a requested team', async () => {
+    const service = {} as CompatibilityPollService;
+    const canonicalMatch = {
+      id: 'espn-401999001',
+      teamId: 'timbers',
+      competitionId: 'mls',
+    };
+    const publicReadService = {
+      getNextMatch: vi.fn(async () => ({ match: canonicalMatch })),
+    } as unknown as PublicReadService;
+    const handler = apiHandler(service, vi.fn(), publicReadService);
+    const { response, captured } = responseCapture();
+
+    await handler(request({
+      method: 'GET',
+      path: '/v1/matches/next',
+      query: { teamId: 'timbers' },
+    }), response);
+
+    expect(captured.statusCode).toBe(200);
+    expect(captured.body).toEqual({ match: canonicalMatch });
+    expect(publicReadService.getNextMatch).toHaveBeenCalledWith('timbers');
+    expect(captured.headers['Cache-Control']).toContain('max-age=60');
+  });
+
+  it('returns a stable capability error for planned team data', async () => {
+    const service = {} as CompatibilityPollService;
+    const publicReadService = {
+      getNextMatch: vi.fn(async () => { throw new Error('capability_unavailable'); }),
+    } as unknown as PublicReadService;
+    const handler = apiHandler(service, vi.fn(), publicReadService);
+    const { response, captured } = responseCapture();
+
+    await handler(request({
+      method: 'GET',
+      path: '/v1/matches/next',
+      query: { teamId: 'thorns' },
+    }), response);
+
+    expect(captured.statusCode).toBe(409);
+    expect(captured.body).toEqual(expect.objectContaining({ code: 'capability_unavailable' }));
+  });
+
+  it('returns a stable gateway timeout when the schedule provider times out', async () => {
+    const service = {} as CompatibilityPollService;
+    const publicReadService = {
+      getNextMatch: vi.fn(async () => { throw new Error('provider_timeout'); }),
+    } as unknown as PublicReadService;
+    const handler = apiHandler(service, vi.fn(), publicReadService);
+    const { response, captured } = responseCapture();
+
+    await handler(request({
+      method: 'GET',
+      path: '/v1/matches/next',
+      query: { teamId: 'timbers' },
+    }), response);
+
+    expect(captured.statusCode).toBe(504);
+    expect(captured.body).toEqual(expect.objectContaining({ code: 'provider_unavailable' }));
+  });
+
   it('requires authentication for response submissions', async () => {
     const service = { submit: vi.fn() } as unknown as CompatibilityPollService;
-    const handler = createApiHandler({ service, verifyIdToken: vi.fn() });
+    const handler = apiHandler(service);
     const { response, captured } = responseCapture();
 
     await handler(request({
@@ -95,7 +240,7 @@ describe('compatibility HTTP API', () => {
         aggregate: { high: 1, medium: 0, low: 0, total: 1 },
       })),
     } as unknown as CompatibilityPollService;
-    const handler = createApiHandler({ service, verifyIdToken: vi.fn(async () => anonymousToken()) });
+    const handler = apiHandler(service, vi.fn(async () => anonymousToken()));
     const { response, captured } = responseCapture();
 
     await handler(request({
@@ -124,7 +269,7 @@ describe('compatibility HTTP API', () => {
     const token = anonymousToken();
     token.firebase.sign_in_provider = 'password';
     const service = { submit: vi.fn() } as unknown as CompatibilityPollService;
-    const handler = createApiHandler({ service, verifyIdToken: vi.fn(async () => token) });
+    const handler = apiHandler(service, vi.fn(async () => token));
     const { response, captured } = responseCapture();
 
     await handler(request({
@@ -150,7 +295,7 @@ describe('compatibility HTTP API', () => {
         matchTimestamp,
       })),
     } as unknown as CompatibilityPollService;
-    const handler = createApiHandler({ service, verifyIdToken: vi.fn() });
+    const handler = apiHandler(service);
     const { response, captured } = responseCapture();
 
     await handler(request({
@@ -176,7 +321,7 @@ describe('compatibility HTTP API', () => {
         matchTimestamp: canonicalTimestamp,
       })),
     } as unknown as CompatibilityPollService;
-    const handler = createApiHandler({ service, verifyIdToken: vi.fn() });
+    const handler = apiHandler(service);
     const { response, captured } = responseCapture();
 
     await handler(request({
@@ -194,7 +339,7 @@ describe('compatibility HTTP API', () => {
     const service = {
       submit: vi.fn(async () => { throw new Error('rate_limited'); }),
     } as unknown as CompatibilityPollService;
-    const handler = createApiHandler({ service, verifyIdToken: vi.fn(async () => anonymousToken()) });
+    const handler = apiHandler(service, vi.fn(async () => anonymousToken()));
     const { response, captured } = responseCapture();
 
     await handler(request({
@@ -220,7 +365,7 @@ describe('compatibility HTTP API', () => {
         requestedAtMs: Date.parse('2026-08-03T12:00:00Z'),
       })),
     } as unknown as CompatibilityPollService;
-    const handler = createApiHandler({ service, verifyIdToken: vi.fn(async () => anonymousToken()) });
+    const handler = apiHandler(service, vi.fn(async () => anonymousToken()));
     const { response, captured } = responseCapture();
 
     await handler(request({
@@ -241,7 +386,7 @@ describe('compatibility HTTP API', () => {
 
   it('requires authentication for installation deletion', async () => {
     const service = { deleteInstallation: vi.fn() } as unknown as CompatibilityPollService;
-    const handler = createApiHandler({ service, verifyIdToken: vi.fn() });
+    const handler = apiHandler(service);
     const { response, captured } = responseCapture();
 
     await handler(request({ method: 'DELETE', path: '/v1/installations/me' }), response);

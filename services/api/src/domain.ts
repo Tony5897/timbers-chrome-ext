@@ -1,4 +1,10 @@
 import { createHash } from 'node:crypto';
+import {
+  compatibilityResponseBodySchema,
+  voteChoiceSchema,
+  type Aggregate,
+  type VoteChoice,
+} from '@matchday/contracts';
 import { z } from 'zod';
 
 export const TEAM_ID = 'timbers';
@@ -13,12 +19,10 @@ export const RATE_LIMIT_RETENTION_MS = 2 * 24 * 60 * 60 * 1000;
 export const AUTH_DELETION_DELAY_MS = 60 * 60 * 1000;
 export const LEGACY_TIMESTAMP_TOLERANCE_MS = 60 * 60 * 1000;
 
-export const voteChoiceSchema = z.enum(['high', 'medium', 'low']);
-export type VoteChoice = z.infer<typeof voteChoiceSchema>;
+export { voteChoiceSchema };
+export type { Aggregate, VoteChoice };
 
-export const responseBodySchema = z.object({
-  choice: voteChoiceSchema,
-}).strict();
+export const responseBodySchema = compatibilityResponseBodySchema;
 
 export const matchTimestampSchema = z.coerce.number().int().min(1_600_000_000_000).max(4_102_444_800_000);
 
@@ -28,13 +32,6 @@ export type PollWindow = {
   providerEventId: string;
   opensAtMs: number;
   closesAtMs: number;
-};
-
-export type Aggregate = {
-  high: number;
-  medium: number;
-  low: number;
-  total: number;
 };
 
 export function pollIdForTimestamp(matchTimestamp: number): string {

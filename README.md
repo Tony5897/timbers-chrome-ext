@@ -2,11 +2,11 @@
 
 [![CI](https://github.com/Tony5897/timbers-chrome-ext/actions/workflows/ci.yml/badge.svg)](https://github.com/Tony5897/timbers-chrome-ext/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/Tony5897/timbers-chrome-ext/graph/badge.svg)](https://codecov.io/gh/Tony5897/timbers-chrome-ext)
 
-A cross-browser extension (Chrome and Safari) that displays upcoming Portland Timbers matches with a live countdown, TV/streaming info, and a fan confidence poll.
+A Chrome-first matchday extension that displays upcoming Portland Timbers matches with a live countdown, TV/streaming info, and an integrity-controlled fan confidence poll. Safari conversion remains available as a compatibility target; Portland Thorns support is represented in shared platform contracts but is not enabled in the extension.
 
 ## Strategic Roadmap
 
-The Chrome-first, multi-team platform architecture and phased implementation plan is documented in [docs/STRATEGIC_IMPLEMENTATION_PLAN.md](docs/STRATEGIC_IMPLEMENTATION_PLAN.md). Its independent requirement, platform, and readiness audit is in [docs/STRATEGIC_IMPLEMENTATION_PLAN_REVIEW.md](docs/STRATEGIC_IMPLEMENTATION_PLAN_REVIEW.md). Current Phase 0 implementation and production gates are tracked in [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md), with the ordered cutover in [docs/runbooks/phase-0-deployment.md](docs/runbooks/phase-0-deployment.md).
+The Chrome-first, multi-team platform architecture and phased implementation plan is documented in [docs/STRATEGIC_IMPLEMENTATION_PLAN.md](docs/STRATEGIC_IMPLEMENTATION_PLAN.md). Its independent requirement, platform, and readiness audit is in [docs/STRATEGIC_IMPLEMENTATION_PLAN_REVIEW.md](docs/STRATEGIC_IMPLEMENTATION_PLAN_REVIEW.md). Current implementation and production gates are tracked in [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md), with the ordered Phase 0 cutover in [docs/runbooks/phase-0-deployment.md](docs/runbooks/phase-0-deployment.md).
 
 ## Features
 
@@ -30,14 +30,15 @@ The Chrome-first, multi-team platform architecture and phased implementation pla
 
 ### Prerequisites
 
-- Node.js (LTS) and npm
+- Node.js 22 and npm
+- Java 21 or later for Firestore emulator verification
 
 ### Setup
 
 ```bash
 git clone https://github.com/Tony5897/timbers-chrome-ext.git
 cd timbers-chrome-ext
-npm install
+npm ci
 npm run build:icons
 ```
 
@@ -108,11 +109,14 @@ Use the **Confidence Poll** section to vote on your confidence level and see how
 | `npm test` | Run Jest test suite with coverage |
 | `npm run test:watch` | Run tests in watch mode |
 | `npm run lint` | Run ESLint and API type checking |
+| `npm run build:packages` | Build shared contract and domain workspaces |
+| `npm run build:api` | Build shared packages and the Firebase API |
 | `npm run test:api` | Run compatibility API unit tests |
 | `npm run test:rules` | Build the API and run Firestore emulator suites |
 | `npm run package:extension` | Build the exact Chrome Web Store ZIP |
 | `npm run verify:extension` | Verify ZIP inventory and secret exclusions |
 | `npm run verify:phase0` | Run the complete Phase 0 verification pipeline |
+| `npm run clean` | Remove generated build, coverage, package, and emulator output |
 | `npm run build:icons` | Generate 16/48/128px icons from `icon.png` |
 | `npm run build:safari` | Convert to Safari Web Extension (requires Xcode) |
 
@@ -139,7 +143,11 @@ timbers-chrome-ext/
 │   ├── generate-icons.js     # Sharp-based icon generator
 │   ├── convert-safari.sh     # Safari Web Extension converter wrapper
 │   ├── package-extension.mjs # Exact Chrome ZIP builder
+│   ├── clean-generated.mjs   # Removes rebuildable generated output
 │   └── cleanup-safari-resources.py  # Post-conversion Xcode bundle cleaner
+├── packages/
+│   ├── contracts/            # Shared Zod API and domain contracts
+│   └── domain/               # Shared team configuration and stable identifiers
 ├── services/api/             # Firebase Functions compatibility backend
 ├── emulator-tests/           # Firestore rules tests
 ├── docs/                     # Strategy, ADRs, provider evidence, and runbooks
@@ -183,12 +191,25 @@ The background service worker creates a `chrome.alarms` alarm (`fetchDataAlarm`,
 
 ### Vote persistence
 
-Fan confidence votes are stored entirely in `chrome.storage.local` (`votes` and `hasVoted` keys). The popup reads existing votes on load and writes new votes on click, with no round-trip to the background worker required.
+The popup keeps local interaction state in `chrome.storage.local`, then submits community responses through the authenticated compatibility API using a Firebase anonymous installation identity. The server validates the client version, poll window, request body, anonymous identity, idempotency key, and rate limit before accepting a response. Community aggregates are labeled `integrity_controlled`; this means one accepted response per anonymous Firebase UID and poll, not one verified person.
+
+## Shared Platform API
+
+The npm workspace foundation introduces shared Zod contracts and domain configuration used by the Firebase API. The following read routes are implemented locally and are not production claims until the deployment gates in `docs/IMPLEMENTATION_STATUS.md` are complete:
+
+| Route | Purpose |
+|---|---|
+| `GET /v1/config` | Public API version, minimum client version, team capabilities, and feature flags |
+| `GET /v1/teams` | Active and planned team configurations |
+| `GET /v1/teams/{teamId}` | One team configuration and capability document |
+| `GET /v1/matches/next?teamId=timbers` | Next canonical scheduled match for an enabled team |
+
+Timbers schedule reads are enabled behind the canonical adapter. Thorns is visible as `planned`, with schedule and polling capabilities disabled until provider, product, and release gates are satisfied.
 
 ## Security Considerations
 
 - **Manifest V3 service workers** — No persistent background page; the service worker is event-driven and terminates when idle, reducing memory footprint and attack surface.
-- **Minimal permissions** — Only `storage`, `alarms`, and two host permissions (`site.api.espn.com` and `google-analytics.com`). No `tabs`, `activeTab`, `webRequest`, or broad host access.
+- **Minimal permissions** — Only `storage`, `alarms`, and four specific hosts for ESPN schedule data, Firebase anonymous authentication, token refresh, and the Matchday API. No `tabs`, `activeTab`, `webRequest`, geolocation, or broad host access.
 - **No remote code execution** — All JavaScript is bundled locally. No CDN imports, no `eval()`, no dynamically injected scripts.
 - **CSP-compliant** — No inline scripts in `popup.html`; all logic loads from `popup.js` via a standard `<script>` tag, satisfying Chrome's extension Content Security Policy.
 - **Structured data only** — Match data is consumed as parsed JSON from the ESPN API. No raw HTML is injected into the popup.
@@ -227,7 +248,7 @@ Passive product analytics and regional analytics are disabled in the compatibili
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feat/my-feature`)
+2. Create a feature branch (`git checkout -b feature/my-feature`)
 3. Commit your changes and push to your fork
 4. Open a pull request against `develop`
 

@@ -1,8 +1,8 @@
 # Matchday Platform — Strategic Technical Implementation Plan
 
-- **Status:** Audited direction; Phase 0 local foundation implemented, production cutover gated
+- **Status:** Audited direction; Phase 0 local foundation implemented, Phase 1 shared-contract foundation implemented locally, production cutover gated
 - **Planning date:** August 3, 2026
-- **Current production baseline:** Chrome extension v1.0.4, Manifest V3, published unlisted
+- **Planning baseline:** Chrome extension v1.0.4, Manifest V3, published unlisted
 - **Primary delivery order:** Chrome extension → web experience and aggregate insights → iOS much later
 
 ## 1. Executive Direction
@@ -25,6 +25,8 @@ The technical strategy is organized around three durable assets:
 This plan intentionally does not include outreach, meeting strategy, acquisition speculation, or assumptions about who may notice the product. It defines the engineering work required to make the product reliable, measurable, extensible, and credible.
 
 ## 2. Current-State Audit
+
+This section records the repository snapshot used to create the plan on August 3, 2026. It is intentionally historical; use `docs/IMPLEMENTATION_STATUS.md` for current implementation and verification state.
 
 ### 2.1 What exists and should be preserved
 
@@ -322,6 +324,8 @@ Aggregate writes use one decided mechanism:
 ## 6. API and Contract Surface
 
 Publish an OpenAPI 3.1 contract generated from the shared Zod schemas. The first stable API is `/v1`. Breaking changes require a new version or an additive migration window.
+
+The current local foundation implements `GET /v1/config`, `GET /v1/teams`, `GET /v1/teams/{teamId}`, and `GET /v1/matches/next?teamId=` against shared Zod contracts. These are additive foundation routes, not a claim that the complete target surface below is deployed. OpenAPI generation, richer match queries, canonical poll aggregates, and the remaining target routes stay in the backlog.
 
 ### 6.1 Read endpoints
 
@@ -1154,9 +1158,9 @@ The first executable backlog, in order:
 5. Add production package inventory verification and include every runtime dependency.
 6. Create local/staging/production Firebase environment definitions, IAM roles, Secret Manager entries, budgets, and redacted logging.
 7. Build provider scorecard tooling and capture Timbers/Thorns schedule and match fixtures.
-8. Scaffold npm workspaces, `packages/contracts`, and `packages/domain`.
-9. Define canonical team, match, alias, event, poll, aggregate, consent, and error schemas.
-10. Implement `/v1/config`, team, match, and aggregate read endpoints against the compatibility data source.
+8. Scaffold npm workspaces, `packages/contracts`, and `packages/domain`. **Local foundation complete:** one root lockfile now governs both shared packages and `services/api`.
+9. Define canonical team, match, alias, event, poll, aggregate, consent, and error schemas. **In progress:** team, capability, canonical match, compatibility aggregate, and error contracts exist; alias, event, canonical poll, and consent contracts remain.
+10. Implement `/v1/config`, team, match, and aggregate read endpoints against the compatibility data source. **In progress:** config, team list/detail, and next-match reads exist; canonical aggregate reads remain separate from the legacy compatibility aggregate.
 11. Deploy the minimal production web foundation and required compliance/support routes.
 12. Scaffold WXT/React/TypeScript extension and port the existing Timbers experience behind shared contracts.
 13. Add installed-extension Playwright smoke tests and artifact checks.

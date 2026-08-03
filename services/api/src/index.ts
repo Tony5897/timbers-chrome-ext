@@ -6,6 +6,7 @@ import { onRequest } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { createApiHandler } from './http.js';
 import { deleteScheduledAnonymousAccounts } from './account-cleanup.js';
+import { PublicReadService } from './public-read-service.js';
 import { FirestoreCompatibilityRepository } from './repository.js';
 import { CompatibilityPollService } from './service.js';
 
@@ -20,8 +21,10 @@ setGlobalOptions({
 
 const repository = new FirestoreCompatibilityRepository(getFirestore());
 const service = new CompatibilityPollService(repository);
+const publicReadService = new PublicReadService();
 const handler = createApiHandler({
   service,
+  publicReadService,
   verifyIdToken: (token) => getAuth().verifyIdToken(token, true),
 });
 

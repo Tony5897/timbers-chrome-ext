@@ -61,6 +61,6 @@ module.exports = [
     },
   },
   {
-    ignores: ['coverage/', 'dist/', 'node_modules/', 'scripts/', 'safari/', 'services/api/'],
+    ignores: ['coverage/', 'dist/', 'node_modules/', 'packages/', 'scripts/', 'safari/', 'services/api/'],
   },
 ];
