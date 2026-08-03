@@ -65,9 +65,19 @@ Direct pushes to `main` or `develop` are forbidden. All changes go through a pul
 | `background.js` | Three-tier fetch: live → cache → fallback |
 | `popup.js / popup.html / styles.css` | Popup UI, countdown, confidence poll |
 | `runtime-config.js / auth.js / community.js` | Public runtime config, anonymous auth, compatibility API client |
+| `packages/contracts/` | Shared Zod schemas and API/domain DTOs |
+| `packages/domain/` | Shared team configuration, capabilities, and stable identifier rules |
 | `services/api/` | Firebase Functions compatibility API and scheduled cleanup |
 | `data/fallback.json` | Bundled fallback match data — keep current |
 | `tests/` | Extension Jest tests — must stay green before any PR |
+
+The repository uses npm workspaces with one root lockfile. Use Node 22 and install from the repository root:
+
+```bash
+npm ci
+```
+
+Do not create or maintain workspace-specific lockfiles.
 
 ---
 
@@ -80,8 +90,20 @@ npm run verify:extension
 
 Packaging follows runtime dependencies and fails on missing files, local telemetry configuration, source maps, service-account material, or secret-like content.
 
+Remove generated build, package, coverage, and emulator output before final review:
+
+```bash
+npm run clean
+```
+
 ---
 
 ## CI
 
 GitHub Actions runs linting, type checks, extension tests, API tests, emulator tests, and exact artifact verification. All must pass before merge.
+
+Run the complete local verification pipeline with Node 22 and Java 21 or later:
+
+```bash
+npm run verify:phase0
+```

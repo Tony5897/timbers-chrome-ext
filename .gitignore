@@ -5,6 +5,7 @@ node_modules/
 dist/
 build/
 services/api/lib/
+packages/*/lib/
 
 # Local migration exports
 backups/

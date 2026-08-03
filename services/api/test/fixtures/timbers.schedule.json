@@ -2,7 +2,23 @@
   "events": [
     {
       "id": "fixture-timbers-001",
-      "date": "2026-08-08T02:30:00Z"
+      "date": "2026-08-08T02:30:00Z",
+      "competitions": [
+        {
+          "competitors": [
+            {
+              "homeAway": "home",
+              "team": { "id": "9723", "displayName": "Portland Timbers" }
+            },
+            {
+              "homeAway": "away",
+              "team": { "id": "9999", "displayName": "Fixture Opponent" }
+            }
+          ],
+          "venue": { "fullName": "Providence Park" },
+          "status": { "type": { "state": "pre", "completed": false, "name": "STATUS_SCHEDULED" } }
+        }
+      ]
     }
   ]
 }

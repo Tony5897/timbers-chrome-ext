@@ -2,18 +2,24 @@
   "name": "timbers-chrome-ext",
   "version": "1.0.5",
   "description": "Track Portland Timbers matches and engage with other fans",
+  "workspaces": [
+    "packages/*",
+    "services/*"
+  ],
   "scripts": {
     "test": "jest --ci --coverage",
     "test:watch": "jest --watch",
-    "lint": "eslint . && npm run typecheck:api",
-    "typecheck:api": "npm --prefix services/api run typecheck",
-    "test:api": "npm --prefix services/api test",
+    "lint": "eslint . && npm run typecheck:workspaces",
+    "build:packages": "npm run build --workspace @matchday/contracts && npm run build --workspace @matchday/domain",
+    "typecheck:workspaces": "npm run build:packages && npm run typecheck --workspace @matchday/contracts && npm run typecheck --workspace @matchday/domain && npm run typecheck --workspace @matchday/compatibility-api",
+    "test:api": "npm run build:packages && npm test --workspace @matchday/compatibility-api",
     "test:rules": "npm run build:api && bash scripts/run-firestore-rules-tests.sh",
-    "build:api": "npm --prefix services/api run build",
+    "build:api": "npm run build:packages && npm run build --workspace @matchday/compatibility-api",
     "export:legacy": "node scripts/export-legacy-votes.mjs",
     "package:extension": "node scripts/package-extension.mjs",
     "verify:extension": "node scripts/verify-extension-package.mjs",
     "verify:phase0": "npm run lint && npm test -- --runInBand && npm run test:api && npm run test:rules && npm run package:extension && npm run verify:extension",
+    "clean": "node scripts/clean-generated.mjs",
     "build:icons": "node scripts/generate-icons.js",
     "build:safari": "bash scripts/convert-safari.sh"
   },
@@ -27,6 +33,14 @@
   "private": true,
   "engines": {
     "node": ">=22"
+  },
+  "overrides": {
+    "gaxios": {
+      "uuid": "11.1.1"
+    },
+    "teeny-request": {
+      "uuid": "11.1.1"
+    }
   },
   "devDependencies": {
     "@babel/core": "^7.27.1",

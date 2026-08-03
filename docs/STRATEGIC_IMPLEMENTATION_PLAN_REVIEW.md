@@ -5,6 +5,8 @@
 - **Review scope:** Chrome extension first, public web second, native iOS explicitly deferred
 - **Verdict:** Phase 0 may proceed through the documented production gates; provider-dependent live features remain gated separately
 
+> This review is an immutable assessment of the August 3, 2026 planning baseline. Repository implementation has advanced since that snapshot; use `docs/IMPLEMENTATION_STATUS.md` for current code, verification, and production-gate status.
+
 ## 1. Review Standard
 
 This review treated the plan as untrusted until its repository claims, platform assumptions, sequencing, privacy boundaries, failure behavior, and requirement coverage were independently checked.

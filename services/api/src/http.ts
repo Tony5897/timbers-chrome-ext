@@ -5,12 +5,14 @@ import {
   matchTimestampSchema,
   responseBodySchema,
 } from './domain.js';
+import type { PublicReadService } from './public-read-service.js';
 import type { CompatibilityPollService } from './service.js';
 
 type RequestLike = {
   method: string;
   path: string;
   body?: unknown;
+  query?: Record<string, unknown>;
   get(name: string): string | undefined;
 };
 
@@ -25,10 +27,12 @@ type AuthVerifier = (token: string) => Promise<DecodedIdToken>;
 
 type ApiDependencies = {
   service: CompatibilityPollService;
+  publicReadService: PublicReadService;
   verifyIdToken: AuthVerifier;
 };
 
 const routePattern = /^\/v1\/legacy-polls\/(\d{13})\/(aggregate|responses)$/;
+const teamRoutePattern = /^\/v1\/teams\/([^/]+)$/;
 
 export function createApiHandler(dependencies: ApiDependencies) {
   return async (request: RequestLike, response: ResponseLike): Promise<void> => {
@@ -44,6 +48,44 @@ export function createApiHandler(dependencies: ApiDependencies) {
     if (request.method === 'GET' && request.path === '/v1/health') {
       response.setHeader('Cache-Control', 'no-store');
       response.status(200).json({ status: 'ok', service: 'matchday-compatibility-api' });
+      return;
+    }
+
+    if (request.method === 'GET' && request.path === '/v1/config') {
+      response.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=900');
+      response.status(200).json(dependencies.publicReadService.getConfig());
+      return;
+    }
+
+    if (request.method === 'GET' && request.path === '/v1/teams') {
+      response.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=900');
+      response.status(200).json({ teams: dependencies.publicReadService.listTeams() });
+      return;
+    }
+
+    const teamRoute = teamRoutePattern.exec(request.path);
+    if (request.method === 'GET' && teamRoute) {
+      try {
+        response.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=900');
+        response.status(200).json({ team: dependencies.publicReadService.getTeam(teamRoute[1]) });
+      } catch (error) {
+        const code = error instanceof Error ? error.message : 'internal_error';
+        const mapped = mapError(code);
+        problem(response, requestId, mapped.status, mapped.code, mapped.detail);
+      }
+      return;
+    }
+
+    if (request.method === 'GET' && request.path === '/v1/matches/next') {
+      try {
+        const result = await dependencies.publicReadService.getNextMatch(request.query?.teamId);
+        response.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=180');
+        response.status(200).json(result);
+      } catch (error) {
+        const code = error instanceof Error ? error.message : 'internal_error';
+        const mapped = mapError(code);
+        problem(response, requestId, mapped.status, mapped.code, mapped.detail);
+      }
       return;
     }
 
@@ -171,6 +213,21 @@ function mapError(code: string): { status: number; code: string; detail: string 
     poll_closed: { status: 409, code, detail: 'This poll is closed.' },
     rate_limited: { status: 429, code, detail: 'The anonymous installation has reached the daily response limit.' },
     installation_deletion_pending: { status: 409, code, detail: 'This anonymous installation is being deleted.' },
+    team_not_found: { status: 404, code, detail: 'The requested team does not exist.' },
+    match_not_found: { status: 404, code, detail: 'No upcoming match is available for this team.' },
+    capability_unavailable: { status: 409, code, detail: 'This capability is not enabled for the requested team.' },
+    provider_timeout: { status: 504, code: 'provider_unavailable', detail: 'The schedule provider timed out.' },
+    provider_invalid_response: { status: 502, code: 'provider_unavailable', detail: 'The schedule provider returned an invalid response.' },
+    provider_unavailable: { status: 503, code, detail: 'The schedule provider is temporarily unavailable.' },
+    provider_http_400: { status: 502, code: 'provider_unavailable', detail: 'The schedule provider is unavailable.' },
+    provider_http_401: { status: 502, code: 'provider_unavailable', detail: 'The schedule provider is unavailable.' },
+    provider_http_403: { status: 502, code: 'provider_unavailable', detail: 'The schedule provider is unavailable.' },
+    provider_http_404: { status: 502, code: 'provider_unavailable', detail: 'The schedule provider is unavailable.' },
+    provider_http_429: { status: 503, code: 'provider_unavailable', detail: 'The schedule provider is temporarily unavailable.' },
+    provider_http_500: { status: 502, code: 'provider_unavailable', detail: 'The schedule provider is unavailable.' },
+    provider_http_502: { status: 502, code: 'provider_unavailable', detail: 'The schedule provider is unavailable.' },
+    provider_http_503: { status: 503, code: 'provider_unavailable', detail: 'The schedule provider is temporarily unavailable.' },
+    provider_http_504: { status: 504, code: 'provider_unavailable', detail: 'The schedule provider timed out.' },
   };
   return errors[code] ?? { status: 500, code: 'internal_error', detail: 'The request could not be completed.' };
 }
