@@ -63,6 +63,6 @@ Timbers Matchday is not directed to children under 13 and does not knowingly req
 
 ## Changes and contact
 
-Behavior changes that affect data handling require an updated extension disclosure and privacy policy in the same release. Use the in-extension deletion control for community data. For questions, deletion failures, or deletion requests when the extension is unavailable, open an issue in the project repository until the dedicated support route is live.
+Behavior changes that affect data handling require an updated extension disclosure and privacy policy in the same release. Use the in-extension deletion control for community data. For questions or non-sensitive deletion-failure reports, use the [public support form](https://github.com/Tony5897/timbers-chrome-ext/issues/new/choose). The public form cannot process a deletion request because identifiers must never be posted publicly; an out-of-extension deletion request may be offered only after a dedicated private support route is live.
 
 Timbers Matchday's use of information received from Chrome APIs adheres to the Chrome Web Store User Data Policy, including the Limited Use requirements.

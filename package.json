@@ -1,7 +1,7 @@
 {
   "name": "timbers-chrome-ext",
   "version": "1.0.5",
-  "description": "Track Portland Timbers matches and engage with other fans",
+  "description": "See the next Portland match, kickoff countdown, viewing details, and anonymous fan confidence in one toolbar popup.",
   "workspaces": [
     "packages/*",
     "services/*"
@@ -11,7 +11,7 @@
     "test:watch": "jest --watch",
     "lint": "eslint .",
     "typecheck": "npm run typecheck:workspaces",
-    "build": "npm run build:api && npm run package:extension && npm run verify:extension",
+    "build": "npm run build:api && npm run package:extension && npm run verify:extension && npm run verify:store-assets",
     "build:packages": "npm run build --workspace @matchday/contracts && npm run build --workspace @matchday/domain",
     "typecheck:workspaces": "npm run build:packages && npm run typecheck --workspace @matchday/contracts && npm run typecheck --workspace @matchday/domain && npm run typecheck --workspace @matchday/compatibility-api",
     "test:api": "npm run build:packages && npm test --workspace @matchday/compatibility-api",
@@ -25,6 +25,8 @@
     "verify:phase0": "npm run lint && npm run typecheck && npm test -- --runInBand && npm run test:api && npm run test:rules && npm run build",
     "clean": "node scripts/clean-generated.mjs",
     "build:icons": "node scripts/generate-icons.js",
+    "build:store-assets": "node scripts/generate-store-assets.mjs",
+    "verify:store-assets": "node scripts/verify-store-assets.mjs",
     "build:safari": "bash scripts/convert-safari.sh"
   },
   "keywords": [

@@ -1,0 +1,42 @@
+name: Support request
+description: Ask for help or report a non-sensitive community-data deletion failure.
+title: "Support: "
+labels:
+  - support
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This request will be public and cannot process a deletion request. Use the in-extension deletion control for community data. You may report a failure here only after removing Firebase IDs, authentication tokens, API keys, precise location, email addresses, and other personal information.
+  - type: dropdown
+    id: topic
+    attributes:
+      label: Topic
+      options:
+        - Installation or update
+        - Match information
+        - Confidence polling
+        - Community data deletion control or failure
+        - Privacy question
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: extension-version
+    attributes:
+      label: Extension version
+      placeholder: 1.0.5
+  - type: textarea
+    id: request
+    attributes:
+      label: How can we help?
+      description: Describe the question or non-sensitive failure without including credentials, identifiers, or personal information.
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy-confirmation
+    attributes:
+      label: Public issue confirmation
+      options:
+        - label: I removed authentication tokens, IDs, keys, and personal information from this request.
+          required: true

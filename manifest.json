@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "Timbers Matchday",
     "version": "1.0.5",
-    "description": "Track Portland Timbers matches and engage with other fans",
+    "description": "See the next Portland match, kickoff countdown, viewing details, and anonymous fan confidence in one toolbar popup.",
     "action": {
         "default_popup": "popup.html",
         "default_icon": {

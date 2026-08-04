@@ -1,21 +1,26 @@
 const sharp = require('sharp');
+const fs = require('fs');
 const path = require('path');
 
-const SOURCE = path.resolve(__dirname, '..', 'icon.png');
+const SOURCE = path.resolve(__dirname, '..', 'assets', 'brand', 'kickoff-dial.svg');
+const ROOT_OUTPUT = path.resolve(__dirname, '..', 'icon.png');
 const OUT_DIR = path.resolve(__dirname, '..', 'icons');
 const SIZES = [16, 48, 128];
 
 async function generate() {
-  const metadata = await sharp(SOURCE).metadata();
-  const crop = Math.min(metadata.width, metadata.height);
-  const left = Math.round((metadata.width - crop) / 2);
-  const top = Math.round((metadata.height - crop) / 2);
+  const source = fs.readFileSync(SOURCE);
+
+  await sharp(source)
+    .resize(640, 640, { fit: 'fill' })
+    .png({ compressionLevel: 9, adaptiveFiltering: true })
+    .toFile(ROOT_OUTPUT);
+
+  console.log('  icon.png');
 
   for (const size of SIZES) {
-    await sharp(SOURCE)
-      .extract({ left, top, width: crop, height: crop })
-      .resize(size, size, { kernel: sharp.kernel.lanczos3 })
-      .png()
+    await sharp(source)
+      .resize(size, size, { fit: 'fill' })
+      .png({ compressionLevel: 9, adaptiveFiltering: true })
       .toFile(path.join(OUT_DIR, `icon-${size}.png`));
 
     console.log(`  icons/icon-${size}.png`);

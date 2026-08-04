@@ -33,6 +33,7 @@
 - Development and staging are separate Firebase projects with delete-protected `nam5` Firestore databases, dedicated web apps, version-controlled anonymous authentication, and verified anonymous-account creation, refresh, and deletion.
 - Staging and production have separate keyless GitHub deployer service accounts. Their Workload Identity providers trust only this repository's immutable numeric identity and the Phase 0 workflow; neither account has a user-managed key.
 - GitHub `staging` and `production` environments enforce branch policies and required review, and contain the environment-specific project, API, Workload Identity, deployer, and protected web-key configuration required by the deployment workflow.
+- The Chrome Web Store presentation foundation includes an original independent mark, reproducible required-size promotional exports, five current-feature screenshots, exact dashboard copy, permission justifications, privacy-field guidance, structured public support forms, and a human-controlled submission checklist.
 
 ## Verified Locally
 

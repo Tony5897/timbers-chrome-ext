@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Privacy policy
+    url: https://tony5897.github.io/timbers-chrome-ext/PRIVACY
+    about: Review data handling, retention, deletion, and Limited Use commitments.
+  - name: Official Portland Timbers schedule
+    url: https://www.timbers.com/schedule/
+    about: Confirm official match scheduling information.
