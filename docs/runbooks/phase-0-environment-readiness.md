@@ -12,9 +12,9 @@ Complete this table with verified values. Do not invent or reserve project IDs i
 
 | Environment | Firebase alias | Firebase project ID | Firestore region | Functions region | Billing | Anonymous auth | Owner |
 |---|---|---|---|---|---|---|---|
-| Development | `development` | Pending | `nam5` proposed | `us-central1` | Pending | Pending | Pending |
-| Staging | `staging` | Pending | `nam5` proposed | `us-central1` | Pending | Pending | Pending |
-| Production | `production` | `timbers-matchday` | `nam5` confirmed | `us-central1` | Billing disabled | Disabled or unverified | Pending |
+| Development | `development` | `timbers-matchday-dev` | `nam5` confirmed | `us-central1` | Billing disabled | Enabled; lifecycle verified | Tony Martinez |
+| Staging | `staging` | `timbers-matchday-staging` | `nam5` confirmed | `us-central1` | Billing disabled | Enabled; lifecycle verified | Tony Martinez |
+| Production | `production` | `timbers-matchday` | `nam5` confirmed | `us-central1` | Billing disabled | Disabled pending staging API | Tony Martinez |
 
 The Firestore location is effectively permanent after database creation. Production was verified as `nam5` on August 3, 2026. Firebase maps `nam5` to `us-central1` as the closest supported Functions region, so the API and extension runtime use `us-central1`. Development and staging should use the same Firestore/Functions pairing unless a documented architecture decision establishes otherwise.
 
@@ -41,10 +41,10 @@ Do not use a legacy `FIREBASE_TOKEN` for GitHub Actions. The deployment workflow
 
 ## Firebase Project Setup
 
-1. Create or select three distinct Firebase projects.
+1. Create or select three distinct Firebase projects. The registered development, staging, and production project IDs are recorded in the environment register and `.firebaserc`.
 2. Upgrade staging and production only to the billing plan required by deployed Functions and scheduled jobs.
 3. Create the default Firestore database in the independently approved region.
-4. Enable anonymous Firebase Authentication.
+4. Enable anonymous Firebase Authentication through the independently approved `auth` component in `.github/workflows/phase0-deploy.yml`.
 5. Register a web app in each environment and retain only its public web configuration.
 6. Restrict each Firebase web API key to the intended project and required APIs where supported.
 7. Add verified aliases after project creation:
@@ -53,13 +53,13 @@ Do not use a legacy `FIREBASE_TOKEN` for GitHub Actions. The deployment workflow
    npx firebase-tools use --add
    ```
 
-   The committed `.firebaserc` must ultimately contain unique `development`, `staging`, and `production` aliases.
+   The committed `.firebaserc` contains unique `development`, `staging`, and `production` aliases and is enforced by Phase 0 preflight.
 
 8. Deploy and validate development first, then staging. Production remains blocked until staging evidence is complete.
 
 ## Deployment Identity
 
-Create one deployer service account per environment. Do not reuse the Firebase runtime identity or a human owner account. Grant only permissions required to deploy the configured Functions, Firestore indexes, and rules; review Firebase CLI permission failures individually rather than granting project-wide Owner.
+Create one deployer service account per environment. Do not reuse the Firebase runtime identity or a human owner account. Grant only permissions required to deploy the configured Authentication settings, Functions, Firestore indexes, and rules; review Firebase CLI permission failures individually rather than granting project-wide Owner.
 
 Create a GitHub Workload Identity provider restricted to this repository:
 
@@ -68,6 +68,10 @@ Create a GitHub Workload Identity provider restricted to this repository:
 - Production deployment ref: `refs/heads/main`
 - Required GitHub permission: `id-token: write`
 - Credential model: Workload Identity Federation through the environment-specific deployer service account
+
+The staging and production identities are provisioned as `github-deployer` service accounts with no user-managed keys. Each provider requires repository ID `954691057`, owner ID `92329104`, and the exact `.github/workflows/phase0-deploy.yml` workflow path. Each deployer has `Firebase Authentication Admin`, `Cloud Datastore Index Admin`, `Cloud Functions Admin`, `Service Usage Consumer`, and an environment-local custom role limited to Firebase Security Rules deployment. Do not broaden these grants to Owner, Editor, or Firebase Admin.
+
+After billing and the Functions build/runtime APIs are enabled, grant `Service Account User` on only the selected Functions runtime and Cloud Build service accounts. Verify those runtime identities are themselves least-privilege before the first API deployment.
 
 In each GitHub environment, configure:
 
@@ -79,11 +83,13 @@ In each GitHub environment, configure:
 | `MATCHDAY_API_BASE_URL` | Variable | Exact deployed API base URL |
 | `FIREBASE_WEB_API_KEY` | Secret | Public client key retained as a protected operational value to avoid accidental log exposure |
 
-Configure required reviewers for the production GitHub environment. Never place service-account JSON, refresh tokens, Firebase CLI tokens, or provider credentials in repository files or GitHub variables.
+The `staging` and `production` GitHub environments are configured with required review, branch policies, environment-specific variables, and protected web API keys. Never place service-account JSON, refresh tokens, Firebase CLI tokens, or provider credentials in repository files or GitHub variables.
 
 ## Cost and Operations Baseline
 
-Before staging deployment, configure:
+Before staging Functions deployment, activate an explicitly approved billing account. As of August 4, 2026, billing is disabled on all three projects and the only account visible to the operator is closed; no paid workload may be enabled until that external blocker is resolved.
+
+After billing activation and before staging Functions deployment, configure:
 
 - Monthly budget thresholds with notifications at 50%, 80%, and 100% of actual spend and 100% of forecast spend.
 - Cloud Logging retention appropriate for operational diagnosis without retaining raw authorization headers, tokens, UIDs, IP addresses, or request bodies.

@@ -15,6 +15,7 @@ on:
         required: true
         type: choice
         options:
+          - auth
           - indexes
           - api
           - temporary-rules
@@ -112,6 +113,12 @@ jobs:
         env:
           PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
         run: npx firebase-tools deploy --only firestore:indexes --project "$PROJECT_ID" --non-interactive
+
+      - name: Deploy anonymous authentication configuration
+        if: inputs.component == 'auth'
+        env:
+          PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+        run: npx firebase-tools deploy --only auth --project "$PROJECT_ID" --non-interactive
 
       - name: Deploy API
         if: inputs.component == 'api'

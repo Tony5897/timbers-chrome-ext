@@ -108,4 +108,4 @@ Run the complete local verification pipeline with Node 22 and Java 21 or later:
 npm run verify:phase0
 ```
 
-Phase 0 cloud deployments use the manually dispatched, environment-protected workflow in `.github/workflows/phase0-deploy.yml`. Indexes, Functions, temporary migration rules, and final migration rules are separate approval actions. Chrome Web Store submission is never automated by this repository.
+Phase 0 cloud deployments use the manually dispatched, environment-protected workflow in `.github/workflows/phase0-deploy.yml`. Authentication configuration, indexes, Functions, temporary migration rules, and final migration rules are separate approval actions. Chrome Web Store submission is never automated by this repository.

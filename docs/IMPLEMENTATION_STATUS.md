@@ -1,6 +1,6 @@
 # Implementation Status
 
-**Updated:** August 3, 2026
+**Updated:** August 4, 2026
 **Scope:** Chrome compatibility release, integrity migration foundation, shared platform contracts, and release controls
 **Production state:** Not deployed
 
@@ -30,6 +30,9 @@
 - A manually dispatched, environment-protected deployment workflow uses GitHub OIDC and Google Workload Identity Federation rather than long-lived Firebase tokens or service-account keys.
 - Phase 0 preflight and deployed API smoke scripts produce credential-free JSON evidence and support authenticated staging verification without fabricating production polls.
 - Environment, IAM, budget, monitoring, authentication, migration, rollback, and Chrome Web Store presentation gates are consolidated in the Phase 0 runbooks.
+- Development and staging are separate Firebase projects with delete-protected `nam5` Firestore databases, dedicated web apps, version-controlled anonymous authentication, and verified anonymous-account creation, refresh, and deletion.
+- Staging and production have separate keyless GitHub deployer service accounts. Their Workload Identity providers trust only this repository's immutable numeric identity and the Phase 0 workflow; neither account has a user-managed key.
+- GitHub `staging` and `production` environments enforce branch policies and required review, and contain the environment-specific project, API, Workload Identity, deployer, and protected web-key configuration required by the deployment workflow.
 
 ## Verified Locally
 
@@ -41,17 +44,15 @@
 
 ## Production Gates Still Open
 
-- Create and document distinct development and staging Firebase projects; only the production alias currently exists locally.
-- Production Firestore is confirmed in `nam5`; deploy Functions in the Firebase-recommended `us-central1` region and use the same pairing for non-production environments.
-- Link an approved billing account to production and staging before deploying Functions or scheduled jobs; production billing is currently disabled.
-- Enable Firebase anonymous authentication and configure anonymous-account cleanup or an equivalent operator process.
-- Create budget alerts, log retention, Secret Manager ownership, least-privilege service identities, and operational alerting.
+- Production Firestore is confirmed in `nam5`; deploy Functions in the Firebase-recommended `us-central1` region after staging succeeds.
+- Link an approved active billing account to staging and production before deploying Functions or scheduled jobs. Billing is disabled on every project, and the only billing account visible to the operator is closed.
+- Grant the deployer `Service Account User` only on the selected least-privilege Functions runtime and Cloud Build identities after billing and required Google APIs are enabled.
+- Enable version-controlled anonymous authentication in production only after staging API validation; then verify account creation, refresh, revocation, deletion, and scheduled cleanup.
+- Create budget alerts, log retention, Secret Manager ownership, runtime service identities, and operational alerting after billing is activated.
 - Archive the verified local `legacy_unverified` export in approved immutable storage before any rule deployment. The local snapshot contains two documents, including one anomalous 10-digit document ID preserved for review.
 - Deploy and smoke-test the API before publishing extension `1.0.5` or changing legacy rules.
 - Start and record the minimum 30-day auto-update grace period before deploying final write-deny rules.
 - Select a production domain, monitored support address, and hosted privacy URL before Phase 1 public launch; deploy and exercise the implemented deletion route in staging.
-- Authenticate the local Firebase CLI and install/configure Google Cloud CLI before provisioning projects, keyless deploy identities, budgets, and monitoring.
-- Configure the `staging` and `production` GitHub environments, required reviewers, Workload Identity variables, API URL, and Firebase web API key.
 - Complete a separate Chrome Web Store public-presentation review before submitting release `1.0.5`; automated workflows intentionally cannot publish the listing.
 
 ## Explicit Non-Claims
