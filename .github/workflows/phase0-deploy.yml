@@ -24,6 +24,14 @@ on:
         description: Full commit SHA authorized for this deployment
         required: true
         type: string
+      legacy_backup_uri:
+        description: Immutable gs:// or https:// backup URI; required for rules deployments
+        required: false
+        type: string
+      legacy_backup_sha256:
+        description: Legacy backup SHA-256; required for rules deployments
+        required: false
+        type: string
       publication_timestamp:
         description: Chrome Web Store publication time in ISO 8601; required for final rules
         required: false
@@ -34,7 +42,7 @@ on:
         type: string
 
 concurrency:
-  group: phase0-${{ inputs.target_environment }}-${{ inputs.component }}
+  group: phase0-${{ inputs.target_environment }}
   cancel-in-progress: false
 
 permissions:
@@ -48,15 +56,23 @@ jobs:
     environment: ${{ inputs.target_environment }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Validate deployment authorization
         env:
           EXPECTED_COMMIT_SHA: ${{ inputs.expected_commit_sha }}
           TARGET_ENVIRONMENT: ${{ inputs.target_environment }}
           COMPONENT: ${{ inputs.component }}
+          LEGACY_BACKUP_URI: ${{ inputs.legacy_backup_uri }}
+          LEGACY_BACKUP_SHA256: ${{ inputs.legacy_backup_sha256 }}
           PUBLICATION_TIMESTAMP: ${{ inputs.publication_timestamp }}
           FINAL_RULES_CONFIRMATION: ${{ inputs.final_rules_confirmation }}
         run: |
+          if [[ ! "$EXPECTED_COMMIT_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Expected commit must be a full lowercase SHA-1." >&2
+            exit 1
+          fi
           if [[ "$EXPECTED_COMMIT_SHA" != "$GITHUB_SHA" ]]; then
             echo "Expected commit does not match checked-out commit." >&2
             exit 1
@@ -68,6 +84,16 @@ jobs:
           if [[ "$COMPONENT" == "final-rules" && "$TARGET_ENVIRONMENT" != "production" ]]; then
             echo "Final migration rules are only valid for production." >&2
             exit 1
+          fi
+          if [[ "$COMPONENT" == "temporary-rules" || "$COMPONENT" == "final-rules" ]]; then
+            if [[ ! "$LEGACY_BACKUP_URI" =~ ^(gs|https):// ]]; then
+              echo "Rules deployment requires an immutable gs:// or https:// backup URI." >&2
+              exit 1
+            fi
+            if [[ ! "$LEGACY_BACKUP_SHA256" =~ ^[0-9a-fA-F]{64}$ ]]; then
+              echo "Rules deployment requires a valid legacy backup SHA-256." >&2
+              exit 1
+            fi
           fi
           if [[ "$COMPONENT" == "final-rules" ]]; then
             if [[ "$FINAL_RULES_CONFIRMATION" != "DEPLOY FINAL RULES" ]]; then
@@ -107,6 +133,39 @@ jobs:
           project_id: ${{ vars.GCP_PROJECT_ID }}
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+      - name: Run deployment preflight
+        env:
+          TARGET_ENVIRONMENT: ${{ inputs.target_environment }}
+          COMPONENT: ${{ inputs.component }}
+          LEGACY_BACKUP_URI: ${{ inputs.legacy_backup_uri }}
+          LEGACY_BACKUP_SHA256: ${{ inputs.legacy_backup_sha256 }}
+        run: |
+          report="phase0-preflight-${TARGET_ENVIRONMENT}-${GITHUB_SHA}.json"
+          arguments=(
+            --require-environments
+            --require-cloud-access
+            --require-clean
+            --target-environment "$TARGET_ENVIRONMENT"
+            --commit-sha "$GITHUB_SHA"
+            --output "$report"
+          )
+          if [[ "$COMPONENT" == "temporary-rules" || "$COMPONENT" == "final-rules" ]]; then
+            arguments+=(
+              --require-backup-evidence
+              --backup-uri "$LEGACY_BACKUP_URI"
+              --backup-sha256 "$LEGACY_BACKUP_SHA256"
+            )
+          fi
+          npm run preflight:phase0 -- "${arguments[@]}"
+
+      - name: Upload deployment preflight evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase0-preflight-${{ inputs.target_environment }}-${{ inputs.component }}-${{ github.sha }}
+          path: phase0-preflight-${{ inputs.target_environment }}-${{ github.sha }}.json
+          if-no-files-found: error
+          retention-days: 90
 
       - name: Deploy indexes
         if: inputs.component == 'indexes'
