@@ -1,5 +1,5 @@
 name: Support request
-description: Ask for help with installation, match information, polling, or data deletion.
+description: Ask for help or report a non-sensitive community-data deletion failure.
 title: "Support: "
 labels:
   - support
@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        This request will be public. Do not post Firebase IDs, authentication tokens, API keys, precise location, email addresses, or other personal information. Use the in-extension deletion control for community data whenever possible.
+        This request will be public and cannot process a deletion request. Use the in-extension deletion control for community data. You may report a failure here only after removing Firebase IDs, authentication tokens, API keys, precise location, email addresses, and other personal information.
   - type: dropdown
     id: topic
     attributes:
@@ -16,7 +16,7 @@ body:
         - Installation or update
         - Match information
         - Confidence polling
-        - Community data deletion
+        - Community data deletion control or failure
         - Privacy question
         - Other
     validations:
@@ -30,7 +30,7 @@ body:
     id: request
     attributes:
       label: How can we help?
-      description: Describe the problem without including credentials or personal information.
+      description: Describe the question or non-sensitive failure without including credentials, identifiers, or personal information.
     validations:
       required: true
   - type: checkboxes

@@ -80,6 +80,8 @@ The homepage and privacy URLs currently use HTTPS GitHub Pages. The support URL 
 
 The promotional graphics use limited text and brand-led composition. The screenshots are full-bleed, describe existing UI states, and do not show live scores, notifications, Thorns support, player voting, standings, geographic analytics, or any other unshipped capability.
 
+Each screenshot embeds a deterministic headless-Chrome capture of the real `popup.html`, `styles.css`, and `popup.js` runtime under a fixed, non-production fixture state. Approved PNG and runtime-source SHA-256 digests prevent stale or substituted artwork from passing the build gate. Regeneration requires Chrome or Chromium; set `CHROME_BIN` when the executable is not in a standard location.
+
 Regenerate and validate the complete set with:
 
 ```bash
@@ -145,5 +147,6 @@ Before uploading or changing the public listing:
 5. Compare the manifest, detailed description, privacy practices, `PRIVACY.md`, support forms, and runtime behavior field by field.
 6. Re-open the homepage, support, privacy, and official schedule URLs from a signed-out browser session.
 7. Confirm the independent-project disclaimer appears in the listing description and popup.
-8. Record the owner-approved title, copy, assets, URLs, visibility, package SHA-256, submission time, approval time, and publication time.
-9. Do not publish until the owner explicitly approves the complete public presentation in the Chrome Web Store Developer Dashboard.
+8. Confirm the public support form is limited to non-sensitive questions and failure reports; do not offer out-of-extension deletion requests until a private support route is live.
+9. Record the owner-approved title, copy, assets, URLs, visibility, package SHA-256, submission time, approval time, and publication time.
+10. Do not publish until the owner explicitly approves the complete public presentation in the Chrome Web Store Developer Dashboard.
