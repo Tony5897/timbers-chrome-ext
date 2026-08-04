@@ -42,11 +42,20 @@
 - The verified extension ZIP contains exactly 13 runtime files and excludes tests, provider observations, environment files, and server-only code.
 - The root lockfile pins patched `uuid` releases for affected Google request-library paths while preserving unrelated modern versions. A current-registry audit remains part of branch verification; offline audit output is not treated as current evidence.
 
+## Verified in Staging
+
+- Protected Auth deployment [run 30884585063](https://github.com/Tony5897/timbers-chrome-ext/actions/runs/30884585063) passed the complete Phase 0 verification, keyless Workload Identity authentication, exact-commit preflight, evidence upload, and version-controlled anonymous-provider deployment from commit `98e6b4214dc830ddc2258df54e63d71a8ef216b9`.
+- A direct Identity Platform configuration read after deployment confirmed anonymous sign-in is enabled in `timbers-matchday-staging`.
+- Protected index deployment [run 30884728558](https://github.com/Tony5897/timbers-chrome-ext/actions/runs/30884728558) passed the same controls. The deletion-queue composite index and response identity-hash collection-group index both report `READY`.
+- Firebase Auth provisioning uses a two-permission environment-local custom role derived from denied audit-log evidence: `firebase.projects.update` and `serviceusage.services.enable`. No Owner, Editor, Firebase Admin, long-lived key, or legacy Firebase token was introduced.
+- Billing remains disabled, so no staging Functions or scheduled jobs were deployed. No production resource or Chrome Web Store listing was changed.
+
 ## Production Gates Still Open
 
-- Production Firestore is confirmed in `nam5`; deploy Functions in the Firebase-recommended `us-central1` region after staging succeeds.
+- Production Firestore is confirmed in `nam5`; deploy Functions in the Firebase-recommended `us-central1` region only after billing controls are active and the staging API succeeds.
 - Link an approved active billing account to staging and production before deploying Functions or scheduled jobs. Billing is disabled on every project, and the only billing account visible to the operator is closed.
 - Grant the deployer `Service Account User` only on the selected least-privilege Functions runtime and Cloud Build identities after billing and required Google APIs are enabled.
+- Configure the canonical staging API URL and project-level billing-status read permission before production API deployment; the workflow now fails closed unless billing is active and staging `/v1/health` reports `ok`.
 - Enable version-controlled anonymous authentication in production only after staging API validation; then verify account creation, refresh, revocation, deletion, and scheduled cleanup.
 - Create budget alerts, log retention, Secret Manager ownership, runtime service identities, and operational alerting after billing is activated.
 - Archive the verified local `legacy_unverified` export in approved immutable storage before any rule deployment. The local snapshot contains two documents, including one anomalous 10-digit document ID preserved for review.
