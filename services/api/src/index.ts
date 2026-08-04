@@ -14,7 +14,7 @@ import { CompatibilityPollService } from './service.js';
 if (getApps().length === 0) initializeApp();
 
 setGlobalOptions({
-  region: 'us-west1',
+  region: 'us-central1',
   maxInstances: 10,
   memory: '256MiB',
   timeoutSeconds: 30,

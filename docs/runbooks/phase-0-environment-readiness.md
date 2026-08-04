@@ -12,11 +12,11 @@ Complete this table with verified values. Do not invent or reserve project IDs i
 
 | Environment | Firebase alias | Firebase project ID | Firestore region | Functions region | Billing | Anonymous auth | Owner |
 |---|---|---|---|---|---|---|---|
-| Development | `development` | Pending | Pending | `us-west1` proposed | Pending | Pending | Pending |
-| Staging | `staging` | Pending | Pending | `us-west1` proposed | Pending | Pending | Pending |
-| Production | `production` | `timbers-matchday` | Pending verification | `us-west1` configured | Pending verification | Disabled or unverified | Pending |
+| Development | `development` | Pending | `nam5` proposed | `us-central1` | Pending | Pending | Pending |
+| Staging | `staging` | Pending | `nam5` proposed | `us-central1` | Pending | Pending | Pending |
+| Production | `production` | `timbers-matchday` | `nam5` confirmed | `us-central1` | Billing disabled | Disabled or unverified | Pending |
 
-The Firestore location is effectively permanent after database creation. Confirm the existing production database location before selecting non-production locations. The API currently declares `us-west1` in `services/api/src/index.ts`; changing that region requires an explicit architecture and migration decision rather than an ad hoc deployment override.
+The Firestore location is effectively permanent after database creation. Production was verified as `nam5` on August 3, 2026. Firebase maps `nam5` to `us-central1` as the closest supported Functions region, so the API and extension runtime use `us-central1`. Development and staging should use the same Firestore/Functions pairing unless a documented architecture decision establishes otherwise.
 
 ## Local Operator Prerequisites
 
@@ -110,7 +110,7 @@ Use the authenticated smoke test only in staging or during an approved productio
 
 ```bash
 npm run smoke:phase0 -- \
-  --api-base-url "https://us-west1-PROJECT_ID.cloudfunctions.net/api" \
+  --api-base-url "https://us-central1-PROJECT_ID.cloudfunctions.net/api" \
   --api-key "PUBLIC_FIREBASE_WEB_API_KEY" \
   --authenticated \
   --output phase0-smoke-staging.json

@@ -36,7 +36,7 @@ Infrastructure providers may process standard network metadata such as an IP add
 | `site.api.espn.com` | Retrieve upcoming Timbers schedule data |
 | `identitytoolkit.googleapis.com` | Create a Firebase anonymous account when community polling is first used |
 | `securetoken.googleapis.com` | Refresh the anonymous Firebase ID token |
-| `us-west1-timbers-matchday.cloudfunctions.net` | Read integrity-controlled aggregates and submit an authenticated response |
+| `us-central1-timbers-matchday.cloudfunctions.net` | Read integrity-controlled aggregates and submit an authenticated response |
 
 ## Retention and deletion
 

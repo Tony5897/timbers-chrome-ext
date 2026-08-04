@@ -42,7 +42,8 @@
 ## Production Gates Still Open
 
 - Create and document distinct development and staging Firebase projects; only the production alias currently exists locally.
-- Confirm the production Firestore region and the selected Functions region before deployment.
+- Production Firestore is confirmed in `nam5`; deploy Functions in the Firebase-recommended `us-central1` region and use the same pairing for non-production environments.
+- Link an approved billing account to production and staging before deploying Functions or scheduled jobs; production billing is currently disabled.
 - Enable Firebase anonymous authentication and configure anonymous-account cleanup or an equivalent operator process.
 - Create budget alerts, log retention, Secret Manager ownership, least-privilege service identities, and operational alerting.
 - Archive the verified local `legacy_unverified` export in approved immutable storage before any rule deployment. The local snapshot contains two documents, including one anomalous 10-digit document ID preserved for review.
