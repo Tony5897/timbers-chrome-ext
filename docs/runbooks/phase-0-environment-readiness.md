@@ -13,7 +13,7 @@ Complete this table with verified values. Do not invent or reserve project IDs i
 | Environment | Firebase alias | Firebase project ID | Firestore region | Functions region | Billing | Anonymous auth | Owner |
 |---|---|---|---|---|---|---|---|
 | Development | `development` | `timbers-matchday-dev` | `nam5` confirmed | `us-central1` | Billing disabled | Enabled; lifecycle verified | Tony Martinez |
-| Staging | `staging` | `timbers-matchday-staging` | `nam5` confirmed | `us-central1` | Billing disabled | Enabled; lifecycle verified | Tony Martinez |
+| Staging | `staging` | `timbers-matchday-staging` | `nam5` confirmed | `us-central1` | Billing disabled | Protected deployment complete; lifecycle verified | Tony Martinez |
 | Production | `production` | `timbers-matchday` | `nam5` confirmed | `us-central1` | Billing disabled | Disabled pending staging API | Tony Martinez |
 
 The Firestore location is effectively permanent after database creation. Production was verified as `nam5` on August 3, 2026. Firebase maps `nam5` to `us-central1` as the closest supported Functions region, so the API and extension runtime use `us-central1`. Development and staging should use the same Firestore/Functions pairing unless a documented architecture decision establishes otherwise.
@@ -71,6 +71,8 @@ Create a GitHub Workload Identity provider restricted to this repository:
 
 The staging and production identities are provisioned as `github-deployer` service accounts with no user-managed keys. Each provider requires repository ID `954691057`, owner ID `92329104`, and the exact `.github/workflows/phase0-deploy.yml` workflow path. Each deployer has `Firebase Authentication Admin`, `Cloud Datastore Index Admin`, `Cloud Functions Admin`, `Service Usage Consumer`, and an environment-local custom role limited to Firebase Security Rules deployment. Do not broaden these grants to Owner, Editor, or Firebase Admin.
 
+Firebase CLI's version-controlled Auth deployment invokes the Firebase provisioning endpoint even when the project, web app, and required APIs already exist. The staging deployer therefore also has an environment-local `Matchday Firebase Auth Provisioner` custom role containing only `firebase.projects.update` and `serviceusage.services.enable`. Those permissions were added individually from denied audit-log checks rather than by assigning a broad predefined administrator role. Recreate and independently review the same narrow role before the approved production Auth deployment.
+
 After billing and the Functions build/runtime APIs are enabled, grant `Service Account User` on only the selected Functions runtime and Cloud Build service accounts. Verify those runtime identities are themselves least-privilege before the first API deployment.
 
 In each GitHub environment, configure:
@@ -99,6 +101,16 @@ After billing activation and before staging Functions deployment, configure:
 - Named owners for billing, incident response, privacy requests, and rollback.
 
 The API emits generated request IDs. Operational logs must correlate with those IDs and stable event categories, never with publicly exposed Firebase UIDs or tokens.
+
+## Staging Deployment Evidence
+
+The non-billed staging foundation was deployed from commit `98e6b4214dc830ddc2258df54e63d71a8ef216b9` on August 4, 2026:
+
+- Protected [Auth deployment run 30884585063](https://github.com/Tony5897/timbers-chrome-ext/actions/runs/30884585063) passed release verification, Workload Identity Federation, exact-commit preflight, evidence upload, and anonymous-provider deployment. A direct Identity Platform configuration read confirmed anonymous sign-in is enabled.
+- Protected [Firestore index deployment run 30884728558](https://github.com/Tony5897/timbers-chrome-ext/actions/runs/30884728558) passed the same gates. The `compatibilityDeletionRequests(status, deleteAfter)` composite index and `responses.identityHash` collection-group field index both subsequently reported `READY`.
+- Staging billing remained disabled throughout. Functions, migration rules, production Auth, and Chrome Web Store publication were not deployed or changed.
+
+Generated preflight reports remain attached to their protected GitHub Actions runs under the configured 90-day retention policy; do not duplicate them in source control.
 
 ## Authentication Verification
 
