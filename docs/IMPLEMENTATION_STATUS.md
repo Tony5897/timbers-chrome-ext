@@ -26,6 +26,10 @@
 - Canonical poll IDs map to existing timestamp-keyed compatibility records inside the repository. New synchronization writes persist the alias and current match status, while provider-event fallback keeps pre-alias records readable without exposing legacy keys publicly. Postponed and cancelled matches resolve to void polls after synchronization. Miss-triggered provider refreshes are coalesced and globally throttled to prevent fabricated public IDs from amplifying provider reads and Firestore writes.
 - Provider timeouts, network failures, HTTP failures, and malformed payloads map to stable public error responses rather than leaking implementation details.
 - Generated workspace builds, coverage, packages, and emulator logs are removed through `npm run clean`; historical root release ZIPs are intentionally preserved.
+- CI exposes independent `lint`, `typecheck`, `test`, and `build` release gates, with verified extension artifacts retained only for `main` builds.
+- A manually dispatched, environment-protected deployment workflow uses GitHub OIDC and Google Workload Identity Federation rather than long-lived Firebase tokens or service-account keys.
+- Phase 0 preflight and deployed API smoke scripts produce credential-free JSON evidence and support authenticated staging verification without fabricating production polls.
+- Environment, IAM, budget, monitoring, authentication, migration, rollback, and Chrome Web Store presentation gates are consolidated in the Phase 0 runbooks.
 
 ## Verified Locally
 
@@ -45,6 +49,9 @@
 - Deploy and smoke-test the API before publishing extension `1.0.5` or changing legacy rules.
 - Start and record the minimum 30-day auto-update grace period before deploying final write-deny rules.
 - Select a production domain, monitored support address, and hosted privacy URL before Phase 1 public launch; deploy and exercise the implemented deletion route in staging.
+- Authenticate the local Firebase CLI and install/configure Google Cloud CLI before provisioning projects, keyless deploy identities, budgets, and monitoring.
+- Configure the `staging` and `production` GitHub environments, required reviewers, Workload Identity variables, API URL, and Firebase web API key.
+- Complete a separate Chrome Web Store public-presentation review before submitting release `1.0.5`; automated workflows intentionally cannot publish the listing.
 
 ## Explicit Non-Claims
 

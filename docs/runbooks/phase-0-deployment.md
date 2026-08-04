@@ -6,11 +6,25 @@ Move community polling from unauthenticated Firestore writes to the authenticate
 
 ## Preconditions
 
+- `docs/runbooks/phase-0-environment-readiness.md` is complete for development, staging, and production.
 - Operator is authenticated with Firebase CLI and has approved production access.
 - Firebase project aliases, Firestore region, Functions region, budgets, logging, IAM, and support ownership are independently verified.
 - Anonymous Firebase Authentication is enabled and tested in a non-production project.
 - `npm run verify:phase0` passes from a clean checkout with Node 22 and Java 21 or later.
 - A rollback owner and observation window are assigned.
+- Chrome Web Store copy, privacy disclosures, screenshots, promotional artwork, support URL, and hosted privacy URL have passed a separate public-presentation review.
+
+Run the release preflight from a clean checkout before any deployment:
+
+```bash
+npm run preflight:phase0 -- \
+  --require-environments \
+  --require-backup \
+  --require-cloud-access \
+  --require-clean \
+  --backup backups/legacy-votes-YYYYMMDDTHHMMSSZ.json \
+  --output phase0-preflight.json
+```
 
 ## Ordered Cutover
 
@@ -22,43 +36,48 @@ Move community polling from unauthenticated Firestore writes to the authenticate
    ```
 
 2. Copy the JSON and checksum to the approved immutable backup location. Record the URI, SHA-256, record count, operator, and timestamp in the cutover log. Never commit the export.
-3. Enable and test anonymous authentication. Confirm a test account can be created, refreshed, revoked, and removed.
-4. Deploy the response identity-hash collection-group index and wait until Firebase reports it ready:
+3. Deploy indexes to staging through the manually approved `Phase 0 Deployment` GitHub Actions workflow. Verify every index reports ready before separately dispatching the API deployment.
+4. Run the authenticated staging smoke test. Confirm account creation, token refresh, invalid-token rejection, submission behavior for the current poll state, deletion receipt idempotency, aggregate correction, and delayed account cleanup.
+5. Enable and test anonymous authentication in production. Confirm a test account can be created, refreshed, revoked, and removed before store publication.
+6. Deploy the response identity-hash collection-group index and wait until Firebase reports it ready:
 
    ```bash
    firebase deploy --only firestore:indexes --project production
    ```
 
-5. Deploy only Functions after the index is ready:
+7. Deploy only Functions after the index is ready:
 
    ```bash
    firebase deploy --only functions --project production
    ```
 
-6. Verify `/v1/health`, scheduled poll-window sync, valid anonymous submission, duplicate submission, invalid token, unsupported client, closed poll, aggregate response behavior, deletion receipt idempotency, aggregate correction, and delayed anonymous-account cleanup.
-7. Build and retain both the new package and the last known-good rollback package:
+8. Verify `/v1/health`, scheduled poll-window sync, invalid token, unsupported client, closed poll, aggregate response behavior, provider behavior, budgets, alerts, and scheduler health. Perform valid and duplicate response testing only during an approved open poll; do not fabricate or alter a production match poll.
+9. Build and retain both the new package and the last known-good rollback package:
 
    ```bash
    npm run package:extension
    npm run verify:extension
    ```
 
-8. Deploy temporary legacy rules only after the export and API smoke test succeed:
+10. Deploy temporary legacy rules only after the export and API smoke test succeed:
 
    ```bash
    firebase deploy --only firestore:rules --project production
    ```
 
-9. Publish extension `1.0.5`. Record Chrome Web Store submission, approval, publication, and observed adoption timestamps.
-10. Monitor API errors, auth failures, duplicate rate, aggregate consistency, deletion-queue age, provider sync, spend, and support reports. Do not infer migration completion from passive analytics consent.
-11. Keep the temporary rules for at least 30 days from confirmed publication and use store-version adoption evidence plus support risk review before final cutover.
-12. Deploy final rules with the separate immutable config:
+11. Stop at the Chrome Web Store publication gate. Review and approve the complete public presentation package: listing title and summary, detailed description, privacy disclosures, category, support and privacy URLs, screenshots, promotional tiles, icon rendering, and release notes.
+12. Publish extension `1.0.5` only after that approval. Record Chrome Web Store submission, approval, publication, and observed adoption timestamps.
+13. Monitor API errors, auth failures, duplicate rate, aggregate consistency, deletion-queue age, provider sync, spend, and support reports. Do not infer migration completion from passive analytics consent.
+14. Keep the temporary rules for at least 30 days from confirmed publication and use store-version adoption evidence plus support risk review before final cutover.
+15. Deploy final rules with the separate immutable config:
 
    ```bash
    firebase --config firebase.final.json deploy --only firestore:rules --project production
    ```
 
-13. Run a packaged legacy-client check: reads still work, direct writes fail, and the UI shows sync unavailable rather than a false success.
+16. Run a packaged legacy-client check: reads still work, direct writes fail, and the UI shows sync unavailable rather than a false success.
+
+The GitHub workflow does not submit or modify the Chrome Web Store listing. Store publication remains a deliberate human-controlled action.
 
 ## Rollback
 
