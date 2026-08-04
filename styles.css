@@ -1,14 +1,15 @@
 :root {
-  --tc-green: #004812;
-  --tc-green-deep: #0D2B07;
-  --tc-green-mid: #183F10;
-  --tc-gold: #EDD132;
-  --tc-gold-dim: #C9B420;
-  --tc-white: #FFFFFF;
-  --tc-offwhite: #F5F5F5;
-  --tc-text-muted: #A8B8A0;
-  --tc-surface: #0A1F05;
-  --tc-radius: 10px;
+  --tc-green: #0E342B;
+  --tc-green-deep: #0B241E;
+  --tc-green-mid: #125544;
+  --tc-accent: #4DE2A8;
+  --tc-gold: #F4C95D;
+  --tc-gold-dim: #D8AB42;
+  --tc-white: #F7F9F5;
+  --tc-offwhite: #E8EFEC;
+  --tc-text-muted: #B8C9C2;
+  --tc-surface: #071A16;
+  --tc-radius: 12px;
   --tc-space: 8px;
   --tc-font: 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
 }
@@ -57,8 +58,8 @@ body::-webkit-scrollbar-thumb {
   align-items: center;
   gap: calc(var(--tc-space) * 1.5);
   padding: calc(var(--tc-space) * 1.5) calc(var(--tc-space) * 2);
-  background: var(--tc-green);
-  border-bottom: 3px solid var(--tc-gold);
+  background: linear-gradient(135deg, var(--tc-green), var(--tc-surface));
+  border-bottom: 3px solid var(--tc-accent);
 }
 
 .ext-logo {
@@ -202,7 +203,7 @@ body::-webkit-scrollbar-thumb {
   background: linear-gradient(
     90deg,
     var(--tc-green-mid) 25%,
-    #1F4E16 50%,
+    #1A6954 50%,
     var(--tc-green-mid) 75%
   );
   background-size: 200% 100%;
@@ -341,7 +342,7 @@ body::-webkit-scrollbar-thumb {
 }
 
 .schedule-link:hover {
-  color: var(--tc-gold-dim);
+  color: var(--tc-accent);
   text-decoration: underline;
 }
 
@@ -388,14 +389,14 @@ body::-webkit-scrollbar-thumb {
 }
 
 .vote-btn:hover {
-  border-color: var(--tc-gold);
-  color: var(--tc-gold);
+  border-color: var(--tc-accent);
+  color: var(--tc-accent);
 }
 
 .vote-btn.selected {
-  background: var(--tc-gold);
-  border-color: var(--tc-gold);
-  color: var(--tc-green);
+  background: var(--tc-accent);
+  border-color: var(--tc-accent);
+  color: var(--tc-surface);
 }
 
 /* ── Community Count ───────────────────────────────────── */
@@ -412,13 +413,13 @@ body::-webkit-scrollbar-thumb {
 .vote-disclosure,
 .community-sync {
   margin: 8px 0 0;
-  color: #aab6ad;
+  color: var(--tc-text-muted);
   font-size: 11px;
   line-height: 1.35;
 }
 
 .community-sync {
-  color: #d7c88b;
+  color: var(--tc-gold);
 }
 
 .community-delete-control {
@@ -431,7 +432,7 @@ body::-webkit-scrollbar-thumb {
 .community-delete {
   border: 0;
   background: transparent;
-  color: #c8a7a7;
+  color: #D7B5B5;
   cursor: pointer;
   font-family: var(--tc-font);
   font-size: 10px;
@@ -440,7 +441,7 @@ body::-webkit-scrollbar-thumb {
 }
 
 .community-delete:hover {
-  color: #f0c3c3;
+  color: #F3CDCD;
 }
 
 .community-delete:disabled {
@@ -503,7 +504,7 @@ body::-webkit-scrollbar-thumb {
 .bar-fill {
   height: 100%;
   width: 0;
-  background: var(--tc-gold);
+  background: var(--tc-accent);
   border-radius: 5px;
   transition: width 0.5s ease;
 }
@@ -532,10 +533,21 @@ body::-webkit-scrollbar-thumb {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-wrap: wrap;
   gap: var(--tc-space);
   padding: calc(var(--tc-space) * 1.5) calc(var(--tc-space) * 2);
   border-top: 1px solid var(--tc-green-mid);
   font-size: 10px;
+}
+
+.footer-status {
+  width: 100%;
+  color: var(--tc-text-muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.3px;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 .ext-footer a {
@@ -545,7 +557,7 @@ body::-webkit-scrollbar-thumb {
 }
 
 .ext-footer a:hover {
-  color: var(--tc-gold);
+  color: var(--tc-accent);
 }
 
 .footer-sep {
@@ -556,7 +568,7 @@ body::-webkit-scrollbar-thumb {
 
 button:focus-visible,
 a:focus-visible {
-  outline: 2px solid var(--tc-gold);
+  outline: 2px solid var(--tc-accent);
   outline-offset: 2px;
 }
 

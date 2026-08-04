@@ -226,18 +226,13 @@ Public poll IDs use `poll-{matchId}-confidence-v1`, for example `poll-espn-40199
 - **Current listing status:** Published — unlisted
 - **Release `1.0.5` status:** Not submitted
 
-![Chrome Web Store — Published Unlisted](assets/chrome-store-published.jpg)
+![Chrome Web Store presentation preview](assets/store/promo-marquee-1400x560.png)
 
 The extension is live on the Chrome Web Store and installable via direct link. It was submitted and approved on March 6, 2026.
 
 Release `1.0.5` will not be submitted until its API, authentication, migration, rollback, privacy, support, listing-copy, screenshot, and store-artwork gates are approved. Store publication is intentionally outside the automated deployment workflow.
 
-<details>
-<summary>Submission history</summary>
-
-![Chrome Web Store — Pending Review](assets/chrome-web-store-pending.png)
-
-</details>
+The original Kickoff Dial identity, required promotional graphics, five current-feature screenshots, dashboard copy, permission justifications, privacy disclosures, release notes, and final human review checklist are maintained in the [Chrome Web Store presentation package](docs/chrome-web-store/presentation-package.md). No current artwork uses the club crest or axe mark, and the listing explicitly identifies the extension as an independent fan project.
 
 - **Manifest V3** compliant
 - Icons at 16px, 48px, and 128px
