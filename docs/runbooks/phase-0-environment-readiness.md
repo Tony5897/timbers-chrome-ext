@@ -112,6 +112,8 @@ In development and staging, verify all of the following before production:
 6. Retained raw responses and aggregate shards are corrected.
 7. Scheduled account cleanup removes the anonymous account after the retry window.
 
+The immediate authenticated smoke test covers account creation, refresh, deletion scheduling, receipt idempotency, and aggregate correction. Delayed cleanup requires separate post-window evidence from the scheduler execution, deletion-request state, and a failed token refresh or Authentication lookup; never infer completion from the immediate smoke report.
+
 Use the authenticated smoke test only in staging or during an approved production poll window:
 
 ```bash

@@ -73,7 +73,38 @@ if (options.requireEnvironments) {
   });
 }
 
-if (options.requireCloudAccess) verifyCloudAccess();
+let deploymentProjectId = null;
+if (options.targetEnvironment) {
+  const allowedEnvironment = ['staging', 'production'].includes(options.targetEnvironment);
+  check('deployment target environment is allowed', allowedEnvironment, {
+    targetEnvironment: options.targetEnvironment,
+  });
+  deploymentProjectId = allowedEnvironment ? firebaseAliases[options.targetEnvironment] ?? null : null;
+  check('deployment target has a Firebase project alias', Boolean(deploymentProjectId), {
+    targetEnvironment: options.targetEnvironment,
+    projectId: deploymentProjectId,
+  });
+}
+
+if (options.commitSha) {
+  const actualCommitSha = execFileSync('git', ['rev-parse', 'HEAD'], {
+    cwd: rootDirectory,
+    encoding: 'utf8',
+  }).trim();
+  check('deployment commit SHA is valid', /^[0-9a-f]{40}$/.test(options.commitSha), {
+    commitSha: options.commitSha,
+  });
+  check('deployment commit matches checkout', options.commitSha === actualCommitSha, {
+    expectedCommitSha: options.commitSha,
+    actualCommitSha,
+  });
+}
+
+if (options.requireBackupEvidence || options.backupUri || options.backupSha256) {
+  verifyExternalBackupEvidence(options);
+}
+
+if (options.requireCloudAccess) verifyCloudAccess(deploymentProjectId);
 
 if (options.backup) verifyBackup(options.backup);
 if (options.requireBackup && !options.backup) {
@@ -94,6 +125,12 @@ const report = {
   releaseVersion: packageJson.version,
   functionsRegion,
   runtimeProjectId: runtimeConfig.projectId,
+  targetEnvironment: options.targetEnvironment,
+  targetProjectId: deploymentProjectId,
+  commitSha: options.commitSha,
+  backupEvidence: options.backupUri && options.backupSha256
+    ? { uri: options.backupUri, sha256: options.backupSha256.toLowerCase() }
+    : null,
   results,
   summary: summarize(results),
 };
@@ -115,8 +152,13 @@ function parseArguments(values) {
     requireCloudAccess: false,
     requireClean: false,
     requireEnvironments: false,
+    requireBackupEvidence: false,
     backup: null,
+    backupUri: null,
+    backupSha256: null,
+    commitSha: null,
     output: null,
+    targetEnvironment: null,
   };
   for (let index = 0; index < values.length; index += 1) {
     const value = values[index];
@@ -124,10 +166,12 @@ function parseArguments(values) {
     else if (value === '--require-cloud-access') parsed.requireCloudAccess = true;
     else if (value === '--require-clean') parsed.requireClean = true;
     else if (value === '--require-environments') parsed.requireEnvironments = true;
-    else if (value === '--backup' || value === '--output') {
+    else if (value === '--require-backup-evidence') parsed.requireBackupEvidence = true;
+    else if (['--backup', '--backup-uri', '--backup-sha256', '--commit-sha', '--output', '--target-environment'].includes(value)) {
       const argument = values[index + 1];
       if (!argument) throw new Error(`${value} requires a value.`);
-      parsed[value.slice(2)] = argument;
+      const key = value.slice(2).replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+      parsed[key] = argument;
       index += 1;
     } else {
       throw new Error(`Unknown argument: ${value}`);
@@ -192,28 +236,62 @@ function verifyBackup(backupArgument) {
   check('legacy backup retains source classification', backup.classification === 'legacy_unverified', {
     classification: backup.classification ?? null,
   });
-  check('legacy backup count agrees with records', backup.recordCount === backup.records?.length, {
+  const hasRecordArray = Array.isArray(backup.records);
+  const hasRecordCount = Number.isSafeInteger(backup.recordCount) && backup.recordCount >= 0;
+  check('legacy backup contains a records array', hasRecordArray, {
+    actualType: hasRecordArray ? 'array' : typeof backup.records,
+  });
+  check('legacy backup contains a non-negative record count', hasRecordCount, {
     declaredCount: backup.recordCount ?? null,
-    actualCount: Array.isArray(backup.records) ? backup.records.length : null,
+  });
+  check('legacy backup count agrees with records', hasRecordArray && hasRecordCount && backup.recordCount === backup.records.length, {
+    declaredCount: backup.recordCount ?? null,
+    actualCount: hasRecordArray ? backup.records.length : null,
   });
 }
 
-function verifyCloudAccess() {
-  const firebaseResult = spawnSync(
-    path.join(rootDirectory, 'node_modules', '.bin', 'firebase'),
-    ['login:list'],
-    { encoding: 'utf8', env: process.env },
-  );
+function verifyExternalBackupEvidence(values) {
+  check('immutable legacy backup URI is valid', /^(gs|https):\/\/\S+$/.test(values.backupUri ?? ''), {
+    uri: values.backupUri,
+  });
+  check('legacy backup SHA-256 is valid', /^[0-9a-fA-F]{64}$/.test(values.backupSha256 ?? ''), {
+    sha256: values.backupSha256,
+  });
+}
+
+function verifyCloudAccess(expectedProjectId) {
+  const firebaseArguments = expectedProjectId
+    ? ['projects:list', '--json', '--non-interactive']
+    : ['login:list'];
+  const firebaseResult = spawnSync(path.join(rootDirectory, 'node_modules', '.bin', 'firebase'), firebaseArguments, {
+    encoding: 'utf8',
+    env: process.env,
+  });
   const firebaseOutput = `${firebaseResult.stdout ?? ''}\n${firebaseResult.stderr ?? ''}`;
-  check('Firebase CLI has an authenticated operator', firebaseResult.status === 0 && !/No authorized accounts/i.test(firebaseOutput));
+  let firebaseAuthorized = firebaseResult.status === 0 && !/No authorized accounts/i.test(firebaseOutput);
+  if (firebaseAuthorized && expectedProjectId) {
+    try {
+      const projectResult = JSON.parse(firebaseResult.stdout);
+      const projects = Array.isArray(projectResult.result) ? projectResult.result : [];
+      firebaseAuthorized = projects.some((project) => project.projectId === expectedProjectId);
+    } catch {
+      firebaseAuthorized = false;
+    }
+  }
+  check('Firebase CLI can access the deployment project', firebaseAuthorized, {
+    projectId: expectedProjectId,
+  });
 
   const gcloudResult = spawnSync(
     'gcloud',
     ['auth', 'list', '--filter=status:ACTIVE', '--format=value(account)'],
     { encoding: 'utf8', env: process.env },
   );
-  check('Google Cloud CLI has an active operator', gcloudResult.status === 0 && gcloudResult.stdout.trim().length > 0, {
+  const adcPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  const hasApplicationDefaultCredentials = Boolean(adcPath && fs.existsSync(adcPath));
+  check('Google Cloud credentials are available', hasApplicationDefaultCredentials || (gcloudResult.status === 0 && gcloudResult.stdout.trim().length > 0), {
     commandAvailable: gcloudResult.error?.code !== 'ENOENT',
+    applicationDefaultCredentials: hasApplicationDefaultCredentials,
   });
 }
 

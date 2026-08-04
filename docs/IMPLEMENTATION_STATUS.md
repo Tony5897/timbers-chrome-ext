@@ -28,7 +28,7 @@
 - Generated workspace builds, coverage, packages, and emulator logs are removed through `npm run clean`; historical root release ZIPs are intentionally preserved.
 - CI exposes independent `lint`, `typecheck`, `test`, and `build` release gates, with verified extension artifacts retained only for `main` builds.
 - A manually dispatched, environment-protected deployment workflow uses GitHub OIDC and Google Workload Identity Federation rather than long-lived Firebase tokens or service-account keys.
-- Phase 0 preflight and deployed API smoke scripts produce credential-free JSON evidence and support authenticated staging verification without fabricating production polls.
+- Phase 0 preflight binds credential-free JSON evidence to the exact deployment commit, target environment, and immutable backup checksum where rules can mutate access; deployed API smoke scripts support authenticated staging verification without fabricating production polls.
 - Environment, IAM, budget, monitoring, authentication, migration, rollback, and Chrome Web Store presentation gates are consolidated in the Phase 0 runbooks.
 - Development and staging are separate Firebase projects with delete-protected `nam5` Firestore databases, dedicated web apps, version-controlled anonymous authentication, and verified anonymous-account creation, refresh, and deletion.
 - Staging and production have separate keyless GitHub deployer service accounts. Their Workload Identity providers trust only this repository's immutable numeric identity and the Phase 0 workflow; neither account has a user-managed key.
