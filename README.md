@@ -6,7 +6,7 @@ A Chrome-first matchday extension that displays upcoming Portland Timbers matche
 
 ## Strategic Roadmap
 
-The Chrome-first, multi-team platform architecture and phased implementation plan is documented in [docs/STRATEGIC_IMPLEMENTATION_PLAN.md](docs/STRATEGIC_IMPLEMENTATION_PLAN.md). Its independent requirement, platform, and readiness audit is in [docs/STRATEGIC_IMPLEMENTATION_PLAN_REVIEW.md](docs/STRATEGIC_IMPLEMENTATION_PLAN_REVIEW.md). Current implementation and production gates are tracked in [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md), with the ordered Phase 0 cutover in [docs/runbooks/phase-0-deployment.md](docs/runbooks/phase-0-deployment.md).
+The Chrome-first, multi-team platform architecture and phased implementation plan is documented in [docs/STRATEGIC_IMPLEMENTATION_PLAN.md](docs/STRATEGIC_IMPLEMENTATION_PLAN.md). Its independent requirement, platform, and readiness audit is in [docs/STRATEGIC_IMPLEMENTATION_PLAN_REVIEW.md](docs/STRATEGIC_IMPLEMENTATION_PLAN_REVIEW.md). Current implementation and production gates are tracked in [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md), with environment preparation in [docs/runbooks/phase-0-environment-readiness.md](docs/runbooks/phase-0-environment-readiness.md) and the ordered cutover in [docs/runbooks/phase-0-deployment.md](docs/runbooks/phase-0-deployment.md).
 
 ## Features
 
@@ -108,13 +108,17 @@ Use the **Confidence Poll** section to vote on your confidence level and see how
 |---------|-------------|
 | `npm test` | Run Jest test suite with coverage |
 | `npm run test:watch` | Run tests in watch mode |
-| `npm run lint` | Run ESLint and API type checking |
+| `npm run lint` | Run ESLint across the repository |
+| `npm run typecheck` | Build shared packages and type-check every TypeScript workspace |
+| `npm run build` | Build the API and verified extension release artifact |
 | `npm run build:packages` | Build shared contract and domain workspaces |
 | `npm run build:api` | Build shared packages and the Firebase API |
 | `npm run test:api` | Run compatibility API unit tests |
 | `npm run test:rules` | Build the API and run Firestore emulator suites |
 | `npm run package:extension` | Build the exact Chrome Web Store ZIP |
 | `npm run verify:extension` | Verify ZIP inventory and secret exclusions |
+| `npm run preflight:phase0` | Validate local release tooling, configuration, and optional backup evidence |
+| `npm run smoke:phase0` | Exercise deployed public and optional authenticated API behavior |
 | `npm run verify:phase0` | Run the complete Phase 0 verification pipeline |
 | `npm run clean` | Remove generated build, coverage, package, and emulator output |
 | `npm run build:icons` | Generate 16/48/128px icons from `icon.png` |
@@ -143,6 +147,8 @@ timbers-chrome-ext/
 │   ├── generate-icons.js     # Sharp-based icon generator
 │   ├── convert-safari.sh     # Safari Web Extension converter wrapper
 │   ├── package-extension.mjs # Exact Chrome ZIP builder
+│   ├── phase0-readiness.mjs  # Release environment and evidence preflight
+│   ├── smoke-phase0.mjs      # Deployed API smoke-test evidence runner
 │   ├── clean-generated.mjs   # Removes rebuildable generated output
 │   └── cleanup-safari-resources.py  # Post-conversion Xcode bundle cleaner
 ├── packages/
@@ -217,11 +223,14 @@ Public poll IDs use `poll-{matchId}-confidence-v1`, for example `poll-espn-40199
 
 ## Chrome Web Store
 
-**Status: Published — unlisted**
+- **Current listing status:** Published — unlisted
+- **Release `1.0.5` status:** Not submitted
 
 ![Chrome Web Store — Published Unlisted](assets/chrome-store-published.jpg)
 
 The extension is live on the Chrome Web Store and installable via direct link. It was submitted and approved on March 6, 2026.
+
+Release `1.0.5` will not be submitted until its API, authentication, migration, rollback, privacy, support, listing-copy, screenshot, and store-artwork gates are approved. Store publication is intentionally outside the automated deployment workflow.
 
 <details>
 <summary>Submission history</summary>

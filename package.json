@@ -9,7 +9,9 @@
   "scripts": {
     "test": "jest --ci --coverage",
     "test:watch": "jest --watch",
-    "lint": "eslint . && npm run typecheck:workspaces",
+    "lint": "eslint .",
+    "typecheck": "npm run typecheck:workspaces",
+    "build": "npm run build:api && npm run package:extension && npm run verify:extension",
     "build:packages": "npm run build --workspace @matchday/contracts && npm run build --workspace @matchday/domain",
     "typecheck:workspaces": "npm run build:packages && npm run typecheck --workspace @matchday/contracts && npm run typecheck --workspace @matchday/domain && npm run typecheck --workspace @matchday/compatibility-api",
     "test:api": "npm run build:packages && npm test --workspace @matchday/compatibility-api",
@@ -18,7 +20,9 @@
     "export:legacy": "node scripts/export-legacy-votes.mjs",
     "package:extension": "node scripts/package-extension.mjs",
     "verify:extension": "node scripts/verify-extension-package.mjs",
-    "verify:phase0": "npm run lint && npm test -- --runInBand && npm run test:api && npm run test:rules && npm run package:extension && npm run verify:extension",
+    "preflight:phase0": "node scripts/phase0-readiness.mjs",
+    "smoke:phase0": "node scripts/smoke-phase0.mjs",
+    "verify:phase0": "npm run lint && npm run typecheck && npm test -- --runInBand && npm run test:api && npm run test:rules && npm run build",
     "clean": "node scripts/clean-generated.mjs",
     "build:icons": "node scripts/generate-icons.js",
     "build:safari": "bash scripts/convert-safari.sh"

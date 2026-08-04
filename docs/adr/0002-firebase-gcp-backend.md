@@ -14,7 +14,7 @@ Direct public Firestore writes cannot enforce one response per installation, pol
 - Use Cloud Functions for Firebase v2 on Node 22 as the public API and scheduled-job runtime.
 - Use Firestore as the canonical operational store for polls, raw responses, aggregate shards, consent, and later installations or push registrations.
 - Keep public Firestore access deny-by-default. Public clients use API responses; Admin SDK access is controlled by service IAM.
-- Deploy production Functions in `us-west1` only after confirming the Firestore location and cross-region cost/latency implications.
+- Deploy Functions in `us-central1`, the Firebase-recommended Functions region for the confirmed production Firestore `nam5` multi-region location. Use the same pairing for development and staging unless an explicit migration decision replaces it.
 - Create distinct development, staging, and production projects before Phase 1. Local emulators are not a substitute for staging.
 - Use Firebase Cloud Messaging for Chrome remote notifications only after notification consent, token lifecycle, and live-provider gates pass.
 - Treat Firebase web API keys as public client configuration. Store provider credentials and operational secrets in Secret Manager, never extension code or repository files.

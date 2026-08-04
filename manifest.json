@@ -22,7 +22,7 @@
         "https://site.api.espn.com/*",
         "https://identitytoolkit.googleapis.com/*",
         "https://securetoken.googleapis.com/*",
-        "https://us-west1-timbers-matchday.cloudfunctions.net/*"
+        "https://us-central1-timbers-matchday.cloudfunctions.net/*"
     ],
     "icons": {
         "16": "icons/icon-16.png",
