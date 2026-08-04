@@ -14,6 +14,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@firebase/app": "0.16.0",
     "@matchday/contracts": "0.1.0",
     "@matchday/domain": "0.1.0",
     "firebase-admin": "14.2.0",
