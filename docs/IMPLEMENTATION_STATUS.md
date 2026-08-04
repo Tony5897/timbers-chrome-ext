@@ -49,20 +49,22 @@
 - A direct Identity Platform configuration read after deployment confirmed anonymous sign-in is enabled in `timbers-matchday-staging`.
 - Protected index deployment [run 30884728558](https://github.com/Tony5897/timbers-chrome-ext/actions/runs/30884728558) passed the same controls. The deletion-queue composite index and response identity-hash collection-group index both report `READY`.
 - Firebase Auth provisioning uses a two-permission environment-local custom role derived from denied audit-log evidence: `firebase.projects.update` and `serviceusage.services.enable`. No Owner, Editor, Firebase Admin, long-lived key, or legacy Firebase token was introduced.
-- Billing remains disabled, so no staging Functions or scheduled jobs were deployed. No production resource or Chrome Web Store listing was changed.
+- Staging billing is active on open Cloud Billing account `01B3E0-9B5B27-05FB9C` (`Firebase Payment`). A `$25` monthly budget with 50%/80%/100% actual and 100% forecast thresholds notifies the operator email channel.
+- Protected API deployment [run 30903666044](https://github.com/Tony5897/timbers-chrome-ext/actions/runs/30903666044) from commit `f20ad971610a04163e1f67253f16f8655a655b3f` deployed Gen2 Functions `api`, `syncCompatibilityPollWindows`, `cleanupCompatibilityResponses`, and `cleanupCompatibilityAccounts` in `us-central1`, then passed authenticated Phase 0 smoke (17/17), including health, public reads, anonymous auth, submission, idempotent existing response, deletion scheduling, and aggregate correction. Immediate smoke proves cleanup was scheduled; delayed anonymous-account deletion still requires separate post-window evidence.
+- Live staging health returns `{"status":"ok","service":"matchday-compatibility-api"}` at `https://us-central1-timbers-matchday-staging.cloudfunctions.net/api/v1/health`. No production resource or Chrome Web Store listing was changed.
 
 ## Production Gates Still Open
 
-- Production Firestore is confirmed in `nam5`; deploy Functions in the Firebase-recommended `us-central1` region only after billing controls are active and the staging API succeeds.
-- Link an approved active billing account to staging and production before deploying Functions or scheduled jobs. Billing is disabled on every project, and the only billing account visible to the operator is closed.
-- Grant the deployer `Service Account User` only on the selected least-privilege Functions runtime and Cloud Build identities after billing and required Google APIs are enabled.
-- Configure the canonical staging API URL and project-level billing-status read permission before production API deployment; the workflow now fails closed unless billing is active and staging `/v1/health` reports `ok`.
-- Enable version-controlled anonymous authentication in production only after staging API validation; then verify account creation, refresh, revocation, deletion, and scheduled cleanup.
-- Create budget alerts, log retention, Secret Manager ownership, runtime service identities, and operational alerting after billing is activated.
+- Production Firestore is confirmed in `nam5`; deploy Functions in the Firebase-recommended `us-central1` region only after production billing controls are active and the staging API continues to succeed.
+- Link an approved active billing account to production before deploying production Functions or scheduled jobs. Staging billing is active; production remains unbilled until explicitly approved.
+- Grant the production deployer `Service Account User` only on the selected least-privilege Functions runtime and Cloud Build identities after production billing and required Google APIs are enabled.
+- Configure the canonical staging API URL and project-level billing-status read permission before production API deployment; the workflow now fails closed unless production billing is active and staging `/v1/health` reports `ok`.
+- Enable version-controlled anonymous authentication in production only after staging delayed-cleanup evidence is recorded; then verify account creation, refresh, revocation, deletion, and scheduled cleanup.
+- Create production budget alerts, log retention, Secret Manager ownership, runtime service identities, and operational alerting after production billing is activated.
 - Archive the verified local `legacy_unverified` export in approved immutable storage before any rule deployment. The local snapshot contains two documents, including one anomalous 10-digit document ID preserved for review.
-- Deploy and smoke-test the API before publishing extension `1.0.5` or changing legacy rules.
+- Record delayed staging cleanup evidence (scheduler success, deleted deletion-request, failed token refresh) before treating staging API validation as complete for production Auth.
 - Start and record the minimum 30-day auto-update grace period before deploying final write-deny rules.
-- Select a production domain, monitored support address, and hosted privacy URL before Phase 1 public launch; deploy and exercise the implemented deletion route in staging.
+- Select a production domain, monitored support address, and hosted privacy URL before Phase 1 public launch.
 - Complete a separate Chrome Web Store public-presentation review before submitting release `1.0.5`; automated workflows intentionally cannot publish the listing.
 
 ## Explicit Non-Claims

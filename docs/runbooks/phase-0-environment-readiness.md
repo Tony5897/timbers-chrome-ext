@@ -13,7 +13,7 @@ Complete this table with verified values. Do not invent or reserve project IDs i
 | Environment | Firebase alias | Firebase project ID | Firestore region | Functions region | Billing | Anonymous auth | Owner |
 |---|---|---|---|---|---|---|---|
 | Development | `development` | `timbers-matchday-dev` | `nam5` confirmed | `us-central1` | Billing disabled | Enabled; lifecycle verified | Tony Martinez |
-| Staging | `staging` | `timbers-matchday-staging` | `nam5` confirmed | `us-central1` | Billing disabled | Protected deployment complete; lifecycle verified | Tony Martinez |
+| Staging | `staging` | `timbers-matchday-staging` | `nam5` confirmed | `us-central1` | Billing active (`01B3E0-9B5B27-05FB9C`) | Protected deployment complete; lifecycle verified | Tony Martinez |
 | Production | `production` | `timbers-matchday` | `nam5` confirmed | `us-central1` | Billing disabled | Disabled pending staging API | Tony Martinez |
 
 The Firestore location is effectively permanent after database creation. Production was verified as `nam5` on August 3, 2026. Firebase maps `nam5` to `us-central1` as the closest supported Functions region, so the API and extension runtime use `us-central1`. Development and staging should use the same Firestore/Functions pairing unless a documented architecture decision establishes otherwise.
@@ -92,7 +92,7 @@ The `staging` and `production` GitHub environments are configured with required 
 
 ## Cost and Operations Baseline
 
-Before staging Functions deployment, activate an explicitly approved billing account. As of August 4, 2026, billing is disabled on all three projects and the only account visible to the operator is closed; no paid workload may be enabled until that external blocker is resolved.
+Before staging Functions deployment, activate an explicitly approved billing account. Staging now uses open Cloud Billing account `01B3E0-9B5B27-05FB9C` (`Firebase Payment`). Production remains unbilled until explicitly approved.
 
 After billing activation and before staging Functions deployment, configure:
 
@@ -111,7 +111,7 @@ The non-billed staging foundation was deployed from commit `98e6b4214dc830ddc225
 
 - Protected [Auth deployment run 30884585063](https://github.com/Tony5897/timbers-chrome-ext/actions/runs/30884585063) passed release verification, Workload Identity Federation, exact-commit preflight, evidence upload, and anonymous-provider deployment. A direct Identity Platform configuration read confirmed anonymous sign-in is enabled.
 - Protected [Firestore index deployment run 30884728558](https://github.com/Tony5897/timbers-chrome-ext/actions/runs/30884728558) passed the same gates. The `compatibilityDeletionRequests(status, deleteAfter)` composite index and `responses.identityHash` collection-group field index both subsequently reported `READY`.
-- Staging billing remained disabled throughout. Functions, migration rules, production Auth, and Chrome Web Store publication were not deployed or changed.
+- Staging billing remained disabled throughout Auth and index foundation deploys. Staging Functions were later deployed after billing activation; see `docs/IMPLEMENTATION_STATUS.md` for the current API evidence. Production Auth and Chrome Web Store publication were not deployed or changed.
 
 Generated preflight reports remain attached to their protected GitHub Actions runs under the configured 90-day retention policy; do not duplicate them in source control.
 
