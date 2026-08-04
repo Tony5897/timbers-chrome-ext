@@ -3,7 +3,11 @@
     "source": "services/api",
     "runtime": "nodejs22",
     "predeploy": [
+      "node scripts/stage-api-workspace-deps.mjs",
       "npm --prefix \"$RESOURCE_DIR\" run build"
+    ],
+    "postdeploy": [
+      "node scripts/restore-api-workspace-deps.mjs"
     ]
   },
   "firestore": {

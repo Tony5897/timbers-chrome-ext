@@ -5,6 +5,8 @@ node_modules/
 dist/
 build/
 services/api/lib/
+services/api/vendor/
+services/api/package.json.workspace
 packages/*/lib/
 
 # Local migration exports

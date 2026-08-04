@@ -231,7 +231,7 @@ jobs:
         if: inputs.component == 'api'
         env:
           PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-        run: npx firebase-tools deploy --only functions --project "$PROJECT_ID" --non-interactive
+        run: npx firebase-tools deploy --only functions --project "$PROJECT_ID" --non-interactive --force
 
       - name: Deploy temporary migration rules
         if: inputs.component == 'temporary-rules'
