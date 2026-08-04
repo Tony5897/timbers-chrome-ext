@@ -10,6 +10,7 @@ packages/*/lib/
 # Local migration exports
 backups/
 provider-observations/
+/phase0-*.json
 
 # OS files
 .DS_Store
@@ -43,6 +44,7 @@ telemetry.local.js
 
 # Local tool data
 .local/
+gha-creds-*.json
 
 # AI/editor tool data
 .claude/

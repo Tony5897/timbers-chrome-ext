@@ -100,10 +100,12 @@ npm run clean
 
 ## CI
 
-GitHub Actions runs linting, type checks, extension tests, API tests, emulator tests, and exact artifact verification. All must pass before merge.
+GitHub Actions exposes independent `lint`, `typecheck`, `test`, and `build` gates. The test gate covers extension, API, and emulator suites; the build gate produces and verifies the exact extension artifact. All four must pass before merge.
 
 Run the complete local verification pipeline with Node 22 and Java 21 or later:
 
 ```bash
 npm run verify:phase0
 ```
+
+Phase 0 cloud deployments use the manually dispatched, environment-protected workflow in `.github/workflows/phase0-deploy.yml`. Authentication configuration, indexes, Functions, temporary migration rules, and final migration rules are separate approval actions. Chrome Web Store submission is never automated by this repository.

@@ -1,5 +1,7 @@
 {
   "projects": {
+    "development": "timbers-matchday-dev",
+    "staging": "timbers-matchday-staging",
     "production": "timbers-matchday"
   }
 }
