@@ -75,6 +75,8 @@ Firebase CLI's version-controlled Auth deployment invokes the Firebase provision
 
 After billing and the Functions build/runtime APIs are enabled, grant `Service Account User` on only the selected Functions runtime and Cloud Build service accounts. Verify those runtime identities are themselves least-privilege before the first API deployment.
 
+Before production Functions deployment, grant the production deployer only the project-level billing-status read permission required by `gcloud billing projects describe` (`billing.resourceAssociations.list`). The protected workflow fails closed unless it can confirm production billing is active and the canonical staging API `/v1/health` response reports `ok`.
+
 In each GitHub environment, configure:
 
 | Name | Type | Purpose |
@@ -83,6 +85,7 @@ In each GitHub environment, configure:
 | `GCP_WORKLOAD_IDENTITY_PROVIDER` | Variable | Full Workload Identity provider resource name |
 | `GCP_DEPLOY_SERVICE_ACCOUNT` | Variable | Environment-specific deployer service account email |
 | `MATCHDAY_API_BASE_URL` | Variable | Exact deployed API base URL |
+| `STAGING_API_BASE_URL` | Variable | Canonical staging API base URL used by the production Functions gate |
 | `FIREBASE_WEB_API_KEY` | Secret | Public client key retained as a protected operational value to avoid accidental log exposure |
 
 The `staging` and `production` GitHub environments are configured with required review, branch policies, environment-specific variables, and protected web API keys. Never place service-account JSON, refresh tokens, Firebase CLI tokens, or provider credentials in repository files or GitHub variables.

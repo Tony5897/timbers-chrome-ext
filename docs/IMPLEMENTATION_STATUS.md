@@ -55,6 +55,7 @@
 - Production Firestore is confirmed in `nam5`; deploy Functions in the Firebase-recommended `us-central1` region only after billing controls are active and the staging API succeeds.
 - Link an approved active billing account to staging and production before deploying Functions or scheduled jobs. Billing is disabled on every project, and the only billing account visible to the operator is closed.
 - Grant the deployer `Service Account User` only on the selected least-privilege Functions runtime and Cloud Build identities after billing and required Google APIs are enabled.
+- Configure the canonical staging API URL and project-level billing-status read permission before production API deployment; the workflow now fails closed unless billing is active and staging `/v1/health` reports `ok`.
 - Enable version-controlled anonymous authentication in production only after staging API validation; then verify account creation, refresh, revocation, deletion, and scheduled cleanup.
 - Create budget alerts, log retention, Secret Manager ownership, runtime service identities, and operational alerting after billing is activated.
 - Archive the verified local `legacy_unverified` export in approved immutable storage before any rule deployment. The local snapshot contains two documents, including one anomalous 10-digit document ID preserved for review.

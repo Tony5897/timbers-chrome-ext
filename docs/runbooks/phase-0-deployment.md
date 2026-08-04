@@ -10,6 +10,7 @@ Move community polling from unauthenticated Firestore writes to the authenticate
 - Operator is authenticated with Firebase CLI and has approved production access.
 - Firebase project aliases, Firestore region, Functions region, budgets, logging, IAM, and support ownership are independently verified.
 - Anonymous Firebase Authentication is enabled and tested in a non-production project.
+- The production deployment identity can read only the production project's billing association, and `STAGING_API_BASE_URL` targets the approved staging Functions endpoint.
 - `npm run verify:phase0` passes from a clean checkout with Node 22 and Java 21 or later.
 - A rollback owner and observation window are assigned.
 - Chrome Web Store copy, privacy disclosures, screenshots, promotional artwork, support URL, and hosted privacy URL have passed a separate public-presentation review.
@@ -52,6 +53,8 @@ npm run preflight:phase0 -- \
    ```bash
    firebase deploy --only functions --project production
    ```
+
+   The protected workflow halts before this command unless production billing is active and the canonical staging `/v1/health` response returns `status: ok`.
 
 10. Verify `/v1/health`, scheduled poll-window sync, invalid token, unsupported client, closed poll, aggregate response behavior, provider behavior, budgets, alerts, and scheduler health. Perform valid and duplicate response testing only during an approved open poll; do not fabricate or alter a production match poll.
 11. Build and retain both the new package and the last known-good rollback package:
