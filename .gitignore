@@ -51,3 +51,9 @@ gha-creds-*.json
 
 # AI/editor tool data
 .claude/
+
+# Private operator / planning docs (local only; never publish)
+docs/
+DEV_STATUS_UPDATE.md
+UNIVERSAL_GIT_POLICY.md
+assets/timbers-mock.png
