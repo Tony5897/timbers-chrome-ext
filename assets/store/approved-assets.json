@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "approvedAt": "2026-08-04",
+  "runtimeSources": [
+    "assets/brand/kickoff-dial.svg",
+    "popup.html",
+    "popup.js",
+    "styles.css",
+    "scripts/generate-icons.js",
+    "scripts/generate-store-assets.mjs"
+  ],
+  "runtimeSourceSha256": "31ec326f0a195a563ad18dc3db35edae7d5357a51d2072f86256922eda9860fa",
+  "files": {
+    "icon.png": "3ceee06f451bb7c83f2539795f8e792a58f4627ebf3d70f2e93bfe3cd965411d",
+    "icons/icon-16.png": "49d753d33c525e3f2811d6ec1b3f21da3207d5da1de8b8d8707622556275c08b",
+    "icons/icon-48.png": "ed2fb26bd54ff2cceff97f49622a0c6429c6c47c397422202e8d30bf7aa85b78",
+    "icons/icon-128.png": "0567ff2f6c4c71425a62e03abf828888da82d5748a9ef613a748d6eb5c74f79e",
+    "assets/store/promo-small-440x280.png": "bf018c6a3f0df7ec91d133024280680d8425336f78e59908fb0f6261ef7ed527",
+    "assets/store/promo-marquee-1400x560.png": "881cb5aca9882e266261256ad7131f68e7a29d706351553c46669737e2d3490b",
+    "assets/store/screenshot-01-next-match-1280x800.png": "a6a4ea2ff8834d8cfdf7bd0661abd344483d7f9cdf67715a1ddcffe522f8f6c5",
+    "assets/store/screenshot-02-confidence-1280x800.png": "fba76336a21c8671f89a7cb2ae43aff8bac7ed8e0eaf9333c4f261822282bc53",
+    "assets/store/screenshot-03-viewing-1280x800.png": "9cf11fea30cb7f796ed82273b2ef7f689de3b619060374712e2e3e9f1e0380fc",
+    "assets/store/screenshot-04-resilient-1280x800.png": "66f04015ebbc49a3507570d499b10394b38c4d56bcf0b9d006136d3bd776387d",
+    "assets/store/screenshot-05-privacy-1280x800.png": "26da0c55c897ca96c63272943eee4f224c18ddea5edddf258378660547d13461"
+  }
+}

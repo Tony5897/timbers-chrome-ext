@@ -4,9 +4,15 @@
 
 A Chrome-first matchday extension that displays upcoming Portland Timbers matches with a live countdown, TV/streaming info, and an integrity-controlled fan confidence poll. Safari conversion remains available as a compatibility target; Portland Thorns support is represented in shared platform contracts but is not enabled in the extension.
 
-## Strategic Roadmap
+## Project Status
 
-The Chrome-first, multi-team platform architecture and phased implementation plan is documented in [docs/STRATEGIC_IMPLEMENTATION_PLAN.md](docs/STRATEGIC_IMPLEMENTATION_PLAN.md). Its independent requirement, platform, and readiness audit is in [docs/STRATEGIC_IMPLEMENTATION_PLAN_REVIEW.md](docs/STRATEGIC_IMPLEMENTATION_PLAN_REVIEW.md). Current implementation and production gates are tracked in [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md), with environment preparation in [docs/runbooks/phase-0-environment-readiness.md](docs/runbooks/phase-0-environment-readiness.md) and the ordered cutover in [docs/runbooks/phase-0-deployment.md](docs/runbooks/phase-0-deployment.md).
+- **Extension version:** `1.0.5` (Manifest V3)
+- **Public site:** [tony5897.github.io/timbers-chrome-ext](https://tony5897.github.io/timbers-chrome-ext/)
+- **Privacy policy:** [PRIVACY.md](PRIVACY.md) (also hosted on the public site)
+- **Chrome Web Store:** published unlisted on an earlier package; release `1.0.5` is prepared and not yet submitted
+- **Backend:** staging Matchday API is deployed and healthy; production cutover is not complete
+
+Internal planning, runbooks, and operator status notes are kept local and are not published with this repository.
 
 ## Features
 
@@ -156,7 +162,6 @@ timbers-chrome-ext/
 │   └── domain/               # Shared team configuration and stable identifiers
 ├── services/api/             # Firebase Functions compatibility backend
 ├── emulator-tests/           # Firestore rules tests
-├── docs/                     # Strategy, ADRs, provider evidence, and runbooks
 ├── tests/
 │   ├── scraper.test.js       # Background scraper unit tests
 │   ├── popup.test.js         # Popup UI and integration tests
@@ -201,7 +206,7 @@ The popup keeps local interaction state in `chrome.storage.local`, then submits 
 
 ## Shared Platform API
 
-The npm workspace foundation introduces shared Zod contracts and domain configuration used by the Firebase API. The following read routes are implemented locally and are not production claims until the deployment gates in `docs/IMPLEMENTATION_STATUS.md` are complete:
+The npm workspace foundation introduces shared Zod contracts and domain configuration used by the Firebase API. The following read routes are implemented for the compatibility API and are not production claims until production cutover is complete:
 
 | Route | Purpose |
 |---|---|
@@ -226,18 +231,13 @@ Public poll IDs use `poll-{matchId}-confidence-v1`, for example `poll-espn-40199
 - **Current listing status:** Published — unlisted
 - **Release `1.0.5` status:** Not submitted
 
-![Chrome Web Store — Published Unlisted](assets/chrome-store-published.jpg)
+![Chrome Web Store presentation preview](assets/store/promo-marquee-1400x560.png)
 
 The extension is live on the Chrome Web Store and installable via direct link. It was submitted and approved on March 6, 2026.
 
 Release `1.0.5` will not be submitted until its API, authentication, migration, rollback, privacy, support, listing-copy, screenshot, and store-artwork gates are approved. Store publication is intentionally outside the automated deployment workflow.
 
-<details>
-<summary>Submission history</summary>
-
-![Chrome Web Store — Pending Review](assets/chrome-web-store-pending.png)
-
-</details>
+The original Kickoff Dial identity, required promotional graphics, and five current-feature screenshots ship with this repository. Listing copy, permission justifications, privacy disclosures, release notes, and the final human review checklist are maintained privately by the operator. No current artwork uses the club crest or axe mark, and the listing explicitly identifies the extension as an independent fan project.
 
 - **Manifest V3** compliant
 - Icons at 16px, 48px, and 128px

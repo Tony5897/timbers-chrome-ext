@@ -5,6 +5,9 @@ node_modules/
 dist/
 build/
 services/api/lib/
+services/api/vendor/
+services/api/package.json.workspace
+services/api/package-lock.json
 packages/*/lib/
 
 # Local migration exports
@@ -48,3 +51,9 @@ gha-creds-*.json
 
 # AI/editor tool data
 .claude/
+
+# Private operator / planning docs (local only; never publish)
+docs/
+DEV_STATUS_UPDATE.md
+UNIVERSAL_GIT_POLICY.md
+assets/timbers-mock.png

@@ -1,0 +1,68 @@
+name: Bug report
+description: Report a reproducible extension problem without sharing private credentials.
+title: "Bug: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Do not include Firebase IDs, authentication tokens, API keys, precise location, or other personal information. This issue will be public.
+  - type: input
+    id: extension-version
+    attributes:
+      label: Extension version
+      description: Find this on chrome://extensions with Developer mode enabled.
+      placeholder: 1.0.5
+    validations:
+      required: true
+  - type: input
+    id: browser-version
+    attributes:
+      label: Chrome version and operating system
+      placeholder: Chrome 140 on macOS 15
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Next match or countdown
+        - Venue or viewing details
+        - Confidence poll
+        - Community data deletion
+        - Extension installation or loading
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: Describe what you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Describe what happened instead and include the exact non-sensitive error text.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Provide the shortest repeatable sequence.
+      placeholder: |
+        1. Open the extension
+        2. Select...
+        3. Observe...
+    validations:
+      required: true
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional non-sensitive context
+      description: Screenshots are welcome after removing names, tokens, IDs, and unrelated browser content.

@@ -153,7 +153,7 @@ async function runAuthenticatedSmoke() {
     await step('idempotent duplicate response', async () => {
       const result = await submitResponse(matchTimestamp, session.idToken, idempotencyKey);
       expectStatus(result, 200);
-      assert(result.body?.status === 'duplicate', 'Duplicate response was not identified.');
+      assert(result.body?.status === 'existing', 'Duplicate response was not identified.');
     });
   } else {
     const detail = `Next confidence poll state is ${poll?.state ?? 'unavailable'}; no production-shaped response was created.`;

@@ -134,6 +134,54 @@ jobs:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
 
+      - name: Setup Google Cloud CLI for production gate
+        if: inputs.component == 'api' && inputs.target_environment == 'production'
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Validate production API prerequisites
+        if: inputs.component == 'api' && inputs.target_environment == 'production'
+        env:
+          PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          STAGING_API_BASE_URL: ${{ vars.STAGING_API_BASE_URL }}
+        run: |
+          if [[ -z "$STAGING_API_BASE_URL" ]]; then
+            echo "STAGING_API_BASE_URL must be configured before production API deployment." >&2
+            exit 1
+          fi
+
+          if ! billing_enabled="$(gcloud billing projects describe "$PROJECT_ID" --format='value(billingEnabled)')"; then
+            echo "Unable to verify production billing status." >&2
+            exit 1
+          fi
+          if [[ "${billing_enabled,,}" != "true" ]]; then
+            echo "Production billing is not active." >&2
+            exit 1
+          fi
+
+          normalized_staging_url="${STAGING_API_BASE_URL%/}"
+          node --input-type=module - "$normalized_staging_url" <<'NODE'
+          import fs from 'node:fs';
+
+          const stagingUrl = new URL(process.argv[2]);
+          const aliases = JSON.parse(fs.readFileSync('.firebaserc', 'utf8')).projects;
+          const apiSource = fs.readFileSync('services/api/src/index.ts', 'utf8');
+          const functionsRegion = apiSource.match(/region:\s*'([^']+)'/)?.[1];
+          const expectedHost = `${functionsRegion}-${aliases.staging}.cloudfunctions.net`;
+
+          if (stagingUrl.protocol !== 'https:' || stagingUrl.hostname !== expectedHost || stagingUrl.pathname !== '/api') {
+            throw new Error(`Staging API URL must be https://${expectedHost}/api.`);
+          }
+          NODE
+
+          if ! health_payload="$(curl --fail --silent --show-error --retry 2 --retry-all-errors --connect-timeout 10 --max-time 30 "$normalized_staging_url/v1/health")"; then
+            echo "Staging API health check failed." >&2
+            exit 1
+          fi
+          HEALTH_PAYLOAD="$health_payload" node --input-type=module <<'NODE'
+          const payload = JSON.parse(process.env.HEALTH_PAYLOAD);
+          if (payload.status !== 'ok') throw new Error('Staging API health response did not report ok.');
+          NODE
+
       - name: Run deployment preflight
         env:
           TARGET_ENVIRONMENT: ${{ inputs.target_environment }}
@@ -183,7 +231,7 @@ jobs:
         if: inputs.component == 'api'
         env:
           PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-        run: npx firebase-tools deploy --only functions --project "$PROJECT_ID" --non-interactive
+        run: npx firebase-tools deploy --only functions --project "$PROJECT_ID" --non-interactive --force
 
       - name: Deploy temporary migration rules
         if: inputs.component == 'temporary-rules'
