@@ -8,7 +8,7 @@ const rootDirectory = path.resolve(import.meta.dirname, '..');
 const { packageJson } = readProjectMetadata(rootDirectory);
 const zipPath = process.argv[2]
   ? path.resolve(process.argv[2])
-  : path.join(rootDirectory, 'dist', `timbers-matchday-v${packageJson.version}.zip`);
+  : path.join(rootDirectory, 'dist', `pdx-matchday-v${packageJson.version}.zip`);
 
 if (!fs.existsSync(zipPath)) throw new Error(`Extension ZIP not found: ${zipPath}`);
 

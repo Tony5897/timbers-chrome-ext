@@ -22,8 +22,8 @@ const canonicalEvent = {
 
 describe('ESPN compatibility adapter', () => {
   it('normalizes provider events into versioned poll windows', async () => {
-    const fetchImplementation = vi.fn(async () => new Response(JSON.stringify({
-      events: [canonicalEvent],
+    const fetchImplementation = vi.fn(async (url: string) => new Response(JSON.stringify({
+      events: url.includes('/usa.nwsl/') ? [] : [canonicalEvent],
     }), { status: 200 })) as unknown as typeof fetch;
 
     const windows = await fetchCompatibilityPollWindows(
@@ -82,8 +82,8 @@ describe('ESPN compatibility adapter', () => {
   });
 
   it('normalizes canonical matches with stable provider-qualified IDs', async () => {
-    const fetchImplementation = vi.fn(async () => new Response(JSON.stringify({
-      events: [canonicalEvent],
+    const fetchImplementation = vi.fn(async (url: string) => new Response(JSON.stringify({
+      events: url.includes('/usa.nwsl/') ? [] : [canonicalEvent],
     }), { status: 200 })) as unknown as typeof fetch;
 
     const matches = await fetchCanonicalMatches(

@@ -18,7 +18,7 @@ const nextMatch: CanonicalMatch = {
 };
 
 describe('PublicReadService', () => {
-  it('exposes contract-validated config with gated capabilities', () => {
+  it('exposes contract-validated config with dual-team capabilities', () => {
     const service = new PublicReadService(vi.fn(), () => now);
 
     expect(service.getConfig()).toEqual(expect.objectContaining({
@@ -28,21 +28,22 @@ describe('PublicReadService', () => {
       features: expect.objectContaining({
         canonicalMatches: true,
         canonicalPolls: true,
-        multiTeamSelection: false,
-        liveEvents: false,
+        multiTeamSelection: true,
+        liveEvents: true,
+        notifications: true,
       }),
     }));
   });
 
-  it('lists active Timbers and planned Thorns without enabling unsupported capabilities', () => {
+  it('lists active Timbers and Thorns with enabled schedule capabilities', () => {
     const service = new PublicReadService(vi.fn(), () => now);
 
     expect(service.listTeams()).toEqual([
       expect.objectContaining({ id: 'timbers', status: 'active' }),
       expect.objectContaining({
         id: 'thorns',
-        status: 'planned',
-        capabilities: expect.objectContaining({ schedule: false, polling: false }),
+        status: 'active',
+        capabilities: expect.objectContaining({ schedule: true, polling: true, standings: true }),
       }),
     ]);
   });
@@ -70,12 +71,12 @@ describe('PublicReadService', () => {
     expect(fetchMatches).toHaveBeenCalledWith('timbers');
   });
 
-  it('keeps Thorns schedule reads disabled behind the capability gate', async () => {
-    const fetchMatches = vi.fn(async () => [nextMatch]);
+  it('returns the next scheduled Thorns match', async () => {
+    const fetchMatches = vi.fn(async () => [{ ...nextMatch, teamId: 'thorns' as const }]);
     const service = new PublicReadService(fetchMatches, () => now);
 
-    await expect(service.getNextMatch('thorns')).rejects.toThrow('capability_unavailable');
-    expect(fetchMatches).not.toHaveBeenCalled();
+    await expect(service.getNextMatch('thorns')).resolves.toMatchObject({ match: { teamId: 'thorns' } });
+    expect(fetchMatches).toHaveBeenCalledWith('thorns');
   });
 
   it('rejects unknown team IDs without leaking schema details', () => {

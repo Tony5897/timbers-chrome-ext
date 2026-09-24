@@ -26,26 +26,26 @@ const teams = [
     capabilities: {
       schedule: true,
       polling: true,
-      standings: false,
-      liveEvents: false,
+      standings: true,
+      liveEvents: true,
       lineups: false,
-      notifications: false,
+      notifications: true,
     },
   }),
   teamSchema.parse({
     id: 'thorns',
     name: 'Portland Thorns FC',
     shortName: 'Thorns',
-    status: 'planned',
+    status: 'active',
     competitions: ['nwsl'],
     officialUrl: 'https://www.thorns.com/',
     capabilities: {
-      schedule: false,
-      polling: false,
-      standings: false,
-      liveEvents: false,
+      schedule: true,
+      polling: true,
+      standings: true,
+      liveEvents: true,
       lineups: false,
-      notifications: false,
+      notifications: true,
     },
   }),
 ] satisfies Team[];
@@ -70,9 +70,9 @@ export function createPublicConfig(generatedAt: Date, minimumClientVersion: stri
     features: {
       canonicalMatches: true,
       canonicalPolls: true,
-      multiTeamSelection: false,
-      liveEvents: false,
-      notifications: false,
+      multiTeamSelection: true,
+      liveEvents: true,
+      notifications: true,
     },
   });
 }

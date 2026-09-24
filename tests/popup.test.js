@@ -18,13 +18,9 @@ describe('Popup HTML Content', () => {
   });
 
   it('should display the branded header', () => {
-    const team = document.querySelector('.ext-team');
-    expect(team).not.toBeNull();
-    expect(team.textContent).toBe('Portland Timbers');
-
-    const appName = document.querySelector('.ext-app-name');
+    const appName = document.querySelector('.app-name');
     expect(appName).not.toBeNull();
-    expect(appName.textContent).toBe('Matchday');
+    expect(appName.textContent).toBe('PDX Matchday');
   });
 
   it('should have "Next Match" card title', () => {
@@ -145,7 +141,46 @@ describe('Popup.js Functionality', () => {
       expect(document.getElementById('match-info').classList.contains('hidden')).toBe(false);
       expect(document.getElementById('match-opponent').textContent).toBe('Seattle Sounders');
       expect(document.getElementById('match-details').innerHTML).toContain('FS1');
+      expect(document.querySelector('a.detail-value-link')).toBeNull();
       expect(document.getElementById('data-notice').classList.contains('hidden')).toBe(true);
+    });
+
+    it('should link TV/Stream to Apple MLS when broadcast includes Apple TV', async () => {
+      const appleMatchData = { ...mockMatchData, tv: 'Apple TV' };
+      mockChrome.runtime.sendMessage = jest.fn((msg, cb) => {
+        if (msg.action === 'getMatchData') {
+          setTimeout(() => cb({ matchData: appleMatchData, source: 'live' }), 0);
+        }
+      });
+
+      initializePopupScript();
+      document.dispatchEvent(new Event('DOMContentLoaded'));
+      await flushAsync();
+
+      const link = document.querySelector('a.detail-value-link');
+      expect(link).not.toBeNull();
+      expect(link.textContent).toBe('Apple TV');
+      expect(link.getAttribute('href')).toBe('https://tv.apple.com/us/channel/mls/tvs.sbd.7000');
+      expect(link.getAttribute('target')).toBe('_blank');
+      expect(link.getAttribute('rel')).toBe('noopener noreferrer');
+    });
+
+    it('should link TV/Stream when Apple TV is combined with other networks', async () => {
+      const appleMatchData = { ...mockMatchData, tv: 'Apple TV, FOX' };
+      mockChrome.runtime.sendMessage = jest.fn((msg, cb) => {
+        if (msg.action === 'getMatchData') {
+          setTimeout(() => cb({ matchData: appleMatchData, source: 'live' }), 0);
+        }
+      });
+
+      initializePopupScript();
+      document.dispatchEvent(new Event('DOMContentLoaded'));
+      await flushAsync();
+
+      const link = document.querySelector('a.detail-value-link');
+      expect(link).not.toBeNull();
+      expect(link.textContent).toBe('Apple TV, FOX');
+      expect(link.getAttribute('href')).toBe('https://tv.apple.com/us/channel/mls/tvs.sbd.7000');
     });
 
     it('should show data-notice when source is cache', async () => {
@@ -226,6 +261,7 @@ describe('Popup.js Functionality', () => {
       const values = document.querySelectorAll('.detail-value');
       const texts = Array.from(values).map(v => v.textContent);
       expect(texts).toContain('N/A');
+      expect(document.querySelector('a.detail-value-link')).toBeNull();
     });
   });
 

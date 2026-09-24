@@ -16,7 +16,7 @@ const expectedStoreAssets = new Map([
   ['screenshot-05-privacy-1280x800.png', [1280, 800]],
 ]);
 const expectedRuntimeSources = [
-  'assets/brand/kickoff-dial.svg',
+  'assets/brand/pdx-matchday-mark.svg',
   'popup.html',
   'popup.js',
   'styles.css',
@@ -74,7 +74,7 @@ assert(manifest.icons?.['128'] === 'icons/icon-128.png', 'Manifest must use the 
 
 const presentationText = [
   await fs.readFile(path.join(rootDirectory, 'popup.html'), 'utf8'),
-  await fs.readFile(path.join(rootDirectory, 'assets', 'brand', 'kickoff-dial.svg'), 'utf8'),
+  await fs.readFile(path.join(rootDirectory, 'assets', 'brand', 'pdx-matchday-mark.svg'), 'utf8'),
   await fs.readFile(path.join(rootDirectory, 'scripts', 'generate-store-assets.mjs'), 'utf8'),
 ].join('\n');
 

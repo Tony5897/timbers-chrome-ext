@@ -9,6 +9,7 @@
   "scripts": {
     "test": "jest --ci --coverage",
     "test:watch": "jest --watch",
+    "dev": "node scripts/preview-extension.mjs",
     "lint": "eslint .",
     "typecheck": "npm run typecheck:workspaces",
     "build": "npm run build:api && npm run package:extension && npm run verify:extension && npm run verify:store-assets",
