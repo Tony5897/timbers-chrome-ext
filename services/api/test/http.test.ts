@@ -97,7 +97,7 @@ describe('compatibility HTTP API', () => {
           canonicalMatches: true,
           canonicalPolls: true,
           multiTeamSelection: false,
-          liveEvents: false,
+          liveEvents: true,
           notifications: false,
         },
       })),

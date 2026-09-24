@@ -34,6 +34,9 @@ const TIMBERS_SOURCES: ScheduleSource[] = [
     providerTeamId: ESPN_TEAM_IDS.timbers,
   },
 ];
+const THORNS_SOURCES: ScheduleSource[] = [{
+  teamId: 'thorns', competitionId: 'nwsl', leaguePath: 'usa.nwsl', providerTeamId: ESPN_TEAM_IDS.thorns,
+}];
 
 const eventSchema = z.object({
   id: z.string().min(1),
@@ -128,13 +131,13 @@ export async function fetchCanonicalMatches(
   fetchImplementation: typeof fetch = fetch,
   now = new Date(),
 ): Promise<CanonicalMatch[]> {
-  if (teamId !== 'timbers') throw new Error('capability_unavailable');
+  const sources = teamId === 'thorns' ? THORNS_SOURCES : TIMBERS_SOURCES;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8_000);
   const season = now.getUTCFullYear();
 
   try {
-    const responses = await Promise.all(TIMBERS_SOURCES.map((source) => fetchImplementation(
+    const responses = await Promise.all(sources.map((source) => fetchImplementation(
       scheduleUrl(source, season),
       {
         headers: { accept: 'application/json' },
@@ -146,7 +149,7 @@ export async function fetchCanonicalMatches(
 
     const schedules = await Promise.all(responses.map((response) => response.json()));
     const matches = schedules.flatMap((payload, index) => {
-      const source = TIMBERS_SOURCES[index];
+      const source = sources[index];
       if (!source) throw new Error('provider_source_missing');
       return parseCanonicalSchedule(payload, source, now);
     });
@@ -177,7 +180,11 @@ export async function fetchCompatibilityPollWindows(
   fetchImplementation: typeof fetch = fetch,
   now = new Date(),
 ): Promise<PollWindow[]> {
-  const matches = await fetchCanonicalMatches('timbers', fetchImplementation, now);
+  const [timbers, thorns] = await Promise.all([
+    fetchCanonicalMatches('timbers', fetchImplementation, now),
+    fetchCanonicalMatches('thorns', fetchImplementation, now),
+  ]);
+  const matches = [...timbers, ...thorns];
   return matches.map((match) => {
     const matchTimestamp = Date.parse(match.kickoff);
     return {

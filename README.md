@@ -1,8 +1,8 @@
-# Portland Timbers Matchday
+# PDX Matchday
 
 [![CI](https://github.com/Tony5897/timbers-chrome-ext/actions/workflows/ci.yml/badge.svg)](https://github.com/Tony5897/timbers-chrome-ext/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/Tony5897/timbers-chrome-ext/graph/badge.svg)](https://codecov.io/gh/Tony5897/timbers-chrome-ext)
 
-A Chrome-first matchday extension that displays upcoming Portland Timbers matches with a live countdown, TV/streaming info, and an integrity-controlled fan confidence poll. Safari conversion remains available as a compatibility target; Portland Thorns support is represented in shared platform contracts but is not enabled in the extension.
+A Chrome-first matchday extension for Portland Timbers and Portland Thorns supporters, with live countdowns, viewing details, standings, kickoff and goal alerts, and an integrity-controlled fan confidence poll.
 
 ## Project Status
 
@@ -16,13 +16,14 @@ Internal planning, runbooks, and operator status notes are kept local and are no
 
 ## Features
 
-- Live countdown to the next Timbers match
+- Live countdown to the next Timbers or Thorns match
 - Match date/time, venue, and TV/streaming details
 - Fan confidence poll with community vote breakdown
 - Self-service deletion for retained community responses and anonymous identity
 - One-click access to the official MLS schedule
 - Hourly background refresh via service worker
-- Timbers-branded dark-green and gold UI
+- Team-aware home and away themes for both clubs
+- Optional kickoff and goal notifications
 
 ## Browser Support
 
@@ -102,7 +103,7 @@ No polyfills or browser-specific code paths are required. The `chrome` namespace
 
 ## Usage
 
-Click the Timbers Matchday icon in the browser toolbar to open the popup. The extension automatically fetches the latest schedule data from the ESPN sports API and displays the next upcoming match with a live countdown timer.
+Click the PDX Matchday icon in the browser toolbar to open the popup. Choose Portland Timbers or Portland Thorns; the extension fetches the latest schedule and standings from the ESPN sports API and displays the next upcoming match with a live countdown timer.
 
 Use the **Confidence Poll** section to vote on your confidence level and see how other fans are feeling.
 
@@ -142,7 +143,7 @@ timbers-chrome-ext/
 ├── runtime-config.js         # Public Firebase and API runtime configuration
 ├── auth.js                   # Firebase anonymous authentication client
 ├── community.js              # Authenticated compatibility API client
-├── icon.png                  # Source icon (640×668)
+├── icon.png                  # Source icon (640×640)
 ├── icons/                    # Generated extension icons
 │   ├── icon-16.png
 │   ├── icon-48.png
@@ -216,7 +217,7 @@ The npm workspace foundation introduces shared Zod contracts and domain configur
 | `GET /v1/matches/next?teamId=timbers` | Next canonical scheduled match plus discoverable confidence poll for an enabled team |
 | `GET /v1/polls/{pollId}/aggregate` | Integrity-controlled confidence aggregate addressed by a stable match-qualified poll ID |
 
-Public poll IDs use `poll-{matchId}-confidence-v1`, for example `poll-espn-401999001-confidence-v1`. Legacy timestamp document IDs remain private compatibility storage details and are resolved behind the repository boundary. Timbers schedule and aggregate reads are enabled behind capability gates. Thorns is visible as `planned`, with schedule and polling capabilities disabled until provider, product, and release gates are satisfied.
+Public poll IDs use `poll-{matchId}-confidence-v1`, for example `poll-espn-401999001-confidence-v1`. Legacy timestamp document IDs remain private compatibility storage details and are resolved behind the repository boundary. Timbers and Thorns schedule, standings, polling, and notification capabilities are enabled behind capability gates.
 
 ## Security Considerations
 
@@ -237,7 +238,7 @@ The extension is live on the Chrome Web Store and installable via direct link. I
 
 Release `1.0.5` will not be submitted until its API, authentication, migration, rollback, privacy, support, listing-copy, screenshot, and store-artwork gates are approved. Store publication is intentionally outside the automated deployment workflow.
 
-The original Kickoff Dial identity, required promotional graphics, and five current-feature screenshots ship with this repository. Listing copy, permission justifications, privacy disclosures, release notes, and the final human review checklist are maintained privately by the operator. No current artwork uses the club crest or axe mark, and the listing explicitly identifies the extension as an independent fan project.
+The original PDX Matchday identity, required promotional graphics, and five current-feature screenshots ship with this repository. Listing copy, permission justifications, privacy disclosures, release notes, and the final human review checklist are maintained privately by the operator. No current artwork uses a club crest, league mark, or official trade dress, and the listing explicitly identifies the extension as an independent fan project.
 
 - **Manifest V3** compliant
 - Icons at 16px, 48px, and 128px

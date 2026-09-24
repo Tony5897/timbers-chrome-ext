@@ -2,7 +2,7 @@ const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
 
-const SOURCE = path.resolve(__dirname, '..', 'assets', 'brand', 'kickoff-dial.svg');
+const SOURCE = path.resolve(__dirname, '..', 'assets', 'brand', 'pdx-matchday-mark.svg');
 const ROOT_OUTPUT = path.resolve(__dirname, '..', 'icon.png');
 const OUT_DIR = path.resolve(__dirname, '..', 'icons');
 const SIZES = [16, 48, 128];

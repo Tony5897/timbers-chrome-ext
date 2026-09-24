@@ -1,129 +1,75 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Timbers Matchday</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PDX Matchday</title>
+  <link rel="icon" href="icons/icon-16.png">
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body data-team="timbers" data-scheme="away">
+  <main class="popup-shell">
+    <header class="app-header">
+      <h1 class="app-name">PDX Matchday</h1>
+      <span class="scheme-tag" id="scheme-tag">Away</span>
+    </header>
 
-  <header class="ext-header">
-    <img src="icon.png" class="ext-logo" alt="Timbers Matchday kickoff dial">
-    <div class="ext-header-text">
-      <span class="ext-team">Portland Timbers</span>
-      <span class="ext-app-name">Matchday</span>
-    </div>
-  </header>
-
-  <section class="match-card">
-    <h2 class="card-title">Next Match</h2>
-
-    <div class="skeleton-block" id="match-skeleton" aria-hidden="true">
-      <div class="skeleton-line sk-wide"></div>
-      <div class="skeleton-line sk-narrow"></div>
-      <div class="skeleton-line sk-wide"></div>
-    </div>
-
-    <div id="match-info" class="hidden" aria-live="polite">
-      <div class="match-vs-row">
-        <span class="match-home">Portland Timbers</span>
-        <span class="vs-badge">VS</span>
-        <span class="match-opponent" id="match-opponent"></span>
+    <section class="team-switcher-wrap">
+      <div class="team-switcher" role="radiogroup" aria-label="Team">
+        <label class="team-option is-selected" id="team-option-timbers"><input type="radio" name="team" value="timbers" checked><span>Timbers</span></label>
+        <label class="team-option" id="team-option-thorns"><input type="radio" name="team" value="thorns"><span>Thorns</span></label>
       </div>
-      <div class="match-details" id="match-details"></div>
-    </div>
+    </section>
 
-    <div id="match-error" class="match-error hidden" role="alert">
-      <span class="error-icon">!</span>
-      <span id="match-error-text"></span>
-    </div>
+    <nav class="tabs" role="tablist" aria-label="Popup sections">
+      <button class="tab is-active" id="tab-match" type="button" role="tab" aria-selected="true" aria-controls="panel-match">Next Match</button>
+      <button class="tab" id="tab-standings" type="button" role="tab" aria-selected="false" aria-controls="panel-standings">Standings</button>
+      <button class="tab" id="tab-settings" type="button" role="tab" aria-selected="false" aria-controls="panel-settings">Settings</button>
+    </nav>
 
-    <div id="data-notice" class="data-notice hidden" aria-live="polite">Schedule data may be delayed.</div>
+    <section class="tab-panel match-panel" id="panel-match" role="tabpanel" aria-labelledby="tab-match">
+      <section class="match-card outlined-panel">
+        <div class="card-heading"><h2 class="section-kicker card-title">Next Match</h2><span class="status-tag" id="match-status">Away</span></div>
+        <div class="skeleton-block" id="match-skeleton" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div id="match-info" class="hidden" aria-live="polite">
+          <h3 class="match-headline"><span id="match-team-name">Timbers</span><span aria-hidden="true"> — </span><span id="match-opponent"></span></h3>
+          <div class="match-details" id="match-details"></div>
+        </div>
+        <div id="match-error" class="match-error hidden" role="alert"><span aria-hidden="true">!</span><span id="match-error-text"></span></div>
+        <div class="data-notice hidden" id="data-notice" aria-live="polite">Schedule data may be delayed.</div>
+      </section>
 
-    <div class="countdown-wrap hidden" id="countdown-wrap">
-      <div class="countdown-unit">
-        <span class="cd-num" id="cd-days">--</span>
-        <span class="cd-label">Days</span>
-      </div>
-      <span class="cd-sep">:</span>
-      <div class="countdown-unit">
-        <span class="cd-num" id="cd-hours">--</span>
-        <span class="cd-label">Hrs</span>
-      </div>
-      <span class="cd-sep">:</span>
-      <div class="countdown-unit">
-        <span class="cd-num" id="cd-mins">--</span>
-        <span class="cd-label">Min</span>
-      </div>
-      <span class="cd-sep">:</span>
-      <div class="countdown-unit">
-        <span class="cd-num" id="cd-secs">--</span>
-        <span class="cd-label">Sec</span>
-      </div>
-    </div>
+      <section class="countdown-card outlined-panel" aria-live="polite">
+        <div id="countdown-wrap" class="countdown-wrap hidden">
+          <span class="countdown-label">Kickoff in</span>
+          <div class="countdown-values"><span><b id="cd-days">00</b><small>D</small></span><i>:</i><span><b id="cd-hours">00</b><small>H</small></span><i>:</i><span><b id="cd-mins">00</b><small>M</small></span><i>:</i><span><b id="cd-secs">00</b><small>S</small></span></div>
+        </div>
+        <div class="live-badge hidden" id="live-badge"><span class="live-dot"></span>Kickoff has arrived</div>
+      </section>
 
-    <div class="live-badge hidden" id="live-badge" aria-live="assertive">● LIVE NOW</div>
+      <a class="schedule-link outlined-panel" id="schedule-link" href="https://www.timbers.com/schedule/" target="_blank" rel="noopener noreferrer"><span>View full schedule</span><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></a>
 
-    <a class="schedule-link" href="https://www.timbers.com/schedule/" target="_blank" rel="noopener noreferrer">View Full Schedule →</a>
-  </section>
+      <section class="vote-card" aria-labelledby="vote-title">
+        <h2 class="section-kicker card-title" id="vote-title">Confidence Poll</h2>
+        <p class="vote-prompt">How confident are you in today's result?</p>
+        <p class="vote-disclosure">Your choice is tied to an anonymous installation and contributes to public community totals.</p>
+        <div class="vote-buttons" id="vote-buttons" role="radiogroup" aria-label="Confidence level">
+          <button class="vote-btn" data-vote="high" type="button"><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg><span>High</span></button>
+          <button class="vote-btn" data-vote="medium" type="button"><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg><span>Med</span></button>
+          <button class="vote-btn" data-vote="low" type="button"><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="15" x2="16" y2="15"></line><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg><span>Low</span></button>
+        </div>
+        <p class="community-count hidden" id="community-count"></p>
+        <p class="community-sync hidden" id="community-sync" aria-live="polite"></p>
+        <div class="vote-results hidden" id="vote-results" aria-live="polite"><p class="results-title">Community Vote</p><div class="vote-bar-row"><span>High</span><div class="bar-track"><span class="bar-fill" id="bar-high"></span></div><b id="pct-high">0%</b></div><div class="vote-bar-row"><span>Med</span><div class="bar-track"><span class="bar-fill" id="bar-medium"></span></div><b id="pct-medium">0%</b></div><div class="vote-bar-row"><span>Low</span><div class="bar-track"><span class="bar-fill" id="bar-low"></span></div><b id="pct-low">0%</b></div><p id="vote-thanks" class="vote-thanks"></p></div>
+      </section>
+    </section>
 
-  <section class="vote-card">
-    <h2 class="card-title">Confidence Poll</h2>
-    <p class="vote-prompt">How confident are you in today's result?</p>
-    <p class="vote-disclosure">Your choice is tied to an anonymous installation and contributes to public community totals. It does not verify a unique person.</p>
+    <section class="tab-panel hidden" id="panel-standings" role="tabpanel" aria-labelledby="tab-standings"><div class="panel-intro"><h2 class="section-kicker">Standings</h2><p id="standings-note">Standings data will load with the selected team.</p></div><div class="standings-wrap"><table class="standings-table"><thead><tr><th scope="col">#</th><th scope="col">Club</th><th scope="col">Pts</th></tr></thead><tbody id="standings-body"><tr><td colspan="3">Loading standings…</td></tr></tbody></table></div></section>
 
-    <div class="vote-buttons" id="vote-buttons">
-      <button class="vote-btn" data-vote="high">
-        <span class="vote-icon">🔥</span>
-        <span class="vote-label">High</span>
-      </button>
-      <button class="vote-btn" data-vote="medium">
-        <span class="vote-icon">⚡</span>
-        <span class="vote-label">Med</span>
-      </button>
-      <button class="vote-btn" data-vote="low">
-        <span class="vote-icon">😬</span>
-        <span class="vote-label">Low</span>
-      </button>
-    </div>
+    <section class="tab-panel hidden" id="panel-settings" role="tabpanel" aria-labelledby="tab-settings"><div class="settings-list"><div class="setting-row"><div><b>Color scheme</b><span id="scheme-label">Away colors</span></div><span class="scheme-tag" id="settings-scheme-tag">Away</span></div><div class="setting-row"><div><b>Notifications</b><span id="notification-label">Kickoff + goal alerts off</span></div><button class="switch" id="notification-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle kickoff and goal notifications"><span></span></button></div><div class="setting-row"><div><b>Data source</b><span id="freshness-label">Waiting for schedule data</span></div><span class="status-tag" id="freshness-tag">—</span></div><a class="settings-link" href="https://www.timbers.com" target="_blank" rel="noopener noreferrer">Open full fan page <span aria-hidden="true">→</span></a><button class="delete-button" id="community-delete" type="button">Delete my community data</button><p class="community-delete-status hidden" id="community-delete-status" aria-live="polite"></p><p class="version-label">PDX Matchday · v1.0.5 · Independent fan project</p></div></section>
 
-    <p class="community-count hidden" id="community-count"></p>
-    <p class="community-sync hidden" id="community-sync" aria-live="polite"></p>
-
-    <div class="vote-results hidden" id="vote-results" aria-live="polite">
-      <p class="results-title">Community Vote</p>
-      <div class="vote-bar-row">
-        <span class="bar-label">High 🔥</span>
-        <div class="bar-track"><div class="bar-fill" id="bar-high"></div></div>
-        <span class="bar-pct" id="pct-high">0%</span>
-      </div>
-      <div class="vote-bar-row">
-        <span class="bar-label">Med ⚡</span>
-        <div class="bar-track"><div class="bar-fill" id="bar-medium"></div></div>
-        <span class="bar-pct" id="pct-medium">0%</span>
-      </div>
-      <div class="vote-bar-row">
-        <span class="bar-label">Low 😬</span>
-        <div class="bar-track"><div class="bar-fill" id="bar-low"></div></div>
-        <span class="bar-pct" id="pct-low">0%</span>
-      </div>
-      <p class="vote-thanks" id="vote-thanks"></p>
-    </div>
-
-    <div class="community-delete-control hidden" id="community-delete-control">
-      <button class="community-delete" id="community-delete" type="button">Delete my community data</button>
-      <p class="community-delete-status hidden" id="community-delete-status" aria-live="polite"></p>
-    </div>
-  </section>
-
-  <footer class="ext-footer">
-    <span class="footer-status">Independent fan project</span>
-    <a href="https://www.timbers.com" target="_blank" rel="noopener noreferrer">Official club site</a>
-    <span class="footer-sep">·</span>
-    <a href="https://www.timbers.com/schedule/" target="_blank" rel="noopener noreferrer">Official schedule</a>
-  </footer>
-
+    <footer class="ext-footer"><strong>Independent fan project</strong><div><a id="club-link" href="https://www.timbers.com" target="_blank" rel="noopener noreferrer">Official club site</a><a id="footer-schedule-link" href="https://www.timbers.com/schedule/" target="_blank" rel="noopener noreferrer">Official schedule</a></div></footer>
+  </main>
   <script src="runtime-config.js"></script>
   <script src="auth.js"></script>
   <script src="community.js"></script>

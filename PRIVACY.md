@@ -1,16 +1,16 @@
-# Privacy Policy — Timbers Matchday
+# Privacy Policy — PDX Matchday
 
 **Effective date:** August 3, 2026
 
 ## Summary
 
-Timbers Matchday does not request your name, email address, precise location, browsing history, visited URLs, or page content. Community polling uses a pseudonymous Firebase anonymous account so the backend can accept at most one response from that anonymous installation for a match poll. An anonymous installation is not proof of one unique person.
+PDX Matchday does not request your name, email address, precise location, browsing history, visited URLs, or page content. Community polling uses a pseudonymous Firebase anonymous account so the backend can accept at most one response from that anonymous installation for a match poll. An anonymous installation is not proof of one unique person. Optional notification preferences stay in extension storage; kickoff and goal alerts are generated locally from public match data.
 
 ## Data the extension handles
 
 | Data | Purpose | Storage and access |
 |---|---|---|
-| Upcoming match data | Show the next Portland Timbers match and countdown | Cached in `chrome.storage.local`; fetched from the ESPN schedule endpoint |
+| Upcoming match data | Show the next Portland Timbers or Thorns match and countdown | Cached in `chrome.storage.local`; fetched from the ESPN schedule endpoint |
 | Local vote state | Remember that this browser installation already responded | Stored in `chrome.storage.local` |
 | Firebase anonymous UID and auth session | Authenticate the community submission without requesting a personal account | Auth tokens and UID are stored in extension-local storage; the ID token is sent only to the Matchday API |
 | Confidence choice | Add High, Medium, or Low to the current match aggregate | Stored server-side in a restricted raw response record keyed by the anonymous UID; never exposed by the public aggregate API |
@@ -33,7 +33,7 @@ Infrastructure providers may process standard network metadata such as an IP add
 
 | Host | Purpose |
 |---|---|
-| `site.api.espn.com` | Retrieve upcoming Timbers schedule data |
+| `site.api.espn.com` | Retrieve Timbers and Thorns schedule, standings, and live event data |
 | `identitytoolkit.googleapis.com` | Create a Firebase anonymous account when community polling is first used |
 | `securetoken.googleapis.com` | Refresh the anonymous Firebase ID token |
 | `us-central1-timbers-matchday.cloudfunctions.net` | Read integrity-controlled aggregates and submit an authenticated response |

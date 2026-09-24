@@ -11,11 +11,11 @@ const rootDirectory = path.resolve(import.meta.dirname, '..');
 const brandDirectory = path.join(rootDirectory, 'assets', 'brand');
 const storeDirectory = path.join(rootDirectory, 'assets', 'store');
 const iconsDirectory = path.join(rootDirectory, 'icons');
-const markSource = await fs.readFile(path.join(brandDirectory, 'kickoff-dial.svg'), 'utf8');
+const markSource = await fs.readFile(path.join(brandDirectory, 'pdx-matchday-mark.svg'), 'utf8');
 const popupTemplate = await fs.readFile(path.join(rootDirectory, 'popup.html'), 'utf8');
 const markBody = markSource.match(/<svg[^>]*>([\s\S]*)<\/svg>/)?.[1];
 
-if (!markBody) throw new Error('Unable to read kickoff dial mark.');
+if (!markBody) throw new Error('Unable to read PDX Matchday mark.');
 
 const colors = {
   ink: '#071A16',
@@ -126,7 +126,7 @@ function promoSmall() {
     <rect width="440" height="280" fill="url(#glow)"/>
     ${orbitPattern(440, 280)}
     ${mark(34, 48, 92)}
-    <text x="152" y="112" fill="${colors.chalk}" font-size="42" class="display">TIMBERS</text>
+    <text x="152" y="112" fill="${colors.chalk}" font-size="42" class="display">PDX</text>
     <text x="152" y="154" fill="${colors.gold}" font-size="31" class="display">MATCHDAY</text>
     <text x="36" y="230" fill="${colors.mist}" font-size="14" class="utility">MATCHDAY, AT A GLANCE</text>`;
 }
@@ -136,8 +136,8 @@ function promoMarquee(capture) {
     <rect width="1400" height="560" fill="url(#glow)"/>
     ${orbitPattern(1400, 560)}
     ${mark(72, 165, 170)}
-    <text x="278" y="228" fill="${colors.chalk}" font-size="76" class="display">TIMBERS MATCHDAY</text>
-    <text x="282" y="294" fill="${colors.gold}" font-size="34" font-weight="700">Your next match. One click away.</text>
+    <text x="278" y="228" fill="${colors.chalk}" font-size="76" class="display">PDX MATCHDAY</text>
+    <text x="282" y="294" fill="${colors.gold}" font-size="34" font-weight="700">Timbers and Thorns. One matchday home.</text>
     <text x="282" y="354" fill="${colors.mist}" font-size="18" class="utility">INDEPENDENT FAN PROJECT</text>
     ${popupCapture(1033, 39, 0.86, capture)}`;
 }
@@ -162,7 +162,7 @@ function screenshotPage({ eyebrow, headline, description, capture }) {
     <rect x="102" y="404" width="92" height="7" rx="3.5" fill="${colors.gold}"/>
     <text x="102" y="468" fill="#466058" font-size="23">${description[0]}</text>
     <text x="102" y="502" fill="#466058" font-size="23">${description[1]}</text>
-    <text x="102" y="666" fill="#668078" font-size="14" class="utility">TIMBERS MATCHDAY · INDEPENDENT FAN PROJECT</text>
+    <text x="102" y="666" fill="#668078" font-size="14" class="utility">PDX MATCHDAY · INDEPENDENT FAN PROJECT</text>
     ${popupCapture(819, 145, 0.98, capture)}`;
 }
 
@@ -180,18 +180,30 @@ async function capturePopupStates(outputDirectory) {
   const matchTimestamp = fixedNow + 32 * 60 * 60 * 1000 + 45 * 60 * 1000;
   const aggregate = { high: 68, medium: 23, low: 9 };
   const baseMatch = {
+    teamId: 'timbers',
     opponent: 'Seattle Sounders',
     date: 'Saturday, August 8',
     time: '7:30 PM PT',
     location: 'Providence Park',
     tv: 'Apple TV',
     matchTimestamp,
+    homeAway: 'home',
+  };
+  const thornsMatch = {
+    teamId: 'thorns',
+    opponent: 'North Carolina Courage',
+    date: 'Friday, October 23',
+    time: '7:00 PM PT',
+    location: 'Providence Park',
+    tv: 'Prime Video',
+    matchTimestamp,
+    homeAway: 'home',
   };
   const fixtures = {
     next: { match: baseMatch, source: 'live', aggregate, hasVoted: false, hasSession: false },
-    confidence: { match: baseMatch, source: 'live', aggregate, hasVoted: true, hasSession: true, captureTop: 180 },
-    viewing: { match: { ...baseMatch, tv: 'Apple TV · MLS' }, source: 'live', aggregate, hasVoted: false, hasSession: false },
-    resilient: { match: baseMatch, source: 'cache', aggregate, hasVoted: false, hasSession: false },
+    confidence: { match: thornsMatch, selectedTeam: 'thorns', source: 'live', aggregate, hasVoted: true, hasSession: true, captureTop: 180 },
+    viewing: { match: { ...baseMatch, homeAway: 'away', location: 'Energizer Park', tv: 'Apple TV · MLS' }, source: 'live', aggregate, hasVoted: false, hasSession: false },
+    resilient: { match: { ...thornsMatch, homeAway: 'away', location: 'Shell Energy Stadium', tv: 'ESPN' }, selectedTeam: 'thorns', source: 'cache', aggregate, hasVoted: false, hasSession: false },
     privacy: { match: baseMatch, source: 'live', aggregate, hasVoted: false, hasSession: true, captureTop: 180 },
   };
 
@@ -238,8 +250,8 @@ function buildCaptureHtml(fixture) {
     <script>
       const fixture = ${fixtureJson};
       const storage = fixture.hasVoted
-        ? { [\`hasVoted_\${fixture.matchTimestamp}\`]: true, [\`votes_\${fixture.matchTimestamp}\`]: fixture.aggregate }
-        : {};
+        ? { selectedTeam: fixture.selectedTeam, [\`hasVoted_\${fixture.matchTimestamp}\`]: true, [\`votes_\${fixture.matchTimestamp}\`]: fixture.aggregate }
+        : { selectedTeam: fixture.selectedTeam };
       Date.now = () => fixture.fixedNow;
       Object.assign(globalThis.chrome ??= {}, {
         runtime: {

@@ -5,9 +5,9 @@ import { collectExtensionFiles, readProjectMetadata, verifyExtensionDirectory } 
 
 const rootDirectory = path.resolve(import.meta.dirname, '..');
 const outputRoot = path.join(rootDirectory, 'dist');
-const packageDirectory = path.join(outputRoot, 'timbers-matchday');
+const packageDirectory = path.join(outputRoot, 'pdx-matchday');
 const { packageJson } = readProjectMetadata(rootDirectory);
-const zipPath = path.join(outputRoot, `timbers-matchday-v${packageJson.version}.zip`);
+const zipPath = path.join(outputRoot, `pdx-matchday-v${packageJson.version}.zip`);
 
 fs.rmSync(packageDirectory, { recursive: true, force: true });
 fs.mkdirSync(packageDirectory, { recursive: true });
