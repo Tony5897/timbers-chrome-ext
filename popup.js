@@ -3,13 +3,50 @@ if (pdxMatchdayPreviewMode) {
   const previewParams = new URLSearchParams(globalThis.location?.search || '');
   const previewTeam = previewParams.get('team') === 'thorns' ? 'thorns' : 'timbers';
   const previewScheme = previewParams.get('scheme') === 'away' ? 'away' : 'home';
-  const previewMatches = {
+  const previewMatches = previewScheme === 'home' ? {
     timbers: { teamId: 'timbers', opponent: 'Charlotte FC', date: 'Oct 24, 2026', time: '7:30 PM PT', location: 'Providence Park', venue: 'Providence Park', tv: 'Apple TV', matchTimestamp: Date.now() + 59 * 86400000, homeAway: 'home', competition: 'MLS' },
     thorns: { teamId: 'thorns', opponent: 'North Carolina Courage', date: 'Oct 23, 2026', time: '7:00 PM PT', location: 'Providence Park', venue: 'Providence Park', tv: 'Prime Video', matchTimestamp: Date.now() + 58 * 86400000, homeAway: 'home', competition: 'NWSL' },
+  } : {
+    timbers: { teamId: 'timbers', opponent: 'St. Louis City SC', date: 'Oct 28, 2026', time: '5:30 PM PT', location: 'Energizer Park', venue: 'Energizer Park', tv: 'Apple TV', matchTimestamp: Date.now() + 63 * 86400000, homeAway: 'away', competition: 'MLS' },
+    thorns: { teamId: 'thorns', opponent: 'Houston Dash', date: 'Nov 1, 2026', time: '2:00 PM PT', location: 'Shell Energy Stadium', venue: 'Shell Energy Stadium', tv: 'ESPN', matchTimestamp: Date.now() + 67 * 86400000, homeAway: 'away', competition: 'NWSL' },
   };
-  Object.values(previewMatches).forEach((match) => { match.homeAway = previewScheme; });
+  // Full-table fixture so the Standings tab can be visually validated (scroll, row count,
+  // conference grouping, highlight placement) without a live API — modeled on the real
+  // endpoint shape, which returns MLS split into Eastern/Western conferences and NWSL as
+  // a single ungrouped table.
+  const previewStandings = {
+    timbers: [
+      { group: 'Eastern Conference', rank: 1, club: 'Nashville SC', points: 57, highlight: false },
+      { group: 'Eastern Conference', rank: 2, club: 'New England Revolution', points: 46, highlight: false },
+      { group: 'Eastern Conference', rank: 3, club: 'Inter Miami CF', points: 46, highlight: false },
+      { group: 'Eastern Conference', rank: 4, club: 'Charlotte FC', points: 43, highlight: false },
+      { group: 'Eastern Conference', rank: 5, club: 'Chicago Fire FC', points: 39, highlight: false },
+      { group: 'Western Conference', rank: 1, club: 'Vancouver Whitecaps FC', points: 49, highlight: false },
+      { group: 'Western Conference', rank: 2, club: 'Houston Dynamo FC', points: 44, highlight: false },
+      { group: 'Western Conference', rank: 3, club: 'St. Louis CITY SC', points: 44, highlight: false },
+      { group: 'Western Conference', rank: 4, club: 'FC Dallas', points: 44, highlight: false },
+      { group: 'Western Conference', rank: 5, club: 'San Jose Earthquakes', points: 42, highlight: false },
+      { group: 'Western Conference', rank: 6, club: 'LAFC', points: 41, highlight: false },
+      { group: 'Western Conference', rank: 7, club: 'Colorado Rapids', points: 36, highlight: false },
+      { group: 'Western Conference', rank: 8, club: 'LA Galaxy', points: 33, highlight: false },
+      { group: 'Western Conference', rank: 9, club: 'Portland Timbers', points: 32, highlight: true },
+      { group: 'Western Conference', rank: 10, club: 'Seattle Sounders FC', points: 32, highlight: false },
+    ],
+    thorns: [
+      { group: null, rank: 1, club: 'Gotham FC', points: 51, highlight: false },
+      { group: null, rank: 2, club: 'Washington Spirit', points: 46, highlight: false },
+      { group: null, rank: 3, club: 'San Diego Wave FC', points: 45, highlight: false },
+      { group: null, rank: 4, club: 'Utah Royals FC', points: 42, highlight: false },
+      { group: null, rank: 5, club: 'Portland Thorns FC', points: 42, highlight: true },
+      { group: null, rank: 6, club: 'Angel City FC', points: 39, highlight: false },
+      { group: null, rank: 7, club: 'North Carolina Courage', points: 39, highlight: false },
+      { group: null, rank: 8, club: 'Kansas City Current', points: 38, highlight: false },
+      { group: null, rank: 9, club: 'Seattle Reign FC', points: 37, highlight: false },
+      { group: null, rank: 10, club: 'Denver Summit FC', points: 35, highlight: false },
+    ],
+  };
   const previewStorage = { selectedTeam: previewTeam };
-  globalThis.chrome = { runtime: { lastError: null, sendMessage: (request, callback) => callback(request.action === 'getStandings' ? { standings: [{ rank: 1, club: request.teamId === 'thorns' ? 'Kansas City Current' : 'Portland Timbers', points: 42, highlight: request.teamId !== 'thorns' }, { rank: 2, club: request.teamId === 'thorns' ? 'Portland Thorns FC' : 'Seattle Sounders FC', points: 39, highlight: request.teamId === 'thorns' }], source: 'live' } : { matchData: previewMatches[request.teamId] || previewMatches.timbers, source: 'live' }) }, storage: { local: { get: (keys, callback) => { const requested = Array.isArray(keys) ? keys : [keys]; callback(Object.fromEntries(requested.filter((key) => key in previewStorage).map((key) => [key, previewStorage[key]]))); }, set: (values, callback) => { Object.assign(previewStorage, values); callback?.(); } } } };
+  globalThis.chrome = { runtime: { lastError: null, sendMessage: (request, callback) => callback(request.action === 'getStandings' ? { standings: previewStandings[request.teamId] || previewStandings.timbers, source: 'live', freshness: 'fresh' } : { matchData: previewMatches[request.teamId] || previewMatches.timbers, source: 'live', freshness: 'fresh' }) }, storage: { local: { get: (keys, callback) => { const requested = Array.isArray(keys) ? keys : [keys]; callback(Object.fromEntries(requested.filter((key) => key in previewStorage).map((key) => [key, previewStorage[key]]))); }, set: (values, callback) => { Object.assign(previewStorage, values); callback?.(); } } } };
   globalThis.MatchdayAuth = { hasSession: () => Promise.resolve(false) };
   globalThis.CommunityVotes = { get: () => Promise.resolve(null), increment: () => Promise.resolve({ synced: false }), deleteInstallation: () => Promise.resolve({ deleted: true }) };
 }
@@ -38,6 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
     $('club-link').href = teamConfig.club;
     $('footer-schedule-link').href = teamConfig.schedule;
     $('schedule-link').href = teamConfig.schedule;
+    $('settings-club-link').href = teamConfig.club;
     document.querySelectorAll('.team-option').forEach((option) => option.classList.toggle('is-selected', option.querySelector('input').value === state.team));
     document.querySelectorAll('input[name="team"]').forEach((input) => { input.checked = input.value === state.team; });
     if (persist) save('selectedTeam', state.team);
@@ -47,12 +85,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function setTab(tab) {
     state.tab = tab;
-    ['match', 'standings', 'settings'].forEach((name) => { const active = name === tab; $(`panel-${name}`).classList.toggle('hidden', !active); $(`tab-${name}`).classList.toggle('is-active', active); $(`tab-${name}`).setAttribute('aria-selected', String(active)); });
+    ['match', 'standings', 'settings'].forEach((name) => { const active = name === tab; $(`panel-${name}`).classList.toggle('hidden', !active); $(`tab-${name}`).classList.toggle('is-active', active); $(`tab-${name}`).setAttribute('aria-selected', String(active)); $(`tab-${name}`).setAttribute('tabindex', active ? '0' : '-1'); });
     if (tab === 'standings') requestStandings();
   }
 
   function requestMatch() {
-    $('match-skeleton').classList.remove('hidden'); $('match-info').classList.add('hidden'); $('match-error').classList.add('hidden');
+    $('match-skeleton').classList.remove('hidden'); $('match-info').classList.add('hidden'); $('match-error').classList.add('hidden'); $('live-score-card').classList.add('hidden');
     chrome.runtime.sendMessage({ action: 'getMatchData', teamId: state.team }, (response) => {
       if (chrome.runtime.lastError || !response) return showError('Could not retrieve match data.');
       state.source = response.source; state.match = response.matchData || null;
@@ -80,12 +118,19 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isApple) { val.href = 'https://tv.apple.com/us/channel/mls/tvs.sbd.7000'; val.target = '_blank'; val.rel = 'noopener noreferrer'; } item.appendChild(val); $('match-details').appendChild(item);
     });
     if (typeof match.matchTimestamp === 'number') { state.matchTimestamp = match.matchTimestamp; startCountdown(match.matchTimestamp, source); hydrateVote(match.matchTimestamp); }
+    const live = match.live;
+    if (live) {
+      $('live-score').textContent = `${live.homeScore}–${live.awayScore}`;
+      const event = live.events?.find((candidate) => candidate.type === 'goal');
+      $('live-event').textContent = event ? event.description : 'Live match updates are being refreshed.';
+      $('live-score-card').classList.remove('hidden');
+    }
   }
 
   function showError(message) { $('match-skeleton').classList.add('hidden'); $('match-info').classList.add('hidden'); $('match-error').classList.remove('hidden'); $('match-error-text').textContent = message; }
   function startCountdown(timestamp, source) { if (timer && typeof clearInterval === 'function') clearInterval(timer); const update = () => { const diff = timestamp - Date.now(); if (diff <= 0) { $('countdown-wrap').classList.add('hidden'); $('live-badge').classList.toggle('hidden', source !== 'live'); return; } $('live-badge').classList.add('hidden'); $('countdown-wrap').classList.remove('hidden'); const pad = (v) => String(v).padStart(2, '0'); $('cd-days').textContent = pad(Math.floor(diff / 86400000)); $('cd-hours').textContent = pad(Math.floor((diff % 86400000) / 3600000)); $('cd-mins').textContent = pad(Math.floor((diff % 3600000) / 60000)); $('cd-secs').textContent = pad(Math.floor((diff % 60000) / 1000)); }; update(); if (typeof setInterval === 'function') timer = setInterval(update, 1000); }
 
-  function requestStandings() { $('standings-note').textContent = 'Loading current standings…'; $('standings-body').innerHTML = '<tr><td colspan="3">Loading standings…</td></tr>'; chrome.runtime.sendMessage({ action: 'getStandings', teamId: state.team }, (response) => { if (chrome.runtime.lastError || !response?.standings) { $('standings-note').textContent = 'Standings are temporarily unavailable.'; $('standings-body').innerHTML = '<tr><td colspan="3">Check the official standings.</td></tr>'; return; } state.standings = response.standings; $('standings-note').textContent = response.source === 'live' ? 'Current provider standings.' : 'Standings data may be delayed.'; $('standings-body').innerHTML = ''; response.standings.forEach((row) => { const tr = document.createElement('tr'); if (row.highlight) tr.className = 'is-highlighted'; tr.innerHTML = `<td>${row.rank}</td><td>${escapeHtml(row.club)}</td><td>${row.points}</td>`; $('standings-body').appendChild(tr); }); }); }
+  function requestStandings() { $('standings-note').textContent = 'Loading current standings…'; $('standings-body').innerHTML = '<tr><td colspan="3">Loading standings…</td></tr>'; chrome.runtime.sendMessage({ action: 'getStandings', teamId: state.team }, (response) => { if (chrome.runtime.lastError || !response?.standings) { $('standings-note').textContent = 'Standings are temporarily unavailable.'; $('standings-body').innerHTML = '<tr><td colspan="3">Check the official standings.</td></tr>'; return; } state.standings = response.standings; $('standings-note').textContent = response.freshness === 'fresh' ? 'Current provider standings.' : 'Standings data may be delayed.'; $('standings-body').innerHTML = ''; let lastGroup; response.standings.forEach((row) => { if (row.group !== lastGroup) { lastGroup = row.group; if (row.group) { const groupRow = document.createElement('tr'); groupRow.className = 'standings-group-row'; groupRow.innerHTML = `<td colspan="3">${escapeHtml(row.group)}</td>`; $('standings-body').appendChild(groupRow); } } const tr = document.createElement('tr'); if (row.highlight) tr.className = 'is-highlighted'; tr.innerHTML = `<td>${row.rank}</td><td>${escapeHtml(row.club)}</td><td>${row.points}</td>`; $('standings-body').appendChild(tr); }); }); }
   function escapeHtml(value) { const div = document.createElement('div'); div.textContent = value; return div.innerHTML; }
 
   async function hydrateVote(timestamp) { const has = await load(`hasVoted_${timestamp}`); state.voted = Boolean(has); if (has) { const local = await load(`votes_${timestamp}`); showVoteResults(state.community || local || { high: 0, medium: 0, low: 0 }); } if (globalThis.CommunityVotes) { state.community = await CommunityVotes.get(timestamp); if (state.community && state.voted) showVoteResults(state.community); else if (state.community) { const total = state.community.high + state.community.medium + state.community.low; if (total) { $('community-count').textContent = `${total} accepted community response${total === 1 ? '' : 's'}`; $('community-count').classList.remove('hidden'); } } } }
