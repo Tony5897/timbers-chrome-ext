@@ -2,9 +2,9 @@
   <title id="title">PDX Matchday</title>
   <desc id="desc">PDX lettermark with Timbers and Thorns color bars</desc>
   <rect width="128" height="128" rx="22" fill="#111412"/>
-  <rect x="10" y="10" width="108" height="6" fill="#f4c95d"/>
-  <rect x="10" y="112" width="54" height="6" fill="#668968"/>
-  <rect x="64" y="112" width="27" height="6" fill="#ef2d88"/>
-  <rect x="91" y="112" width="27" height="6" fill="#eb342f"/>
-  <text x="64" y="82" fill="#f7f3ef" font-family="Arial Narrow, Arial, sans-serif" font-size="48" font-weight="700" text-anchor="middle">PDX</text>
+  <rect x="10" y="10" width="108" height="14" fill="#f4c95d"/>
+  <rect x="10" y="104" width="54" height="14" fill="#668968"/>
+  <rect x="64" y="104" width="27" height="14" fill="#ef2d88"/>
+  <rect x="91" y="104" width="27" height="14" fill="#eb342f"/>
+  <text x="64" y="84" fill="#f7f3ef" font-family="Arial Narrow, Arial, sans-serif" font-size="56" font-weight="800" text-anchor="middle">PDX</text>
 </svg>
