@@ -9,18 +9,18 @@
     "scripts/generate-icons.js",
     "scripts/generate-store-assets.mjs"
   ],
-  "runtimeSourceSha256": "d307f869194bdd9c5f5c2b8ab76dcfe1567432d0d1ee6d174cd4e8147bdd4952",
+  "runtimeSourceSha256": "05b4afd5fdc7d96d0fde1c8f739d1b5f737873ec15db70d0dbea770d01ceacf3",
   "files": {
-    "icon.png": "96c7b6e3e3bd049dd2b6d4bb1ac2ffb903cccabcdf88ab206f682fb39b609ec0",
-    "icons/icon-16.png": "f840f948fc0914fe0b69085999475110cd969a02a0dfe7d21be961b2953d77bc",
-    "icons/icon-48.png": "08d14e05465f264c6cfef7d778449fc48097b501ac6e259fb702410e2a4bb422",
-    "icons/icon-128.png": "31266b7fbf65149da9e2df547fb6a9ecd9e5990cbb9f3215b4096036ce8d8318",
-    "assets/store/promo-small-440x280.png": "f1cd1cfffd4c378342d8df14cd7672bdaca56c4e7452bc9a9756f97ac327fdd3",
-    "assets/store/promo-marquee-1400x560.png": "7279ef5a515ebe957b5373c7c18b77929d18e53ed56180d73acaa6985cdc856a",
-    "assets/store/screenshot-01-next-match-1280x800.png": "16bf2efe41d69c3ebedcb20c26c3eaa4104a0d124d338245c25d626f2101ba05",
-    "assets/store/screenshot-02-confidence-1280x800.png": "34d0b06b5c01f9d0cc99e305d424900bdb0a9adb32636e6d4dd06b2c25b56962",
-    "assets/store/screenshot-03-viewing-1280x800.png": "0ff3356ce1a8133a509f301c2a94c78bb3b9c74bc038c0e23d91baf2a27da8c9",
-    "assets/store/screenshot-04-resilient-1280x800.png": "6afdff94371e13c0fa3dd882fbf2288f2a19dd0f3107df792d7031dd061538c8",
-    "assets/store/screenshot-05-privacy-1280x800.png": "984df13198f0cd13366dc8efc31b8a629dc739b6b8d6036261033ac1b1d675dd"
+    "icon.png": "f554db2a65d377e87f008aa32d25f76c3413d85690c14dde61c4b6d17d74428c",
+    "icons/icon-16.png": "cb0bcad92f704b39ebf3f90d351fa89c67193a6990e8a8c691ec0c21a5b979e8",
+    "icons/icon-48.png": "c6903cdad959ede831f4b0adc6134e19b529c8c7c6fff1a392a0defc709d40ec",
+    "icons/icon-128.png": "5b8b81588ca61da6965d0a1f1cf5b17792b20e859e35ae34c01cfce97ec8d30e",
+    "assets/store/promo-small-440x280.png": "361a49384eeb5802fe4c00f96d27304107c9a40135358e2d9cf49bfb360d7728",
+    "assets/store/promo-marquee-1400x560.png": "45fabdbd68576833f98cad0a5ed63eaafa06257cd14cf1e5c459f50169dca168",
+    "assets/store/screenshot-01-next-match-1280x800.png": "5f75e87cd5c5bb6b3de019b2c039bb7a3fc2a7f530bf9936922a390c3fbd9e09",
+    "assets/store/screenshot-02-confidence-1280x800.png": "ce0ac78a5fce6f29a00098f21af098aaab3710a1df803a9f80eeed678bb4e7fc",
+    "assets/store/screenshot-03-viewing-1280x800.png": "119d7179048391a40d323c922c50cb1af9ca21ab620a6434a83d2ef22821d590",
+    "assets/store/screenshot-04-resilient-1280x800.png": "5bfb5e4e06cd0cc25b458942461a7d8eb582f84dc3be8d0cfd652e59d626e55c",
+    "assets/store/screenshot-05-privacy-1280x800.png": "594e47881b72c89ce717af032b8973934f2ab9783cccbf6cf8fb40ba10ea4ce5"
   }
 }
