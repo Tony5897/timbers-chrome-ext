@@ -10,7 +10,7 @@ A Chrome-first matchday extension for Portland Timbers and Portland Thorns suppo
 - **Public site:** [tony5897.github.io/timbers-chrome-ext](https://tony5897.github.io/timbers-chrome-ext/)
 - **Privacy policy:** [PRIVACY.md](PRIVACY.md) (also hosted on the public site)
 - **Chrome Web Store:** published unlisted on an earlier package; release `1.0.5` is prepared and not yet submitted
-- **Backend:** dual-team API code (schedule, standings, live match) is complete and merged to `main`/`develop`; the deployed staging and production instances currently predate this work (last deployed 2026-08-05) and need a redeploy via the Phase 0 workflow before the live extension reflects it. ESPN remains the server-side sports-data provider.
+- **Backend:** dual-team API (schedule, standings grouped by conference, live match) is deployed to staging and production (last deployed 2026-09-24); ESPN remains the server-side sports-data provider
 
 Internal planning, runbooks, and operator status notes are kept local and are not published with this repository.
 
