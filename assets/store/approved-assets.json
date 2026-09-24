@@ -9,7 +9,7 @@
     "scripts/generate-icons.js",
     "scripts/generate-store-assets.mjs"
   ],
-  "runtimeSourceSha256": "d0bba9e488983a6c816d5be252d73e7bc3acce7bc8af7a2e83d6dc5f4260691b",
+  "runtimeSourceSha256": "b06ba40eabd46eba7a6ca083e86e65688ed4c65984112b108d5940e5a88351e2",
   "files": {
     "icon.png": "7edca186b34d9d2a5dbd5c85fc7a06affb9fa043303648e5f4c552003e74efdc",
     "icons/icon-16.png": "c5247be66a067514605c194e8d337f8ef7b506c20e278e476f1b9c6c10a763ce",
@@ -21,6 +21,6 @@
     "assets/store/screenshot-02-confidence-1280x800.png": "7a08e93be2ea51aa07f29876429c007815c443544561dbda15def1e81a2b770b",
     "assets/store/screenshot-03-viewing-1280x800.png": "027b55f0e28a4ba05b84409ae9358f084aac56eb03513bedbebde210e1e9007f",
     "assets/store/screenshot-04-resilient-1280x800.png": "d89aae4973dcd0d642ab007bf7ac3e5650827f38968973fa819c4ed642d5bd2b",
-    "assets/store/screenshot-05-privacy-1280x800.png": "a71550c4287b28d6279ffb3f54793ace91c247ee55bf3b2ed969c59891059bef"
+    "assets/store/screenshot-05-privacy-1280x800.png": "b8906cf283e0085ba954562e889aeaf265fbb58e9394cdd29f926bf088b2ad6c"
   }
 }
