@@ -10,7 +10,7 @@ A Chrome-first matchday extension for Portland Timbers and Portland Thorns suppo
 - **Public site:** [tony5897.github.io/timbers-chrome-ext](https://tony5897.github.io/timbers-chrome-ext/)
 - **Privacy policy:** [PRIVACY.md](PRIVACY.md) (also hosted on the public site)
 - **Chrome Web Store:** published unlisted on an earlier package; release `1.0.5` is prepared and not yet submitted
-- **Backend:** dual-team API is deployed to staging and production; ESPN remains the server-side sports-data provider
+- **Backend:** dual-team API code (schedule, standings, live match) is complete and merged to `main`/`develop`; the deployed staging and production instances currently predate this work (last deployed 2026-08-05) and need a redeploy via the Phase 0 workflow before the live extension reflects it. ESPN remains the server-side sports-data provider.
 
 Internal planning, runbooks, and operator status notes are kept local and are not published with this repository.
 
@@ -18,9 +18,11 @@ Internal planning, runbooks, and operator status notes are kept local and are no
 
 - Live countdown to the next Timbers or Thorns match
 - Match date/time, venue, and TV/streaming details
+- Live score and match events (goals, kickoff/halftime) while a match is in progress
+- League standings, grouped by conference for leagues that have one (MLS) and as a single table for leagues that don't (NWSL)
 - Fan confidence poll with community vote breakdown
 - Self-service deletion for retained community responses and anonymous identity
-- One-click access to the official MLS schedule
+- One-click access to the official club schedule (MLS for Timbers, NWSL for Thorns)
 - Hourly background refresh via service worker
 - Team-aware home and away themes for both clubs
 - Optional kickoff and goal notifications
@@ -115,6 +117,7 @@ Use the **Confidence Poll** section to vote on your confidence level and see how
 |---------|-------------|
 | `npm test` | Run Jest test suite with coverage |
 | `npm run test:watch` | Run tests in watch mode |
+| `npm run dev` | Serve the popup at `http://localhost:4173/popup.html` outside the extension shell, for quick UI iteration (supports `?team=` and `?scheme=` preview params) |
 | `npm run lint` | Run ESLint across the repository |
 | `npm run typecheck` | Build shared packages and type-check every TypeScript workspace |
 | `npm run build` | Build the API and verified extension release artifact |
@@ -122,6 +125,7 @@ Use the **Confidence Poll** section to vote on your confidence level and see how
 | `npm run build:api` | Build shared packages and the Firebase API |
 | `npm run test:api` | Run compatibility API unit tests |
 | `npm run test:rules` | Build the API and run Firestore emulator suites |
+| `npm run export:legacy` | Export legacy vote records for migration (operator tooling) |
 | `npm run package:extension` | Build the exact Chrome Web Store ZIP |
 | `npm run verify:extension` | Verify ZIP inventory and secret exclusions |
 | `npm run preflight:phase0` | Validate local release tooling, configuration, and optional backup evidence |
@@ -129,6 +133,8 @@ Use the **Confidence Poll** section to vote on your confidence level and see how
 | `npm run verify:phase0` | Run the complete Phase 0 verification pipeline |
 | `npm run clean` | Remove generated build, coverage, package, and emulator output |
 | `npm run build:icons` | Generate 16/48/128px icons from `icon.png` |
+| `npm run build:store-assets` | Regenerate Chrome Web Store screenshots and promo images from the live popup |
+| `npm run verify:store-assets` | Verify store asset dimensions and approved content digests |
 | `npm run build:safari` | Convert to Safari Web Extension (requires Xcode) |
 
 ### Project Structure
@@ -166,6 +172,8 @@ timbers-chrome-ext/
 ├── tests/
 │   ├── scraper.test.js       # Background scraper unit tests
 │   ├── popup.test.js         # Popup UI and integration tests
+│   ├── auth.test.js          # Firebase anonymous auth client tests
+│   ├── community.test.js     # Compatibility API client tests
 │   └── mocks/
 │       └── styleMock.js      # Jest CSS mock
 ├── .github/workflows/ci.yml  # GitHub Actions CI pipeline
@@ -214,6 +222,7 @@ The npm workspace foundation introduces shared Zod contracts and domain configur
 
 | Route | Purpose |
 |---|---|
+| `GET /v1/health` | Liveness check; returns `{"status":"ok"}` when the API is reachable |
 | `GET /v1/config` | Public API version, minimum client version, team capabilities, and feature flags |
 | `GET /v1/teams` | Active and planned team configurations |
 | `GET /v1/teams/{teamId}` | One team configuration and capability document |
