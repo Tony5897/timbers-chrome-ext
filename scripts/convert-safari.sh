@@ -9,7 +9,7 @@ set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUTPUT_DIR="${PROJECT_ROOT}/safari"
-APP_NAME="Timbers Matchday"
+APP_NAME="PDX Matchday"
 BUNDLE_ID="com.timbersmatchday.safari-extension"
 PBXPROJ="${OUTPUT_DIR}/${APP_NAME}/${APP_NAME}.xcodeproj/project.pbxproj"
 

@@ -10,7 +10,7 @@ and unshippable.
 
 Usage:
     python3 scripts/cleanup-safari-resources.py \
-        "safari/Timbers Matchday/Timbers Matchday.xcodeproj/project.pbxproj"
+        "safari/PDX Matchday/PDX Matchday.xcodeproj/project.pbxproj"
 """
 import re
 import sys
@@ -96,17 +96,17 @@ def main():
         content = f.read()
 
     # ── Step 1: find which PBXResourcesBuildPhase belongs to the extension ──
-    # Locate the "Timbers Matchday Extension" PBXNativeTarget block and
+    # Locate the "PDX Matchday Extension" PBXNativeTarget block and
     # pull out its Resources build phase UUID.
     # Anchored to "isa = PBXNativeTarget" to avoid accidentally matching a
     # PBXGroup or other block with the same name comment.
     target_block_re = re.compile(
-        r"(/\*\s*Timbers Matchday Extension\s*\*/\s*=\s*\{.*?isa\s*=\s*PBXNativeTarget.*?buildPhases\s*=\s*\((.*?)\))",
+        r"(/\*\s*PDX Matchday Extension\s*\*/\s*=\s*\{.*?isa\s*=\s*PBXNativeTarget.*?buildPhases\s*=\s*\((.*?)\))",
         re.DOTALL,
     )
     target_match = target_block_re.search(content)
     if not target_match:
-        print("Warning: could not find 'Timbers Matchday Extension' target — no changes made.")
+        print("Warning: could not find 'PDX Matchday Extension' target — no changes made.")
         sys.exit(1)
 
     build_phases_block = target_match.group(2)

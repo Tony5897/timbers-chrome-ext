@@ -10,7 +10,7 @@ A Chrome-first matchday extension for Portland Timbers and Portland Thorns suppo
 - **Public site:** [tony5897.github.io/timbers-chrome-ext](https://tony5897.github.io/timbers-chrome-ext/)
 - **Privacy policy:** [PRIVACY.md](PRIVACY.md) (also hosted on the public site)
 - **Chrome Web Store:** published unlisted on an earlier package; release `1.0.5` is prepared and not yet submitted
-- **Backend:** staging Matchday API is deployed and healthy; production cutover is not complete
+- **Backend:** dual-team API is deployed to staging and production; ESPN remains the server-side sports-data provider
 
 Internal planning, runbooks, and operator status notes are kept local and are not published with this repository.
 
@@ -78,13 +78,13 @@ Safari requires converting the extension into an Xcode project using Apple's too
 3. Open the generated Xcode project:
 
    ```bash
-   open safari/Timbers\ Matchday/Timbers\ Matchday.xcodeproj
+   open safari/PDX\ Matchday/PDX\ Matchday.xcodeproj
    ```
 
 4. In Xcode, select a signing team under **Signing & Capabilities**, then build and run (Cmd+R).
 
 5. Enable the extension in Safari:
-   - Safari > Settings > Extensions > enable **Timbers Matchday**
+   - Safari > Settings > Extensions > enable **PDX Matchday**
 
 **For unsigned development builds:**
 - Safari > Settings > Advanced > check **Show Develop menu in menu bar**
@@ -103,7 +103,7 @@ No polyfills or browser-specific code paths are required. The `chrome` namespace
 
 ## Usage
 
-Click the PDX Matchday icon in the browser toolbar to open the popup. Choose Portland Timbers or Portland Thorns; the extension fetches the latest schedule and standings from the ESPN sports API and displays the next upcoming match with a live countdown timer.
+Click the PDX Matchday icon in the browser toolbar to open the popup. Choose Portland Timbers or Portland Thorns; the extension reads the latest schedule, standings, and live state from the Matchday API and displays the next upcoming match with a live countdown timer.
 
 Use the **Confidence Poll** section to vote on your confidence level and see how other fans are feeling.
 
@@ -190,11 +190,14 @@ Chrome extensions run in isolated execution contexts — the popup UI and the ba
                                                      fetchAndParseSchedule()
                                                                     │
                                                                     ▼
-                                              site.api.espn.com (ESPN sports API)
+                                              Matchday API (Firebase)
+                                                                    │
+                                                                    ▼
+                                              ESPN provider boundary
 ```
 
 1. **Popup opens** — `popup.js` dispatches `chrome.runtime.sendMessage({ action: 'getMatchData' })` and shows a skeleton loader while waiting.
-2. **Background handles request** — `background.js` listens via `chrome.runtime.onMessage.addListener` and attempts a three-tier resolution: live fetch from the ESPN sports API (`site.api.espn.com`), cached data from `chrome.storage.local`, then a bundled fallback fixture (`data/fallback.json`). The response includes a `source` field (`'live'`, `'cache'`, or `'fallback'`) so the popup can indicate data freshness.
+2. **Background handles request** — `background.js` listens via `chrome.runtime.onMessage.addListener` and reads the Matchday API boundary. It uses cached data from `chrome.storage.local` and the bundled Timbers fixture only when the API is unavailable; the packaged extension does not call ESPN directly. The response includes a `source` field (`'live'`, `'cache'`, or `'fallback'`) so the popup can indicate data freshness.
 3. **Popup renders** — On success the popup displays match data and starts the countdown timer. If the data came from cache or fallback, a subtle notice is shown. The error state only appears if all three tiers return nothing.
 
 ### Periodic refresh
@@ -207,25 +210,27 @@ The popup keeps local interaction state in `chrome.storage.local`, then submits 
 
 ## Shared Platform API
 
-The npm workspace foundation introduces shared Zod contracts and domain configuration used by the Firebase API. The following read routes are implemented for the compatibility API and are not production claims until production cutover is complete:
+The npm workspace foundation introduces shared Zod contracts and domain configuration used by the deployed Firebase API. The following read routes are implemented for the compatibility API and are covered by staging and production smoke checks:
 
 | Route | Purpose |
 |---|---|
 | `GET /v1/config` | Public API version, minimum client version, team capabilities, and feature flags |
 | `GET /v1/teams` | Active and planned team configurations |
 | `GET /v1/teams/{teamId}` | One team configuration and capability document |
-| `GET /v1/matches/next?teamId=timbers` | Next canonical scheduled match plus discoverable confidence poll for an enabled team |
+| `GET /v1/matches/next?teamId={teamId}` | Next canonical match plus discoverable confidence poll for an enabled team |
+| `GET /v1/standings?teamId={teamId}` | Team standings with source and freshness metadata |
+| `GET /v1/matches/live?teamId={teamId}` | Current live score and normalized match events when a match is live |
 | `GET /v1/polls/{pollId}/aggregate` | Integrity-controlled confidence aggregate addressed by a stable match-qualified poll ID |
 
-Public poll IDs use `poll-{matchId}-confidence-v1`, for example `poll-espn-401999001-confidence-v1`. Legacy timestamp document IDs remain private compatibility storage details and are resolved behind the repository boundary. Timbers and Thorns schedule, standings, polling, and notification capabilities are enabled behind capability gates.
+Public poll IDs use `poll-{matchId}-confidence-v1`, for example `poll-espn-401999001-confidence-v1`. Legacy timestamp document IDs remain private compatibility storage details and are resolved behind the repository boundary. Timbers and Thorns schedule, standings, polling, live-event, and notification capabilities are enabled behind capability gates. The extension consumes these capabilities through the Matchday API; ESPN remains the provider boundary.
 
 ## Security Considerations
 
 - **Manifest V3 service workers** — No persistent background page; the service worker is event-driven and terminates when idle, reducing memory footprint and attack surface.
-- **Minimal permissions** — Only `storage`, `alarms`, and four specific hosts for ESPN schedule data, Firebase anonymous authentication, token refresh, and the Matchday API. No `tabs`, `activeTab`, `webRequest`, geolocation, or broad host access.
+- **Minimal permissions** — Only `storage`, `alarms`, and three specific hosts for Firebase anonymous authentication, token refresh, and the Matchday API. ESPN is accessed server-side and is not a browser host permission. No `tabs`, `activeTab`, `webRequest`, geolocation, or broad host access.
 - **No remote code execution** — All JavaScript is bundled locally. No CDN imports, no `eval()`, no dynamically injected scripts.
 - **CSP-compliant** — No inline scripts in `popup.html`; all logic loads from `popup.js` via a standard `<script>` tag, satisfying Chrome's extension Content Security Policy.
-- **Structured data only** — Match data is consumed as parsed JSON from the ESPN API. No raw HTML is injected into the popup.
+- **Structured data only** — Match data is consumed as parsed JSON from the Matchday API. No raw HTML is injected into the popup.
 
 ## Chrome Web Store
 
@@ -242,7 +247,7 @@ The original PDX Matchday identity, required promotional graphics, and five curr
 
 - **Manifest V3** compliant
 - Icons at 16px, 48px, and 128px
-- Minimal permissions (`storage`, `alarms`, and specific hosts for ESPN schedule data, Firebase anonymous authentication, token refresh, and the Matchday API)
+- Minimal permissions (`storage`, `alarms`, and specific hosts for Firebase anonymous authentication, token refresh, and the Matchday API; ESPN is accessed server-side only)
 - Privacy policy included (`PRIVACY.md`)
 - No remote code execution; all logic is bundled locally
 
