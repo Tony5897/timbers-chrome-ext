@@ -9,7 +9,7 @@
     "scripts/generate-icons.js",
     "scripts/generate-store-assets.mjs"
   ],
-  "runtimeSourceSha256": "cef27ddd3fb2b87b87112696b5aab5fec3de3681afb7cd1103ee850b2b60587c",
+  "runtimeSourceSha256": "5ad62857642e614b3dd342e9da698f59e7f6193092da0ac26fdc5ab32fb8a78e",
   "files": {
     "icon.png": "7edca186b34d9d2a5dbd5c85fc7a06affb9fa043303648e5f4c552003e74efdc",
     "icons/icon-16.png": "c5247be66a067514605c194e8d337f8ef7b506c20e278e476f1b9c6c10a763ce",
