@@ -13,6 +13,7 @@ const nextMatch: CanonicalMatch = {
   opponent: 'Fixture Opponent',
   homeAway: 'home',
   venue: 'Providence Park',
+  broadcasts: [],
   status: 'scheduled',
   dataUpdatedAt: '2026-08-03T12:00:00.000Z',
 };
@@ -57,6 +58,8 @@ describe('PublicReadService', () => {
 
     await expect(service.getNextMatch('timbers')).resolves.toEqual({
       match: nextMatch,
+      source: 'live',
+      freshness: 'fresh',
       polls: [{
         id: 'poll-espn-401999001-confidence-v1',
         matchId: 'espn-401999001',
@@ -83,5 +86,48 @@ describe('PublicReadService', () => {
     const service = new PublicReadService(vi.fn(), () => now);
 
     expect(() => service.getTeam('unknown')).toThrow('team_not_found');
+  });
+
+  it('serves live standings and caches them for a subsequent provider failure', async () => {
+    const standings = [{ teamId: 'timbers' as const, group: null, rank: 1, club: 'Portland Timbers', points: 42, highlight: true }];
+    const fetchStandingsData = vi.fn()
+      .mockResolvedValueOnce(standings)
+      .mockRejectedValueOnce(new Error('provider_unavailable'));
+    const service = new PublicReadService(vi.fn(), () => now, fetchStandingsData);
+
+    await expect(service.getStandings('timbers')).resolves.toEqual(expect.objectContaining({
+      teamId: 'timbers', standings, source: 'live', freshness: 'fresh',
+    }));
+    await expect(service.getStandings('timbers')).resolves.toEqual(expect.objectContaining({
+      teamId: 'timbers', standings, source: 'cache', freshness: 'stale',
+    }));
+    expect(fetchStandingsData).toHaveBeenCalledTimes(2);
+  });
+
+  it('rejects the standings request when the provider fails with no cache available', async () => {
+    const fetchStandingsData = vi.fn(async () => { throw new Error('provider_unavailable'); });
+    const service = new PublicReadService(vi.fn(), () => now, fetchStandingsData);
+
+    await expect(service.getStandings('timbers')).rejects.toThrow('provider_unavailable');
+  });
+
+  it('returns live match data for the currently live fixture', async () => {
+    const liveMatch = { ...nextMatch, status: 'live' as const };
+    const fetchMatches = vi.fn(async () => [liveMatch]);
+    const liveResponse = {
+      match: liveMatch, homeScore: 1, awayScore: 0, events: [], source: 'live' as const, freshness: 'fresh' as const, dataUpdatedAt: new Date(now).toISOString(),
+    };
+    const fetchLiveMatchData = vi.fn(async () => liveResponse);
+    const service = new PublicReadService(fetchMatches, () => now, vi.fn(), fetchLiveMatchData);
+
+    await expect(service.getLiveMatch('timbers')).resolves.toEqual(liveResponse);
+    expect(fetchLiveMatchData).toHaveBeenCalledWith('timbers', liveMatch);
+  });
+
+  it('rejects the live match request when no match is currently live', async () => {
+    const fetchMatches = vi.fn(async () => [nextMatch]);
+    const service = new PublicReadService(fetchMatches, () => now);
+
+    await expect(service.getLiveMatch('timbers')).rejects.toThrow('match_not_found');
   });
 });

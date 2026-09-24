@@ -85,7 +85,11 @@ fs.rmSync(packageLockPath, { force: true });
 
 execFileSync(
   'npm',
-  ['install', '--omit=dev', '--no-workspaces', '--ignore-scripts', '--no-fund'],
+  // npm 10 can fail while resolving the Firebase dependency graph from the
+  // repository workspace metadata. The vendored API package has no peer
+  // dependencies that need resolution here, so use the stable legacy peer
+  // resolver for the production lockfile generation step.
+  ['install', '--omit=dev', '--no-workspaces', '--ignore-scripts', '--no-fund', '--legacy-peer-deps'],
   {
     cwd: apiDirectory,
     stdio: 'inherit',

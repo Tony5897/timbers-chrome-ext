@@ -153,3 +153,15 @@ export function assertPollingAvailable(teamId: TeamId): Team {
   if (!team.capabilities.polling) throw new Error('capability_unavailable');
   return team;
 }
+
+export function assertStandingsAvailable(teamId: TeamId): Team {
+  const team = getTeam(teamId);
+  if (!team.capabilities.standings) throw new Error('capability_unavailable');
+  return team;
+}
+
+export function assertLiveEventsAvailable(teamId: TeamId): Team {
+  const team = getTeam(teamId);
+  if (!team.capabilities.liveEvents) throw new Error('capability_unavailable');
+  return team;
+}

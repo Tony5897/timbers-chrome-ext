@@ -10,7 +10,7 @@ PDX Matchday does not request your name, email address, precise location, browsi
 
 | Data | Purpose | Storage and access |
 |---|---|---|
-| Upcoming match data | Show the next Portland Timbers or Thorns match and countdown | Cached in `chrome.storage.local`; fetched from the ESPN schedule endpoint |
+| Upcoming match data | Show the next Portland Timbers or Thorns match and countdown | Cached in `chrome.storage.local`; fetched from the Matchday API, which sources it from ESPN |
 | Local vote state | Remember that this browser installation already responded | Stored in `chrome.storage.local` |
 | Firebase anonymous UID and auth session | Authenticate the community submission without requesting a personal account | Auth tokens and UID are stored in extension-local storage; the ID token is sent only to the Matchday API |
 | Confidence choice | Add High, Medium, or Low to the current match aggregate | Stored server-side in a restricted raw response record keyed by the anonymous UID; never exposed by the public aggregate API |
@@ -33,7 +33,7 @@ Infrastructure providers may process standard network metadata such as an IP add
 
 | Host | Purpose |
 |---|---|
-| `site.api.espn.com` | Retrieve Timbers and Thorns schedule, standings, and live event data |
+| Matchday API | Retrieve normalized Timbers and Thorns schedule, standings, and live event data; the server uses ESPN as its provider |
 | `identitytoolkit.googleapis.com` | Create a Firebase anonymous account when community polling is first used |
 | `securetoken.googleapis.com` | Refresh the anonymous Firebase ID token |
 | `us-central1-timbers-matchday.cloudfunctions.net` | Read integrity-controlled aggregates and submit an authenticated response |
@@ -59,10 +59,10 @@ Raw responses and authentication data are server-only. Public clients can read a
 
 ## Children
 
-Timbers Matchday is not directed to children under 13 and does not knowingly request personal information from children.
+PDX Matchday is not directed to children under 13 and does not knowingly request personal information from children.
 
 ## Changes and contact
 
 Behavior changes that affect data handling require an updated extension disclosure and privacy policy in the same release. Use the in-extension deletion control for community data. For questions or non-sensitive deletion-failure reports, use the [public support form](https://github.com/Tony5897/timbers-chrome-ext/issues/new/choose). The public form cannot process a deletion request because identifiers must never be posted publicly; an out-of-extension deletion request may be offered only after a dedicated private support route is live.
 
-Timbers Matchday's use of information received from Chrome APIs adheres to the Chrome Web Store User Data Policy, including the Limited Use requirements.
+PDX Matchday's use of information received from Chrome APIs adheres to the Chrome Web Store User Data Policy, including the Limited Use requirements.

@@ -55,10 +55,64 @@ export const canonicalMatchSchema = z.object({
   opponent: z.string().min(1),
   homeAway: z.enum(['home', 'away', 'neutral']),
   venue: z.string().min(1).nullable(),
+  broadcasts: z.array(z.string()).default([]),
   status: matchStatusSchema,
   dataUpdatedAt: z.iso.datetime({ offset: true }),
 }).strict();
 export type CanonicalMatch = z.infer<typeof canonicalMatchSchema>;
+
+export const dataSourceSchema = z.enum(['live', 'cache', 'fallback', 'unavailable']);
+export type DataSource = z.infer<typeof dataSourceSchema>;
+
+export const freshnessSchema = z.enum(['fresh', 'stale', 'unavailable']);
+export type Freshness = z.infer<typeof freshnessSchema>;
+
+export const standingSchema = z.object({
+  teamId: teamIdSchema,
+  group: z.string().min(1).nullable(),
+  rank: z.number().int().positive(),
+  club: z.string().min(1),
+  points: z.number().int().nonnegative(),
+  played: z.number().int().nonnegative().optional(),
+  wins: z.number().int().nonnegative().optional(),
+  draws: z.number().int().nonnegative().optional(),
+  losses: z.number().int().nonnegative().optional(),
+  goalDifference: z.number().int().optional(),
+  highlight: z.boolean(),
+}).strict();
+export type Standing = z.infer<typeof standingSchema>;
+
+export const liveEventSchema = z.object({
+  id: z.string().min(1),
+  type: z.enum(['goal', 'period', 'status', 'other']),
+  minute: z.number().int().nonnegative().nullable(),
+  teamId: teamIdSchema.nullable(),
+  player: z.string().min(1).nullable(),
+  description: z.string().min(1),
+  homeScore: z.number().int().nonnegative(),
+  awayScore: z.number().int().nonnegative(),
+}).strict();
+export type LiveEvent = z.infer<typeof liveEventSchema>;
+
+export const standingsResponseSchema = z.object({
+  teamId: teamIdSchema,
+  standings: z.array(standingSchema),
+  source: dataSourceSchema,
+  freshness: freshnessSchema,
+  dataUpdatedAt: z.iso.datetime({ offset: true }).nullable(),
+}).strict();
+export type StandingsResponse = z.infer<typeof standingsResponseSchema>;
+
+export const liveMatchResponseSchema = z.object({
+  match: canonicalMatchSchema,
+  homeScore: z.number().int().nonnegative(),
+  awayScore: z.number().int().nonnegative(),
+  events: z.array(liveEventSchema),
+  source: dataSourceSchema,
+  freshness: freshnessSchema,
+  dataUpdatedAt: z.iso.datetime({ offset: true }).nullable(),
+}).strict();
+export type LiveMatchResponse = z.infer<typeof liveMatchResponseSchema>;
 
 export const identityClassSchema = z.literal('integrity_controlled');
 
@@ -85,6 +139,8 @@ export type ConfidencePoll = z.infer<typeof confidencePollSchema>;
 export const nextMatchResponseSchema = z.object({
   match: canonicalMatchSchema,
   polls: z.array(confidencePollSchema).max(1),
+  source: dataSourceSchema,
+  freshness: freshnessSchema,
 }).strict();
 
 export const voteChoiceSchema = z.enum(['high', 'medium', 'low']);

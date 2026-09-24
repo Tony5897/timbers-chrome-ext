@@ -132,6 +132,14 @@ describe('Background scraper logic', () => {
     });
   });
 
+  test('builds team-scoped notification keys and only notifies on score increases', () => {
+    expect(background.kickoffReminderKey('thorns', 123)).toBe('notified_kickoff_thorns_123');
+    expect(background.goalNotificationKey('timbers', 'event-1', [1, 0])).toBe('notified_goal_timbers_event-1_1-0');
+    expect(background.scoreIncreased([0, 0], [1, 0])).toBe(true);
+    expect(background.scoreIncreased([1, 0], [1, 0])).toBe(false);
+    expect(background.scoreIncreased([2, 1], [1, 1])).toBe(false);
+  });
+
   test('returns null when response.ok is false', async () => {
     mockFetch({}, false);
 

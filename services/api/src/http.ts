@@ -92,6 +92,32 @@ export function createApiHandler(dependencies: ApiDependencies) {
       return;
     }
 
+    if (request.method === 'GET' && request.path === '/v1/standings') {
+      try {
+        const result = await dependencies.publicReadService.getStandings(request.query?.teamId);
+        response.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+        response.status(200).json(result);
+      } catch (error) {
+        const code = error instanceof Error ? error.message : 'internal_error';
+        const mapped = mapError(code);
+        problem(response, requestId, mapped.status, mapped.code, mapped.detail);
+      }
+      return;
+    }
+
+    if (request.method === 'GET' && request.path === '/v1/matches/live') {
+      try {
+        const result = await dependencies.publicReadService.getLiveMatch(request.query?.teamId);
+        response.setHeader('Cache-Control', 'no-store');
+        response.status(200).json(result);
+      } catch (error) {
+        const code = error instanceof Error ? error.message : 'internal_error';
+        const mapped = mapError(code);
+        problem(response, requestId, mapped.status, mapped.code, mapped.detail);
+      }
+      return;
+    }
+
     const pollAggregateRoute = pollAggregateRoutePattern.exec(request.path);
     if (request.method === 'GET' && pollAggregateRoute) {
       try {

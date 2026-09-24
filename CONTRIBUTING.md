@@ -1,4 +1,4 @@
-# Timbers Matchday — Contributing & Workflow
+# PDX Matchday — Contributing & Workflow
 
 ## Branch Protection Rules
 
