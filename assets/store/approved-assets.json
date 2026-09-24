@@ -9,18 +9,18 @@
     "scripts/generate-icons.js",
     "scripts/generate-store-assets.mjs"
   ],
-  "runtimeSourceSha256": "5ad62857642e614b3dd342e9da698f59e7f6193092da0ac26fdc5ab32fb8a78e",
+  "runtimeSourceSha256": "6b4af60242530bc88423c960fe2b4a156c2301bdccfd05ab988eb22f9f98ddca",
   "files": {
     "icon.png": "7edca186b34d9d2a5dbd5c85fc7a06affb9fa043303648e5f4c552003e74efdc",
     "icons/icon-16.png": "c5247be66a067514605c194e8d337f8ef7b506c20e278e476f1b9c6c10a763ce",
     "icons/icon-48.png": "46a9188fe8a29303da4dbc2ccca809d9a61221ee5974b12c16555787e191c909",
     "icons/icon-128.png": "df65a6670b1dc26ecbf5949b832bd8c53e291de544e9f5865181ce9b90eba731",
     "assets/store/promo-small-440x280.png": "64bc7314cd83f73368dbc6194b2ce98244d2d029373982a7f8c3f49c42d2ec07",
-    "assets/store/promo-marquee-1400x560.png": "9ea837393e8471baf12b1e341bb054d501e1f43659f7e27ba670dd1692a01fef",
-    "assets/store/screenshot-01-next-match-1280x800.png": "80d7ed90d700ffa838d1a3ca4700475f3b6a9832467eb6ca0798bd74f0770860",
-    "assets/store/screenshot-02-confidence-1280x800.png": "a3b3f9f414f1f6e43d6eabb53f120cd29daa2e2001bc5e471eee5b3b6fd61675",
-    "assets/store/screenshot-03-viewing-1280x800.png": "db23170dca46141052beb0bce8e370ff621e45be940fd5ed1e8831d65b2e27c8",
-    "assets/store/screenshot-04-resilient-1280x800.png": "88ae8cdf57fab2f5ff262018ce80ff9072154176d18ea39a8af9b24630ef535e",
-    "assets/store/screenshot-05-privacy-1280x800.png": "8b1674290abff616899ec136c24c3a8385ffcc0c2a6deba10373ecd2af907b88"
+    "assets/store/promo-marquee-1400x560.png": "9e72b0536b8e297cfbc114b83e050930c7e00673a5a2fc66ecda316c33b1b056",
+    "assets/store/screenshot-01-next-match-1280x800.png": "481ace6f9d24e9c831ccd0a0581ae2fdaa88c61c2c5f59792e87e86cc941db62",
+    "assets/store/screenshot-02-confidence-1280x800.png": "5a9486757365fa645f33ecc8a78abe78717752f710cee592449b14530ba3ceb5",
+    "assets/store/screenshot-03-viewing-1280x800.png": "67bb4768e10cff90c46cb89ba3ffbf2f672b52afa6bf3e191ebdd29f8a2192b0",
+    "assets/store/screenshot-04-resilient-1280x800.png": "a01945b4b83d3f3d3071c0460d4b2d43184c2c67fd3e6ea949b5a85cd58fdc8a",
+    "assets/store/screenshot-05-privacy-1280x800.png": "e8556169644fbbb5d3fd6d9f3a5ffbf83d4bd090d1603b4032107d6615f83027"
   }
 }
