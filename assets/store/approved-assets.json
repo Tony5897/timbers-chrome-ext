@@ -1,26 +1,26 @@
 {
   "schemaVersion": 1,
-  "approvedAt": "2026-08-04",
+  "approvedAt": "2026-09-23",
   "runtimeSources": [
-    "assets/brand/kickoff-dial.svg",
+    "assets/brand/pdx-matchday-mark.svg",
     "popup.html",
     "popup.js",
     "styles.css",
     "scripts/generate-icons.js",
     "scripts/generate-store-assets.mjs"
   ],
-  "runtimeSourceSha256": "31ec326f0a195a563ad18dc3db35edae7d5357a51d2072f86256922eda9860fa",
+  "runtimeSourceSha256": "164f24db8f34a6ee3466c101d67b3ac69b1b3eabfe7c86a2012ca03729c4dae6",
   "files": {
-    "icon.png": "3ceee06f451bb7c83f2539795f8e792a58f4627ebf3d70f2e93bfe3cd965411d",
-    "icons/icon-16.png": "49d753d33c525e3f2811d6ec1b3f21da3207d5da1de8b8d8707622556275c08b",
-    "icons/icon-48.png": "ed2fb26bd54ff2cceff97f49622a0c6429c6c47c397422202e8d30bf7aa85b78",
-    "icons/icon-128.png": "0567ff2f6c4c71425a62e03abf828888da82d5748a9ef613a748d6eb5c74f79e",
-    "assets/store/promo-small-440x280.png": "bf018c6a3f0df7ec91d133024280680d8425336f78e59908fb0f6261ef7ed527",
-    "assets/store/promo-marquee-1400x560.png": "881cb5aca9882e266261256ad7131f68e7a29d706351553c46669737e2d3490b",
-    "assets/store/screenshot-01-next-match-1280x800.png": "a6a4ea2ff8834d8cfdf7bd0661abd344483d7f9cdf67715a1ddcffe522f8f6c5",
-    "assets/store/screenshot-02-confidence-1280x800.png": "fba76336a21c8671f89a7cb2ae43aff8bac7ed8e0eaf9333c4f261822282bc53",
-    "assets/store/screenshot-03-viewing-1280x800.png": "9cf11fea30cb7f796ed82273b2ef7f689de3b619060374712e2e3e9f1e0380fc",
-    "assets/store/screenshot-04-resilient-1280x800.png": "66f04015ebbc49a3507570d499b10394b38c4d56bcf0b9d006136d3bd776387d",
-    "assets/store/screenshot-05-privacy-1280x800.png": "26da0c55c897ca96c63272943eee4f224c18ddea5edddf258378660547d13461"
+    "icon.png": "ccb6d995dca127443d5fca5cc33a59f51574326d8fd2e3c76e89adbc466b6f61",
+    "icons/icon-16.png": "0b11fe733fde8cd597a48d9c2743bb26f1a4cfdb5d5e503eb938160e42c67dbb",
+    "icons/icon-48.png": "d3cd19d3a98ef4f7d2fa3f56acabd3e49ee29ed9373e3a05295bc9bb4f29a3a4",
+    "icons/icon-128.png": "aa53081be382ed3ffcb4b7605a93ce4aedbc7e1b1a77e1f27f049f7dfc4397ba",
+    "assets/store/promo-small-440x280.png": "23ae3bf3b385e7543ce8dc2fa0fe4866810fdc926ac95def74fb1c6a0bea838e",
+    "assets/store/promo-marquee-1400x560.png": "20dd263825d08fb09f6b4acfe946d5288d9dcc313f5c1ab6090f91782a016d2f",
+    "assets/store/screenshot-01-next-match-1280x800.png": "4e2efab3a6e8aa1588eb08c2d808a126fe646d6859240768e6edafdced5bdbb8",
+    "assets/store/screenshot-02-confidence-1280x800.png": "d3ab0a2bbb13903559a2f5e5ef07f909007d40b434500e4341f7d625d72b6f82",
+    "assets/store/screenshot-03-viewing-1280x800.png": "810750018235a60a27d62c79f9d243869f3bcf42a35c50073b5e56f7ec810248",
+    "assets/store/screenshot-04-resilient-1280x800.png": "5e99c1e55a799ac435aa2e355339cfea39b4439d498276f68b96557c5712a584",
+    "assets/store/screenshot-05-privacy-1280x800.png": "e54873130da50abde532cbec0e712c7d1be719a70c365bccd6c142e3c8e4618e"
   }
 }

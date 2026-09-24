@@ -51,7 +51,7 @@ describe('PollReadService', () => {
     );
   });
 
-  it('keeps planned-team aggregate reads behind the polling capability gate', async () => {
+  it('returns an aggregate for an enabled Thorns poll', async () => {
     const compatibilityService = {
       getCanonicalAggregateResult: vi.fn(async () => ({
         aggregate: { high: 0, medium: 0, low: 0, total: 0 },
@@ -70,9 +70,9 @@ describe('PollReadService', () => {
     } as unknown as CompatibilityPollService;
     const service = new PollReadService(compatibilityService, () => now);
 
-    await expect(service.getAggregate('poll-espn-401999001-confidence-v1')).rejects.toThrow(
-      'capability_unavailable',
-    );
+    await expect(service.getAggregate('poll-espn-401999001-confidence-v1')).resolves.toMatchObject({
+      poll: expect.objectContaining({ teamId: 'thorns' }),
+    });
   });
 
   it('returns a void poll after a postponed match is synchronized', async () => {

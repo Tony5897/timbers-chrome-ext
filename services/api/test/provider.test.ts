@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   fetchCanonicalMatches,
   fetchCompatibilityPollWindows,
+  fetchLiveMatch,
+  fetchStandings,
   parseCanonicalSchedule,
   parseCompatibilitySchedule,
 } from '../src/provider.js';
@@ -22,8 +24,8 @@ const canonicalEvent = {
 
 describe('ESPN compatibility adapter', () => {
   it('normalizes provider events into versioned poll windows', async () => {
-    const fetchImplementation = vi.fn(async () => new Response(JSON.stringify({
-      events: [canonicalEvent],
+    const fetchImplementation = vi.fn(async (url: string) => new Response(JSON.stringify({
+      events: url.includes('/usa.nwsl/') ? [] : [canonicalEvent],
     }), { status: 200 })) as unknown as typeof fetch;
 
     const windows = await fetchCompatibilityPollWindows(
@@ -82,8 +84,8 @@ describe('ESPN compatibility adapter', () => {
   });
 
   it('normalizes canonical matches with stable provider-qualified IDs', async () => {
-    const fetchImplementation = vi.fn(async () => new Response(JSON.stringify({
-      events: [canonicalEvent],
+    const fetchImplementation = vi.fn(async (url: string) => new Response(JSON.stringify({
+      events: url.includes('/usa.nwsl/') ? [] : [canonicalEvent],
     }), { status: 200 })) as unknown as typeof fetch;
 
     const matches = await fetchCanonicalMatches(
@@ -103,6 +105,92 @@ describe('ESPN compatibility adapter', () => {
       status: 'scheduled',
       dataUpdatedAt: '2026-08-03T12:00:00.000Z',
     }));
+  });
+
+  it.each(['timbers', 'thorns'] as const)('normalizes %s standings into shared rows', async (teamId) => {
+    const providerTeamId = teamId === 'timbers' ? '9723' : '15362';
+    const leaguePath = teamId === 'timbers' ? 'usa.1' : 'usa.nwsl';
+    const fetchImplementation = vi.fn(async () => new Response(JSON.stringify({
+      children: [{ standings: { entries: [{ team: { id: providerTeamId, displayName: teamId === 'timbers' ? 'Portland Timbers' : 'Portland Thorns FC' }, stats: [
+        { name: 'rank', value: 1 }, { name: 'points', value: 42 }, { name: 'gamesplayed', value: 20 },
+      ] }] } }],
+    }), { status: 200 })) as unknown as typeof fetch;
+
+    const standings = await fetchStandings(teamId, fetchImplementation, new Date('2026-08-03T12:00:00Z'));
+
+    expect(fetchImplementation).toHaveBeenCalledWith(
+      `https://site.api.espn.com/apis/v2/sports/soccer/${leaguePath}/standings?season=2026`,
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+    expect(standings[0]).toEqual(expect.objectContaining({ teamId, group: null, rank: 1, points: 42, highlight: true }));
+  });
+
+  it('splits a multi-conference table into named groups with independent per-conference ranks', async () => {
+    const fetchImplementation = vi.fn(async () => new Response(JSON.stringify({
+      children: [
+        {
+          name: 'Eastern Conference',
+          abbreviation: 'East',
+          standings: { entries: [
+            { team: { id: '9999', displayName: 'Nashville SC' }, stats: [{ name: 'rank', value: 1 }, { name: 'points', value: 57 }] },
+            { team: { id: '182', displayName: 'Chicago Fire FC' }, stats: [{ name: 'rank', value: 5 }, { name: 'points', value: 39 }] },
+          ] },
+        },
+        {
+          name: 'Western Conference',
+          abbreviation: 'West',
+          standings: { entries: [
+            { team: { id: '8888', displayName: 'Vancouver Whitecaps FC' }, stats: [{ name: 'rank', value: 1 }, { name: 'points', value: 49 }] },
+            { team: { id: '9723', displayName: 'Portland Timbers' }, stats: [{ name: 'rank', value: 9 }, { name: 'points', value: 32 }] },
+          ] },
+        },
+      ],
+    }), { status: 200 })) as unknown as typeof fetch;
+
+    const standings = await fetchStandings('timbers', fetchImplementation, new Date('2026-09-24T12:00:00Z'));
+
+    expect(standings).toEqual([
+      expect.objectContaining({ group: 'Eastern Conference', rank: 1, club: 'Nashville SC', highlight: false }),
+      expect.objectContaining({ group: 'Eastern Conference', rank: 5, club: 'Chicago Fire FC', highlight: false }),
+      expect.objectContaining({ group: 'Western Conference', rank: 1, club: 'Vancouver Whitecaps FC', highlight: false }),
+      expect.objectContaining({ group: 'Western Conference', rank: 9, club: 'Portland Timbers', highlight: true }),
+    ]);
+  });
+
+  it('falls back to a 1-based rank within its own group when the provider omits a rank stat', async () => {
+    const fetchImplementation = vi.fn(async () => new Response(JSON.stringify({
+      children: [
+        { name: 'Eastern Conference', standings: { entries: [
+          { team: { id: '1', displayName: 'Club A' }, stats: [{ name: 'points', value: 50 }] },
+          { team: { id: '2', displayName: 'Club B' }, stats: [{ name: 'points', value: 40 }] },
+        ] } },
+        { name: 'Western Conference', standings: { entries: [
+          { team: { id: '9723', displayName: 'Portland Timbers' }, stats: [{ name: 'points', value: 45 }] },
+        ] } },
+      ],
+    }), { status: 200 })) as unknown as typeof fetch;
+
+    const standings = await fetchStandings('timbers', fetchImplementation, new Date('2026-09-24T12:00:00Z'));
+
+    expect(standings.map((row) => row.rank)).toEqual([1, 2, 1]);
+  });
+
+  it('normalizes live score and goal details for Thorns', async () => {
+    const match = {
+      id: 'espn-live-thorns-1', teamId: 'thorns' as const, competitionId: 'nwsl' as const,
+      provider: 'espn_bootstrap' as const, providerEventId: 'live-thorns-1',
+      kickoff: '2026-08-08T02:30:00.000Z', opponent: 'Fixture Opponent', homeAway: 'away' as const,
+      venue: 'Fixture Stadium', broadcasts: [], status: 'live' as const, dataUpdatedAt: '2026-08-08T02:30:00.000Z',
+    };
+    const fetchImplementation = vi.fn(async () => new Response(JSON.stringify({ events: [{ id: 'live-thorns-1', competitions: [{ competitors: [
+      { homeAway: 'home', score: '0', team: { id: '8888', displayName: 'Fixture Opponent' } },
+      { homeAway: 'away', score: '1', team: { id: '15362', displayName: 'Portland Thorns FC' } },
+    ], details: [{ id: 'goal-1', text: 'Goal', clock: { displayValue: '27' }, team: { id: '15362' }, athlete: { displayName: 'Fixture Player' } }] }] }] }), { status: 200 })) as unknown as typeof fetch;
+
+    const live = await fetchLiveMatch('thorns', match, fetchImplementation);
+
+    expect(live).toEqual(expect.objectContaining({ homeScore: 0, awayScore: 1, source: 'live', freshness: 'fresh' }));
+    expect(live.events[0]).toEqual(expect.objectContaining({ type: 'goal', teamId: 'thorns', player: 'Fixture Player' }));
   });
 
   it.each([

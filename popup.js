@@ -1,273 +1,158 @@
+var pdxMatchdayPreviewMode = !globalThis.chrome?.storage?.local || !globalThis.chrome?.runtime?.sendMessage;
+if (pdxMatchdayPreviewMode) {
+  const previewParams = new URLSearchParams(globalThis.location?.search || '');
+  const previewTeam = previewParams.get('team') === 'thorns' ? 'thorns' : 'timbers';
+  const previewScheme = previewParams.get('scheme') === 'away' ? 'away' : 'home';
+  const previewMatches = previewScheme === 'home' ? {
+    timbers: { teamId: 'timbers', opponent: 'Charlotte FC', date: 'Oct 24, 2026', time: '7:30 PM PT', location: 'Providence Park', venue: 'Providence Park', tv: 'Apple TV', matchTimestamp: Date.now() + 59 * 86400000, homeAway: 'home', competition: 'MLS' },
+    thorns: { teamId: 'thorns', opponent: 'North Carolina Courage', date: 'Oct 23, 2026', time: '7:00 PM PT', location: 'Providence Park', venue: 'Providence Park', tv: 'Prime Video', matchTimestamp: Date.now() + 58 * 86400000, homeAway: 'home', competition: 'NWSL' },
+  } : {
+    timbers: { teamId: 'timbers', opponent: 'St. Louis City SC', date: 'Oct 28, 2026', time: '5:30 PM PT', location: 'Energizer Park', venue: 'Energizer Park', tv: 'Apple TV', matchTimestamp: Date.now() + 63 * 86400000, homeAway: 'away', competition: 'MLS' },
+    thorns: { teamId: 'thorns', opponent: 'Houston Dash', date: 'Nov 1, 2026', time: '2:00 PM PT', location: 'Shell Energy Stadium', venue: 'Shell Energy Stadium', tv: 'ESPN', matchTimestamp: Date.now() + 67 * 86400000, homeAway: 'away', competition: 'NWSL' },
+  };
+  // Full-table fixture so the Standings tab can be visually validated (scroll, row count,
+  // conference grouping, highlight placement) without a live API — modeled on the real
+  // endpoint shape, which returns MLS split into Eastern/Western conferences and NWSL as
+  // a single ungrouped table.
+  const previewStandings = {
+    timbers: [
+      { group: 'Eastern Conference', rank: 1, club: 'Nashville SC', points: 57, highlight: false },
+      { group: 'Eastern Conference', rank: 2, club: 'New England Revolution', points: 46, highlight: false },
+      { group: 'Eastern Conference', rank: 3, club: 'Inter Miami CF', points: 46, highlight: false },
+      { group: 'Eastern Conference', rank: 4, club: 'Charlotte FC', points: 43, highlight: false },
+      { group: 'Eastern Conference', rank: 5, club: 'Chicago Fire FC', points: 39, highlight: false },
+      { group: 'Western Conference', rank: 1, club: 'Vancouver Whitecaps FC', points: 49, highlight: false },
+      { group: 'Western Conference', rank: 2, club: 'Houston Dynamo FC', points: 44, highlight: false },
+      { group: 'Western Conference', rank: 3, club: 'St. Louis CITY SC', points: 44, highlight: false },
+      { group: 'Western Conference', rank: 4, club: 'FC Dallas', points: 44, highlight: false },
+      { group: 'Western Conference', rank: 5, club: 'San Jose Earthquakes', points: 42, highlight: false },
+      { group: 'Western Conference', rank: 6, club: 'LAFC', points: 41, highlight: false },
+      { group: 'Western Conference', rank: 7, club: 'Colorado Rapids', points: 36, highlight: false },
+      { group: 'Western Conference', rank: 8, club: 'LA Galaxy', points: 33, highlight: false },
+      { group: 'Western Conference', rank: 9, club: 'Portland Timbers', points: 32, highlight: true },
+      { group: 'Western Conference', rank: 10, club: 'Seattle Sounders FC', points: 32, highlight: false },
+    ],
+    thorns: [
+      { group: null, rank: 1, club: 'Gotham FC', points: 51, highlight: false },
+      { group: null, rank: 2, club: 'Washington Spirit', points: 46, highlight: false },
+      { group: null, rank: 3, club: 'San Diego Wave FC', points: 45, highlight: false },
+      { group: null, rank: 4, club: 'Utah Royals FC', points: 42, highlight: false },
+      { group: null, rank: 5, club: 'Portland Thorns FC', points: 42, highlight: true },
+      { group: null, rank: 6, club: 'Angel City FC', points: 39, highlight: false },
+      { group: null, rank: 7, club: 'North Carolina Courage', points: 39, highlight: false },
+      { group: null, rank: 8, club: 'Kansas City Current', points: 38, highlight: false },
+      { group: null, rank: 9, club: 'Seattle Reign FC', points: 37, highlight: false },
+      { group: null, rank: 10, club: 'Denver Summit FC', points: 35, highlight: false },
+    ],
+  };
+  const previewStorage = { selectedTeam: previewTeam };
+  globalThis.chrome = { runtime: { lastError: null, sendMessage: (request, callback) => callback(request.action === 'getStandings' ? { standings: previewStandings[request.teamId] || previewStandings.timbers, source: 'live', freshness: 'fresh' } : { matchData: previewMatches[request.teamId] || previewMatches.timbers, source: 'live', freshness: 'fresh' }) }, storage: { local: { get: (keys, callback) => { const requested = Array.isArray(keys) ? keys : [keys]; callback(Object.fromEntries(requested.filter((key) => key in previewStorage).map((key) => [key, previewStorage[key]]))); }, set: (values, callback) => { Object.assign(previewStorage, values); callback?.(); } } } };
+  globalThis.MatchdayAuth = { hasSession: () => Promise.resolve(false) };
+  globalThis.CommunityVotes = { get: () => Promise.resolve(null), increment: () => Promise.resolve({ synced: false }), deleteInstallation: () => Promise.resolve({ deleted: true }) };
+}
 document.addEventListener('DOMContentLoaded', () => {
-  const skeleton = document.getElementById('match-skeleton');
-  const matchInfo = document.getElementById('match-info');
-  const matchError = document.getElementById('match-error');
-  const matchErrorText = document.getElementById('match-error-text');
-  const opponentEl = document.getElementById('match-opponent');
-  const detailsEl = document.getElementById('match-details');
-  const countdownWrap = document.getElementById('countdown-wrap');
-  const liveBadge = document.getElementById('live-badge');
-  const voteButtons = document.getElementById('vote-buttons');
-  const voteResults = document.getElementById('vote-results');
-  const voteThanks = document.getElementById('vote-thanks');
-  const deleteControl = document.getElementById('community-delete-control');
-  const deleteButton = document.getElementById('community-delete');
-  const deleteStatus = document.getElementById('community-delete-status');
-  let timerInterval;
-  let currentMatchTimestamp = null;
-  let communityData = null;
-  let hasVotedThisSession = false;
+  const TEAM_CONFIG = {
+    timbers: { shortName: 'Timbers', scheme: 'away', schemeLabels: { home: 'Home colors — Providence Park green and gold', away: 'Away colors — Civic Stadium ice and green' }, club: 'https://www.timbers.com', schedule: 'https://www.timbers.com/schedule/' },
+    thorns: { shortName: 'Thorns', scheme: 'away', schemeLabels: { home: 'Home colors — Electric Bloom pink and yellow', away: 'Away colors — black and ember red' }, club: 'https://www.thorns.com', schedule: 'https://www.thorns.com/schedule' },
+  };
+  const $ = (id) => document.getElementById(id);
+  const state = { team: 'timbers', tab: 'match', match: null, source: null, standings: [], matchTimestamp: null, community: null, voted: false };
+  let timer;
 
-  const dataNotice = document.getElementById('data-notice');
+  function config() { return TEAM_CONFIG[state.team]; }
+  function save(key, value) { chrome.storage.local.set({ [key]: value }, () => {}); }
+  function load(key) { return new Promise((resolve) => chrome.storage.local.get([key], (r) => resolve(r?.[key]))); }
 
-  if (typeof MatchdayAuth !== 'undefined' && typeof MatchdayAuth.hasSession === 'function') {
-    MatchdayAuth.hasSession().then((hasSession) => {
-      if (hasSession) deleteControl.classList.remove('hidden');
-    }).catch(() => undefined);
+  function applyTeam(team, persist = true) {
+    state.team = TEAM_CONFIG[team] ? team : 'timbers';
+    const teamConfig = config();
+    document.body.dataset.team = state.team;
+    document.body.dataset.scheme = teamConfig.scheme;
+    $('match-team-name').textContent = teamConfig.shortName;
+    $('scheme-tag').textContent = teamConfig.scheme[0].toUpperCase() + teamConfig.scheme.slice(1);
+    $('settings-scheme-tag').textContent = $('scheme-tag').textContent;
+    $('scheme-label').textContent = teamConfig.schemeLabels[teamConfig.scheme];
+    $('club-link').href = teamConfig.club;
+    $('footer-schedule-link').href = teamConfig.schedule;
+    $('schedule-link').href = teamConfig.schedule;
+    $('settings-club-link').href = teamConfig.club;
+    document.querySelectorAll('.team-option').forEach((option) => option.classList.toggle('is-selected', option.querySelector('input').value === state.team));
+    document.querySelectorAll('input[name="team"]').forEach((input) => { input.checked = input.value === state.team; });
+    if (persist) save('selectedTeam', state.team);
+    if (state.tab === 'standings') requestStandings();
+    requestMatch();
   }
 
-  chrome.runtime.sendMessage({ action: 'getMatchData' }, (response) => {
-    if (chrome.runtime.lastError) {
-      console.error('Error fetching match data:', chrome.runtime.lastError.message);
-      showError('Could not retrieve match data.');
-      return;
-    }
-    if (response && response.matchData) {
-      displayMatchData(response.matchData, response.source);
-      if (response.source === 'cache' || response.source === 'fallback') {
-        dataNotice.classList.remove('hidden');
-      }
-      if (typeof response.matchData.matchTimestamp === 'number') {
-        currentMatchTimestamp = response.matchData.matchTimestamp;
-        const hasVotedKey = `hasVoted_${currentMatchTimestamp}`;
-        const votesKey = `votes_${currentMatchTimestamp}`;
-
-        // Check local vote state.
-        chrome.storage.local.get([hasVotedKey, votesKey], (res) => {
-          if (chrome.runtime.lastError) return;
-          if (res[hasVotedKey]) {
-            hasVotedThisSession = true;
-            showVoteResults(communityData || res[votesKey] || { high: 0, medium: 0, low: 0 });
-          }
-        });
-
-        // Fetch community totals in background — updates UI when resolved.
-        if (typeof CommunityVotes !== 'undefined') {
-          CommunityVotes.get(currentMatchTimestamp).then((data) => {
-            communityData = data;
-            if (!data) return;
-            const countEl = document.getElementById('community-count');
-            if (!hasVotedThisSession) {
-              // Show participation count alongside the vote buttons.
-              const total = data.high + data.medium + data.low;
-              if (total > 0 && countEl) {
-                countEl.textContent = `${total} accepted community response${total === 1 ? '' : 's'}`;
-                countEl.classList.remove('hidden');
-              }
-            } else if (!voteResults.classList.contains('hidden')) {
-              // User already voted — refresh results with community totals.
-              showVoteResults(data);
-            }
-          });
-        }
-      }
-    } else if (response && response.source === 'no_match') {
-      showError('No upcoming match scheduled. Check the full schedule below.');
-    } else {
-      showError('Could not retrieve match data at this time.');
-    }
-  });
-
-  function showError(msg) {
-    skeleton.classList.add('hidden');
-    matchInfo.classList.add('hidden');
-    matchError.classList.remove('hidden');
-    matchErrorText.textContent = msg;
+  function setTab(tab) {
+    state.tab = tab;
+    ['match', 'standings', 'settings'].forEach((name) => { const active = name === tab; $(`panel-${name}`).classList.toggle('hidden', !active); $(`tab-${name}`).classList.toggle('is-active', active); $(`tab-${name}`).setAttribute('aria-selected', String(active)); $(`tab-${name}`).setAttribute('tabindex', active ? '0' : '-1'); });
+    if (tab === 'standings') requestStandings();
   }
 
-  function displayMatchData(matchData, source) {
-    skeleton.classList.add('hidden');
-    matchError.classList.add('hidden');
-    matchInfo.classList.remove('hidden');
-
-    opponentEl.textContent = matchData.opponent || 'TBA';
-
-    detailsEl.textContent = '';
-    const details = [
-      ['Date', matchData.date],
-      ['Time', matchData.time],
-      ['Location', matchData.location],
-      ['TV/Stream', matchData.tv],
-    ];
-    details.forEach(([label, value]) => {
-      const item = document.createElement('div');
-      item.className = 'detail-item';
-
-      const lbl = document.createElement('span');
-      lbl.className = 'detail-label';
-      lbl.textContent = label;
-      item.appendChild(lbl);
-
-      const val = document.createElement('span');
-      val.className = 'detail-value';
-      val.textContent = value || 'N/A';
-      item.appendChild(val);
-
-      detailsEl.appendChild(item);
+  function requestMatch() {
+    $('match-skeleton').classList.remove('hidden'); $('match-info').classList.add('hidden'); $('match-error').classList.add('hidden'); $('live-score-card').classList.add('hidden');
+    chrome.runtime.sendMessage({ action: 'getMatchData', teamId: state.team }, (response) => {
+      if (chrome.runtime.lastError || !response) return showError('Could not retrieve match data.');
+      state.source = response.source; state.match = response.matchData || null;
+      $('freshness-label').textContent = state.source === 'live' ? 'Live schedule data' : state.source ? 'Cached schedule data' : 'Waiting for schedule data';
+      $('freshness-tag').textContent = state.source === 'live' ? 'Live' : state.source ? 'Delayed' : '—';
+      $('data-notice').classList.toggle('hidden', state.source === 'live' || !state.source);
+      if (!state.match) return showError(response.source === 'no_match' ? 'No upcoming match scheduled. Check the full schedule below.' : 'Could not retrieve match data at this time.');
+      displayMatch(state.match, state.source);
     });
-
-    if (typeof matchData.matchTimestamp === 'number') {
-      startCountdown(matchData.matchTimestamp, source);
-    }
   }
 
-  function startCountdown(matchTimestamp, source) {
-    const daysEl = document.getElementById('cd-days');
-    const hoursEl = document.getElementById('cd-hours');
-    const minsEl = document.getElementById('cd-mins');
-    const secsEl = document.getElementById('cd-secs');
-
-    if (timerInterval) {
-      clearInterval(timerInterval);
-    }
-
-    function pad(n) {
-      return String(n).padStart(2, '0');
-    }
-
-    function update() {
-      const diff = matchTimestamp - Date.now();
-
-      if (diff <= 0) {
-        countdownWrap.classList.add('hidden');
-        if (source === 'live') {
-          liveBadge.classList.remove('hidden');
-        }
-        clearInterval(timerInterval);
-        return;
-      }
-
-      countdownWrap.classList.remove('hidden');
-      liveBadge.classList.add('hidden');
-
-      const d = Math.floor(diff / 86400000);
-      const h = Math.floor((diff % 86400000) / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-
-      daysEl.textContent = pad(d);
-      hoursEl.textContent = pad(h);
-      minsEl.textContent = pad(m);
-      secsEl.textContent = pad(s);
-    }
-
-    update();
-    timerInterval = setInterval(update, 1000);
-  }
-
-  // ── Voting ──────────────────────────────────────────────
-
-  document.querySelectorAll('.vote-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      if (!currentMatchTimestamp) return;
-      const vote = btn.getAttribute('data-vote');
-      const votesKey = `votes_${currentMatchTimestamp}`;
-      const hasVotedKey = `hasVoted_${currentMatchTimestamp}`;
-
-      btn.classList.add('selected');
-      hasVotedThisSession = true;
-
-      chrome.storage.local.get([votesKey], (result) => {
-        if (chrome.runtime.lastError) {
-          console.error('Error reading votes:', chrome.runtime.lastError.message);
-          return;
-        }
-        const votes = result[votesKey] || { high: 0, medium: 0, low: 0 };
-        votes[vote] = (votes[vote] || 0) + 1;
-
-        chrome.storage.local.set({ [votesKey]: votes, [hasVotedKey]: true }, () => {
-          if (chrome.runtime.lastError) {
-            console.error('Error saving vote:', chrome.runtime.lastError.message);
-            return;
-          }
-          const syncEl = document.getElementById('community-sync');
-          if (typeof CommunityVotes !== 'undefined') {
-            CommunityVotes.increment(currentMatchTimestamp, vote).then((result) => {
-              if (!syncEl) return;
-              syncEl.classList.remove('hidden');
-              if (!result?.synced) {
-                syncEl.textContent = 'Saved on this device. Community sync will retry.';
-                return;
-              }
-              syncEl.textContent = 'Response accepted for the anonymous-installation community total.';
-              deleteControl.classList.remove('hidden');
-              if (result.aggregate) {
-                communityData = result.aggregate;
-                showVoteResults(result.aggregate);
-              }
-            });
-          }
-          // Optimistically apply this vote to community totals for immediate display.
-          const displayVotes = communityData
-            ? { ...communityData, [vote]: (communityData[vote] || 0) + 1 }
-            : votes;
-          showVoteResults(displayVotes);
-        });
-      });
+  function displayMatch(match, source) {
+    if (match.teamId && match.teamId !== state.team) return;
+    $('match-skeleton').classList.add('hidden'); $('match-info').classList.remove('hidden'); $('match-error').classList.add('hidden');
+    $('match-opponent').textContent = match.opponent || 'TBA'; $('match-status').textContent = match.homeAway === 'home' ? 'Home' : 'Away';
+    const scheme = match.homeAway === 'home' ? 'home' : 'away';
+    document.body.dataset.scheme = scheme;
+    $('scheme-tag').textContent = scheme === 'home' ? 'Home' : 'Away';
+    $('settings-scheme-tag').textContent = $('scheme-tag').textContent;
+    $('scheme-label').textContent = config().schemeLabels[scheme];
+    $('match-details').textContent = '';
+    [['Date', match.date], ['Time', match.time], ['Location', match.location || match.venue], ['TV / Stream', match.tv]].forEach(([label, value]) => {
+      const item = document.createElement('div'); item.className = 'detail-item'; const lbl = document.createElement('span'); lbl.className = 'detail-label'; lbl.textContent = label; item.appendChild(lbl);
+      const display = value || 'N/A'; const isApple = label === 'TV / Stream' && /apple\s*tv/i.test(String(value || '')); const val = document.createElement(isApple ? 'a' : 'span'); val.className = isApple ? 'detail-value detail-value-link' : 'detail-value'; val.textContent = display;
+      if (isApple) { val.href = 'https://tv.apple.com/us/channel/mls/tvs.sbd.7000'; val.target = '_blank'; val.rel = 'noopener noreferrer'; } item.appendChild(val); $('match-details').appendChild(item);
     });
-  });
-
-  deleteButton.addEventListener('click', async () => {
-    const confirmed = window.confirm(
-      'Delete retained community responses and this anonymous community identity? This cannot be undone.',
-    );
-    if (!confirmed || typeof CommunityVotes === 'undefined') return;
-
-    deleteButton.disabled = true;
-    deleteStatus.textContent = 'Deleting retained community data…';
-    deleteStatus.classList.remove('hidden');
-    const result = await CommunityVotes.deleteInstallation();
-    if (!result?.deleted) {
-      deleteStatus.textContent = 'Deletion could not be completed. Please try again.';
-      deleteButton.disabled = false;
-      return;
+    if (typeof match.matchTimestamp === 'number') { state.matchTimestamp = match.matchTimestamp; startCountdown(match.matchTimestamp, source); hydrateVote(match.matchTimestamp); }
+    const live = match.live;
+    if (live) {
+      $('live-score').textContent = `${live.homeScore}–${live.awayScore}`;
+      const event = live.events?.find((candidate) => candidate.type === 'goal');
+      $('live-event').textContent = event ? event.description : 'Live match updates are being refreshed.';
+      $('live-score-card').classList.remove('hidden');
     }
-
-    communityData = null;
-    hasVotedThisSession = false;
-    voteResults.classList.add('hidden');
-    voteButtons.classList.remove('hidden');
-    document.querySelectorAll('.vote-btn').forEach((button) => button.classList.remove('selected'));
-    document.getElementById('community-count').classList.add('hidden');
-    document.getElementById('community-sync').classList.add('hidden');
-    deleteButton.classList.add('hidden');
-    deleteStatus.textContent = 'Retained responses were deleted. Anonymous account removal is scheduled.';
-  });
-
-  function showVoteResults(votes) {
-    voteButtons.classList.add('hidden');
-    voteResults.classList.remove('hidden');
-    const countEl = document.getElementById('community-count');
-    if (countEl) countEl.classList.add('hidden');
-
-    const total = (votes.high || 0) + (votes.medium || 0) + (votes.low || 0);
-
-    ['high', 'medium', 'low'].forEach((key) => {
-      const count = votes[key] || 0;
-      const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-
-      document.getElementById('pct-' + key).textContent = pct + '%';
-
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          document.getElementById('bar-' + key).style.width = pct + '%';
-        });
-      });
-    });
-
-    const isCommunity = communityData !== null;
-    const label = total === 1 ? '1 vote' : `${total} votes`;
-    const suffix = isCommunity ? ' accepted in the community total' : '';
-    voteThanks.textContent = `Thanks for voting! ${label} cast${suffix}.`;
   }
+
+  function showError(message) { $('match-skeleton').classList.add('hidden'); $('match-info').classList.add('hidden'); $('match-error').classList.remove('hidden'); $('match-error-text').textContent = message; }
+  function startCountdown(timestamp, source) { if (timer && typeof clearInterval === 'function') clearInterval(timer); const update = () => { const diff = timestamp - Date.now(); if (diff <= 0) { $('countdown-wrap').classList.add('hidden'); $('live-badge').classList.toggle('hidden', source !== 'live'); return; } $('live-badge').classList.add('hidden'); $('countdown-wrap').classList.remove('hidden'); const pad = (v) => String(v).padStart(2, '0'); $('cd-days').textContent = pad(Math.floor(diff / 86400000)); $('cd-hours').textContent = pad(Math.floor((diff % 86400000) / 3600000)); $('cd-mins').textContent = pad(Math.floor((diff % 3600000) / 60000)); $('cd-secs').textContent = pad(Math.floor((diff % 60000) / 1000)); }; update(); if (typeof setInterval === 'function') timer = setInterval(update, 1000); }
+
+  function requestStandings() { $('standings-note').textContent = 'Loading current standings…'; $('standings-body').innerHTML = '<tr><td colspan="3">Loading standings…</td></tr>'; chrome.runtime.sendMessage({ action: 'getStandings', teamId: state.team }, (response) => { if (chrome.runtime.lastError || !response?.standings) { $('standings-note').textContent = 'Standings are temporarily unavailable.'; $('standings-body').innerHTML = '<tr><td colspan="3">Check the official standings.</td></tr>'; return; } state.standings = response.standings; $('standings-note').textContent = response.freshness === 'fresh' ? 'Current provider standings.' : 'Standings data may be delayed.'; $('standings-body').innerHTML = ''; let lastGroup; response.standings.forEach((row) => { if (row.group !== lastGroup) { lastGroup = row.group; if (row.group) { const groupRow = document.createElement('tr'); groupRow.className = 'standings-group-row'; groupRow.innerHTML = `<td colspan="3">${escapeHtml(row.group)}</td>`; $('standings-body').appendChild(groupRow); } } const tr = document.createElement('tr'); if (row.highlight) tr.className = 'is-highlighted'; tr.innerHTML = `<td>${row.rank}</td><td>${escapeHtml(row.club)}</td><td>${row.points}</td>`; $('standings-body').appendChild(tr); }); }); }
+  function escapeHtml(value) { const div = document.createElement('div'); div.textContent = value; return div.innerHTML; }
+
+  async function hydrateVote(timestamp) { const has = await load(`hasVoted_${timestamp}`); state.voted = Boolean(has); if (has) { const local = await load(`votes_${timestamp}`); showVoteResults(state.community || local || { high: 0, medium: 0, low: 0 }); } if (globalThis.CommunityVotes) { state.community = await CommunityVotes.get(timestamp); if (state.community && state.voted) showVoteResults(state.community); else if (state.community) { const total = state.community.high + state.community.medium + state.community.low; if (total) { $('community-count').textContent = `${total} accepted community response${total === 1 ? '' : 's'}`; $('community-count').classList.remove('hidden'); } } } }
+  function showVoteResults(votes) { $('vote-buttons').classList.add('hidden'); $('vote-results').classList.remove('hidden'); $('community-count').classList.add('hidden'); const total = (votes.high || 0) + (votes.medium || 0) + (votes.low || 0); ['high', 'medium', 'low'].forEach((key) => { const pct = total ? Math.round(((votes[key] || 0) / total) * 100) : 0; $(`pct-${key}`).textContent = `${pct}%`; $(`bar-${key}`).style.width = `${pct}%`; }); $('vote-thanks').textContent = `Thanks for voting! ${total} response${total === 1 ? '' : 's'} counted${state.community ? ' in the community total' : ''}.`; }
+  document.querySelectorAll('.vote-btn').forEach((button) => button.addEventListener('click', async () => { if (!state.matchTimestamp) return; const choice = button.dataset.vote; const key = `votes_${state.matchTimestamp}`; const votes = (await load(key)) || { high: 0, medium: 0, low: 0 }; votes[choice] = (votes[choice] || 0) + 1; state.voted = true; await new Promise((resolve) => chrome.storage.local.set({ [key]: votes, [`hasVoted_${state.matchTimestamp}`]: true }, resolve)); showVoteResults(state.community ? { ...state.community, [choice]: (state.community[choice] || 0) + 1 } : votes); if (globalThis.CommunityVotes) { const result = await CommunityVotes.increment(state.matchTimestamp, choice); $('community-sync').classList.remove('hidden'); $('community-sync').textContent = result.synced ? 'Response accepted for the anonymous-installation community total.' : 'Saved on this device. Community sync will retry.'; if (result.aggregate) { state.community = result.aggregate; showVoteResults(result.aggregate); } } }));
+  $('community-delete').addEventListener('click', async () => { if (!globalThis.CommunityVotes || !window.confirm('Delete retained community responses and this anonymous community identity? This cannot be undone.')) return; $('community-delete').disabled = true; $('community-delete-status').textContent = 'Deleting retained community data…'; $('community-delete-status').classList.remove('hidden'); const result = await CommunityVotes.deleteInstallation(); $('community-delete-status').textContent = result.deleted ? 'Retained responses were deleted. Anonymous account removal is scheduled.' : 'Deletion could not be completed. Please try again.'; $('community-delete').disabled = !result.deleted; });
+  $('notification-toggle').addEventListener('click', async () => { const enabled = !(await load('notificationsEnabled')); save('notificationsEnabled', enabled); updateNotifications(enabled); chrome.runtime.sendMessage({ action: 'setNotifications', enabled }); });
+  function updateNotifications(enabled) { $('notification-toggle').setAttribute('aria-checked', String(enabled)); $('notification-label').textContent = enabled ? 'Kickoff + goal alerts on' : 'Kickoff + goal alerts off'; }
+  document.querySelectorAll('input[name="team"]').forEach((input) => input.addEventListener('change', () => applyTeam(input.value)));
+  document.querySelectorAll('.tab').forEach((button) => button.addEventListener('click', () => setTab(button.id.replace('tab-', ''))));
+  document.querySelector('.tabs').addEventListener('keydown', (event) => {
+    if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+    event.preventDefault();
+    const tabs = [...document.querySelectorAll('.tab')];
+    const current = tabs.findIndex((tab) => tab.getAttribute('aria-selected') === 'true');
+    const next = (current + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+    tabs[next].focus();
+    setTab(tabs[next].id.replace('tab-', ''));
+  });
+  applyTeam('timbers', false);
+  chrome.storage.local.get(['selectedTeam', 'notificationsEnabled'], (stored) => {
+    if (stored?.selectedTeam && stored.selectedTeam !== state.team) applyTeam(stored.selectedTeam);
+    updateNotifications(Boolean(stored?.notificationsEnabled));
+  });
 });

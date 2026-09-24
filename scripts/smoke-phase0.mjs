@@ -26,7 +26,11 @@ await step('team directory', async () => {
   const teams = result.body?.teams;
   assert(Array.isArray(teams), 'Team directory did not return an array.');
   assert(teams.some((team) => team.id === 'timbers' && team.status === 'active'), 'Active Timbers configuration is missing.');
-  assert(teams.some((team) => team.id === 'thorns' && team.status === 'planned'), 'Planned Thorns configuration is missing.');
+  assert(teams.some((team) => team.id === 'thorns' && team.status === 'active'), 'Active Thorns configuration is missing.');
+  const thorns = teams.find((team) => team.id === 'thorns');
+  assert(thorns?.capabilities?.schedule === true, 'Thorns schedule capability is missing.');
+  assert(thorns?.capabilities?.polling === true, 'Thorns polling capability is missing.');
+  assert(thorns?.capabilities?.standings === true, 'Thorns standings capability is missing.');
 });
 
 await step('Timbers team detail', async () => {
@@ -35,9 +39,34 @@ await step('Timbers team detail', async () => {
   assert(result.body?.team?.id === 'timbers', 'Timbers team detail is invalid.');
 });
 
+await step('Thorns team detail', async () => {
+  const result = await apiRequest('/v1/teams/thorns');
+  expectStatus(result, 200);
+  assert(result.body?.team?.id === 'thorns', 'Thorns team detail is invalid.');
+  assert(result.body?.team?.status === 'active', 'Thorns team is not active.');
+});
+
 await step('unknown team rejection', async () => {
   const result = await apiRequest('/v1/teams/unknown');
   expectProblem(result, 404, 'team_not_found');
+});
+
+await step('next Thorns match', async () => {
+  const result = await apiRequest('/v1/matches/next?teamId=thorns');
+  expectStatus(result, 200);
+  assert(result.body?.match?.teamId === 'thorns', 'Thorns next match returned the wrong team.');
+  assert(result.body?.source && result.body?.freshness, 'Thorns freshness metadata is missing.');
+});
+
+await step('Thorns standings capability', async () => {
+  const result = await apiRequest('/v1/standings?teamId=thorns');
+  if (result.status === 200) {
+    assert(result.body?.teamId === 'thorns', 'Thorns standings returned the wrong team.');
+    assert(result.body?.source && result.body?.freshness, 'Thorns standings freshness metadata is missing.');
+  } else {
+    assert([502, 503].includes(result.status), `Expected provider-unavailable status, received ${result.status}.`);
+    assert(result.body?.code === 'provider_unavailable', 'Thorns standings did not return a provider-unavailable response.');
+  }
 });
 
 await step('next Timbers match', async () => {
@@ -47,6 +76,20 @@ await step('next Timbers match', async () => {
   assert(Number.isFinite(Date.parse(result.body?.match?.kickoff)), 'Next match kickoff is invalid.');
   assert(Array.isArray(result.body?.polls), 'Next match polls are invalid.');
   nextMatch = result.body;
+});
+
+await step('Timbers live match availability', async () => {
+  const result = await apiRequest('/v1/matches/live?teamId=timbers');
+  if (result.status === 200) {
+    assert(result.body?.match?.teamId === 'timbers', 'Live match response returned the wrong team.');
+    assert(Number.isInteger(result.body?.homeScore) && Number.isInteger(result.body?.awayScore), 'Live match score is invalid.');
+    assert(Array.isArray(result.body?.events), 'Live match events are invalid.');
+  } else if (result.status === 404) {
+    assert(result.body?.code === 'match_not_found', 'Expected match_not_found when no Timbers match is live.');
+  } else {
+    assert([502, 503, 504].includes(result.status), `Expected provider-unavailable status, received ${result.status}.`);
+    assert(result.body?.code === 'provider_unavailable', 'Timbers live match did not return a provider-unavailable response.');
+  }
 });
 
 await step('canonical poll aggregate', async () => {

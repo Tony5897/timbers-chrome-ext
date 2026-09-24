@@ -51,6 +51,7 @@ gha-creds-*.json
 
 # AI/editor tool data
 .claude/
+.playwright-cli/
 
 # Private operator / planning docs (local only; never publish)
 docs/

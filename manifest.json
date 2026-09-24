@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
-    "name": "Timbers Matchday",
+    "name": "PDX Matchday",
     "version": "1.0.5",
-    "description": "See the next Portland match, kickoff countdown, viewing details, and anonymous fan confidence in one toolbar popup.",
+    "description": "See the next Timbers or Thorns match, kickoff countdown, viewing details, standings, and anonymous fan confidence.",
     "action": {
         "default_popup": "popup.html",
         "default_icon": {
@@ -16,10 +16,10 @@
     },
     "permissions": [
         "storage",
-        "alarms"
+        "alarms",
+        "notifications"
     ],
     "host_permissions": [
-        "https://site.api.espn.com/*",
         "https://identitytoolkit.googleapis.com/*",
         "https://securetoken.googleapis.com/*",
         "https://us-central1-timbers-matchday.cloudfunctions.net/*"

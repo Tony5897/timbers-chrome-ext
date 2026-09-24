@@ -97,7 +97,7 @@ describe('compatibility HTTP API', () => {
           canonicalMatches: true,
           canonicalPolls: true,
           multiTeamSelection: false,
-          liveEvents: false,
+          liveEvents: true,
           notifications: false,
         },
       })),
@@ -112,11 +112,11 @@ describe('compatibility HTTP API', () => {
     expect(captured.headers['Cache-Control']).toContain('max-age=300');
   });
 
-  it('lists teams with active and planned availability', async () => {
+  it('lists active Timbers and Thorns availability', async () => {
     const service = {} as CompatibilityPollService;
     const teams = [
       { id: 'timbers', status: 'active' },
-      { id: 'thorns', status: 'planned' },
+      { id: 'thorns', status: 'active' },
     ];
     const publicReadService = {
       listTeams: vi.fn(() => teams),
@@ -185,7 +185,41 @@ describe('compatibility HTTP API', () => {
     expect(captured.headers['Cache-Control']).toContain('max-age=60');
   });
 
-  it('returns a stable capability error for planned team data', async () => {
+  it('serves standings with freshness metadata for a requested team', async () => {
+    const service = {} as CompatibilityPollService;
+    const publicReadService = {
+      getStandings: vi.fn(async () => ({
+        teamId: 'thorns', standings: [], source: 'live', freshness: 'fresh', dataUpdatedAt: null,
+      })),
+    } as unknown as PublicReadService;
+    const handler = apiHandler(service, vi.fn(), publicReadService);
+    const { response, captured } = responseCapture();
+
+    await handler(request({ method: 'GET', path: '/v1/standings', query: { teamId: 'thorns' } }), response);
+
+    expect(captured.statusCode).toBe(200);
+    expect(captured.body).toEqual(expect.objectContaining({ teamId: 'thorns', source: 'live', freshness: 'fresh' }));
+    expect(publicReadService.getStandings).toHaveBeenCalledWith('thorns');
+  });
+
+  it('serves live match data with no-store caching', async () => {
+    const service = {} as CompatibilityPollService;
+    const publicReadService = {
+      getLiveMatch: vi.fn(async () => ({
+        match: { id: 'espn-live-1', teamId: 'timbers' }, homeScore: 1, awayScore: 0, events: [], source: 'live', freshness: 'fresh', dataUpdatedAt: null,
+      })),
+    } as unknown as PublicReadService;
+    const handler = apiHandler(service, vi.fn(), publicReadService);
+    const { response, captured } = responseCapture();
+
+    await handler(request({ method: 'GET', path: '/v1/matches/live', query: { teamId: 'timbers' } }), response);
+
+    expect(captured.statusCode).toBe(200);
+    expect(captured.headers['Cache-Control']).toBe('no-store');
+    expect(publicReadService.getLiveMatch).toHaveBeenCalledWith('timbers');
+  });
+
+  it('returns a stable capability error when a capability is unavailable', async () => {
     const service = {} as CompatibilityPollService;
     const publicReadService = {
       getNextMatch: vi.fn(async () => { throw new Error('capability_unavailable'); }),
