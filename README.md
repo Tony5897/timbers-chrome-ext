@@ -9,7 +9,7 @@ A Chrome-first matchday extension for Portland Timbers and Portland Thorns suppo
 - **Extension version:** `1.0.5` (Manifest V3)
 - **Public site:** [tony5897.github.io/timbers-chrome-ext](https://tony5897.github.io/timbers-chrome-ext/)
 - **Privacy policy:** [PRIVACY.md](PRIVACY.md) (also hosted on the public site)
-- **Chrome Web Store:** published and public; release `1.0.5` is live
+- **Chrome Web Store:** published and public; release `1.0.5` is live — [view or install it here](https://chromewebstore.google.com/detail/ldecngkangcclhcjcckfldafdmjlpldi)
 - **Backend:** dual-team API (schedule, standings grouped by conference, live match) is deployed to staging and production (last deployed 2026-09-24); ESPN remains the server-side sports-data provider
 
 ## Features
@@ -242,12 +242,14 @@ Public poll IDs use `poll-{matchId}-confidence-v1`, for example `poll-espn-40199
 
 ## Chrome Web Store
 
+**[Get PDX Matchday on the Chrome Web Store →](https://chromewebstore.google.com/detail/ldecngkangcclhcjcckfldafdmjlpldi)**
+
 - **Current listing status:** Published — public
 - **Release `1.0.5` status:** Live
 
 ![Chrome Web Store presentation preview](assets/store/promo-marquee-1400x560.png)
 
-The extension is live and publicly listed on the Chrome Web Store — searchable in the store as well as installable via direct link. The original package was submitted and approved on March 6, 2026; release `1.0.5` was submitted and approved on 2026-09-25.
+The extension is live and publicly listed on the Chrome Web Store — searchable in the store as well as [installable via direct link](https://chromewebstore.google.com/detail/ldecngkangcclhcjcckfldafdmjlpldi). The original package was submitted and approved on March 6, 2026; release `1.0.5` was submitted and approved on 2026-09-25.
 
 Store publication is intentionally outside the automated deployment workflow.
 
