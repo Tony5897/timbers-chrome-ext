@@ -274,7 +274,7 @@ Passive product analytics and regional analytics are disabled in the compatibili
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/my-feature`)
 3. Commit your changes and push to your fork
-4. Open a pull request against `develop`
+4. Open a pull request against `main`
 
 ## License
 
