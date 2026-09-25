@@ -1,5 +1,5 @@
-const background = require('../background');
-const fallbackFixture = require('../data/fallback.json');
+const background = require('../extension/background');
+const fallbackFixture = require('../extension/data/fallback.json');
 
 // ESPN API response factory.
 // Uses a date far enough in the future to always pass the "upcoming match"

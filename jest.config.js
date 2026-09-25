@@ -7,7 +7,7 @@ module.exports = {
   transform: {
     '^.+\\.js$': 'babel-jest',
   },
-  collectCoverageFrom: ['background.js', 'popup.js'],
+  collectCoverageFrom: ['extension/background.js', 'extension/popup.js'],
   reporters: ['default'],
   testPathIgnorePatterns: ['/node_modules/', '/emulator-tests/', '/services/api/'],
 };

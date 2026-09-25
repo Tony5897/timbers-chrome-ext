@@ -1,5 +1,5 @@
 {
-  "name": "timbers-chrome-ext",
+  "name": "pdx-matchday",
   "version": "1.0.5",
   "description": "See the next Portland match, kickoff countdown, viewing details, and anonymous fan confidence in one toolbar popup.",
   "workspaces": [

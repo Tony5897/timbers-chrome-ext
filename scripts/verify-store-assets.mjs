@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import sharp from 'sharp';
 
 const rootDirectory = path.resolve(import.meta.dirname, '..');
+const extensionDirectory = path.join(rootDirectory, 'extension');
 const storeDirectory = path.join(rootDirectory, 'assets', 'store');
 const approval = JSON.parse(await fs.readFile(path.join(storeDirectory, 'approved-assets.json'), 'utf8'));
 const expectedStoreAssets = new Map([
@@ -17,17 +18,17 @@ const expectedStoreAssets = new Map([
 ]);
 const expectedRuntimeSources = [
   'assets/brand/pdx-matchday-mark.svg',
-  'popup.html',
-  'popup.js',
-  'styles.css',
+  'extension/popup.html',
+  'extension/popup.js',
+  'extension/styles.css',
   'scripts/generate-icons.js',
   'scripts/generate-store-assets.mjs',
 ];
 const expectedApprovedFiles = [
-  'icon.png',
-  'icons/icon-16.png',
-  'icons/icon-48.png',
-  'icons/icon-128.png',
+  'extension/icon.png',
+  'extension/icons/icon-16.png',
+  'extension/icons/icon-48.png',
+  'extension/icons/icon-128.png',
   ...[...expectedStoreAssets.keys()].map((filename) => `assets/store/${filename}`),
 ].sort();
 
@@ -46,12 +47,12 @@ for (const [filename, [expectedWidth, expectedHeight]] of expectedStoreAssets) {
 }
 
 for (const size of [16, 48, 128]) {
-  const metadata = await sharp(path.join(rootDirectory, 'icons', `icon-${size}.png`)).metadata();
+  const metadata = await sharp(path.join(extensionDirectory, 'icons', `icon-${size}.png`)).metadata();
   assert(metadata.format === 'png', `icon-${size}.png must be PNG.`);
   assert(metadata.width === size && metadata.height === size, `icon-${size}.png must be ${size}x${size}.`);
 }
 
-const rootIcon = await sharp(path.join(rootDirectory, 'icon.png')).metadata();
+const rootIcon = await sharp(path.join(extensionDirectory, 'icon.png')).metadata();
 assert(rootIcon.format === 'png' && rootIcon.width === 640 && rootIcon.height === 640, 'icon.png must be a 640x640 PNG source export.');
 
 for (const [filename, approvedDigest] of Object.entries(approval.files)) {
@@ -68,12 +69,12 @@ for (const filename of approval.runtimeSources) {
 }
 assert(sourceHash.digest('hex') === approval.runtimeSourceSha256, 'Runtime presentation sources changed without regenerated and re-approved store assets.');
 
-const manifest = JSON.parse(await fs.readFile(path.join(rootDirectory, 'manifest.json'), 'utf8'));
+const manifest = JSON.parse(await fs.readFile(path.join(extensionDirectory, 'manifest.json'), 'utf8'));
 assert(manifest.description.length <= 132, 'Manifest description must remain within the Chrome Web Store summary limit.');
 assert(manifest.icons?.['128'] === 'icons/icon-128.png', 'Manifest must use the approved 128px icon.');
 
 const presentationText = [
-  await fs.readFile(path.join(rootDirectory, 'popup.html'), 'utf8'),
+  await fs.readFile(path.join(extensionDirectory, 'popup.html'), 'utf8'),
   await fs.readFile(path.join(rootDirectory, 'assets', 'brand', 'pdx-matchday-mark.svg'), 'utf8'),
   await fs.readFile(path.join(rootDirectory, 'scripts', 'generate-store-assets.mjs'), 'utf8'),
 ].join('\n');

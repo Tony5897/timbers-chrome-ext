@@ -12,8 +12,6 @@ A Chrome-first matchday extension for Portland Timbers and Portland Thorns suppo
 - **Chrome Web Store:** published unlisted on an earlier package; release `1.0.5` is prepared and not yet submitted
 - **Backend:** dual-team API (schedule, standings grouped by conference, live match) is deployed to staging and production (last deployed 2026-09-24); ESPN remains the server-side sports-data provider
 
-Internal planning, runbooks, and operator status notes are kept local and are not published with this repository.
-
 ## Features
 
 - Live countdown to the next Timbers or Thorns match
@@ -55,7 +53,7 @@ npm run build:icons
 
 1. Navigate to `chrome://extensions` (or `edge://extensions`)
 2. Enable **Developer mode**
-3. Click **Load unpacked** and select the project root folder
+3. Click **Load unpacked** and select the `extension/` folder
 
 ### Safari (macOS)
 
@@ -125,12 +123,12 @@ Use the **Confidence Poll** section to vote on your confidence level and see how
 | `npm run build:api` | Build shared packages and the Firebase API |
 | `npm run test:api` | Run compatibility API unit tests |
 | `npm run test:rules` | Build the API and run Firestore emulator suites |
-| `npm run export:legacy` | Export legacy vote records for migration (operator tooling) |
+| `npm run export:legacy` | Export legacy vote records for the Firestore migration |
 | `npm run package:extension` | Build the exact Chrome Web Store ZIP |
 | `npm run verify:extension` | Verify ZIP inventory and secret exclusions |
-| `npm run preflight:phase0` | Validate local release tooling, configuration, and optional backup evidence |
+| `npm run preflight:phase0` | Validate local release tooling, configuration, and optional backup evidence before a deploy |
 | `npm run smoke:phase0` | Exercise deployed public and optional authenticated API behavior |
-| `npm run verify:phase0` | Run the complete Phase 0 verification pipeline |
+| `npm run verify:phase0` | Run the full local verification pipeline: lint, typecheck, tests, and build |
 | `npm run clean` | Remove generated build, coverage, package, and emulator output |
 | `npm run build:icons` | Generate 16/48/128px icons from `icon.png` |
 | `npm run build:store-assets` | Regenerate Chrome Web Store screenshots and promo images from the live popup |
@@ -141,21 +139,22 @@ Use the **Confidence Poll** section to vote on your confidence level and see how
 
 ```
 timbers-chrome-ext/
-├── background.js             # Service worker — fetches and caches match data
-├── popup.html                # Extension popup UI
-├── popup.js                  # Popup logic — countdown, voting, data display
-├── styles.css                # Popup stylesheet (CSS custom properties design system)
-├── manifest.json             # Extension manifest (MV3)
-├── runtime-config.js         # Public Firebase and API runtime configuration
-├── auth.js                   # Firebase anonymous authentication client
-├── community.js              # Authenticated compatibility API client
-├── icon.png                  # Source icon (640×640)
-├── icons/                    # Generated extension icons
-│   ├── icon-16.png
-│   ├── icon-48.png
-│   └── icon-128.png
-├── data/
-│   └── fallback.json         # Bundled match fixture (last-resort fallback)
+├── extension/                 # The installable Chrome/Edge/Safari extension
+│   ├── manifest.json          # Extension manifest (MV3)
+│   ├── background.js          # Service worker — fetches and caches match data
+│   ├── popup.html             # Extension popup UI
+│   ├── popup.js               # Popup logic — countdown, voting, data display
+│   ├── styles.css             # Popup stylesheet (CSS custom properties design system)
+│   ├── runtime-config.js      # Public Firebase and API runtime configuration
+│   ├── auth.js                # Firebase anonymous authentication client
+│   ├── community.js           # Authenticated compatibility API client
+│   ├── icon.png                # Source icon (640×640)
+│   ├── icons/                  # Generated extension icons
+│   │   ├── icon-16.png
+│   │   ├── icon-48.png
+│   │   └── icon-128.png
+│   └── data/
+│       └── fallback.json       # Bundled match fixture (last-resort fallback)
 ├── scripts/
 │   ├── generate-icons.js     # Sharp-based icon generator
 │   ├── convert-safari.sh     # Safari Web Extension converter wrapper
@@ -252,7 +251,7 @@ The extension is live on the Chrome Web Store and installable via direct link. I
 
 Release `1.0.5` will not be submitted until its API, authentication, migration, rollback, privacy, support, listing-copy, screenshot, and store-artwork gates are approved. Store publication is intentionally outside the automated deployment workflow.
 
-The original PDX Matchday identity, required promotional graphics, and five current-feature screenshots ship with this repository. Listing copy, permission justifications, privacy disclosures, release notes, and the final human review checklist are maintained privately by the operator. No current artwork uses a club crest, league mark, or official trade dress, and the listing explicitly identifies the extension as an independent fan project.
+The original PDX Matchday identity, required promotional graphics, and five current-feature screenshots ship with this repository. Listing copy, permission justifications, privacy disclosures, release notes, and the final human review checklist are maintained privately and are not published in this repository. No current artwork uses a club crest, league mark, or official trade dress, and the listing explicitly identifies the extension as an independent fan project.
 
 - **Manifest V3** compliant
 - Icons at 16px, 48px, and 128px

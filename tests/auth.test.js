@@ -51,7 +51,7 @@ describe('MatchdayAuth', () => {
         expiresIn: '3600',
       }),
     });
-    const auth = require('../auth');
+    const auth = require('../extension/auth');
 
     await expect(auth.getIdToken()).resolves.toBe('id-token');
     expect(global.fetch).toHaveBeenCalledWith(
@@ -75,7 +75,7 @@ describe('MatchdayAuth', () => {
     });
     global.chrome = storage.chrome;
     global.fetch = jest.fn();
-    const auth = require('../auth');
+    const auth = require('../extension/auth');
 
     await expect(auth.getIdToken()).resolves.toBe('stored-token');
     expect(global.fetch).not.toHaveBeenCalled();
@@ -100,7 +100,7 @@ describe('MatchdayAuth', () => {
         expires_in: '3600',
       }),
     });
-    const auth = require('../auth');
+    const auth = require('../extension/auth');
 
     await expect(auth.getIdToken()).resolves.toBe('refreshed-token');
     expect(global.fetch).toHaveBeenCalledWith(
@@ -114,7 +114,7 @@ describe('MatchdayAuth', () => {
     const storage = createChromeStorage({ _matchday_auth_v1: { idToken: 'stored-token' } });
     global.chrome = storage.chrome;
     global.fetch = jest.fn();
-    const auth = require('../auth');
+    const auth = require('../extension/auth');
 
     await expect(auth.hasSession()).resolves.toBe(true);
     expect(global.fetch).not.toHaveBeenCalled();
