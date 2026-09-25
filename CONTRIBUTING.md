@@ -2,16 +2,18 @@
 
 ## Branch Protection Rules
 
-Direct pushes to `main` or `develop` are forbidden. All changes go through a pull request reviewed and merged by the repository owner.
+Direct pushes to `main` are forbidden. All changes go through a pull request reviewed and merged by the repository owner.
+
+`develop` is retired from the active workflow. It still exists only because GitHub Pages currently serves this repo's public site from it (Settings → Pages). Do not branch off or target `develop` for new work — branch off `main`.
 
 ---
 
 ## PR Workflow (required for every change)
 
-1. **Branch off `develop`**
+1. **Branch off `main`**
    ```bash
-   git checkout develop
-   git pull origin develop
+   git checkout main
+   git pull origin main
    git checkout -b feature/short-description
    ```
 
@@ -26,14 +28,12 @@ Direct pushes to `main` or `develop` are forbidden. All changes go through a pul
    git push origin feature/short-description
    ```
 
-4. **Open a PR targeting `develop`**
+4. **Open a PR targeting `main`**
    ```bash
-   gh pr create --base develop --title "..." --body "..."
+   gh pr create --base main --title "..." --body "..."
    ```
 
 5. **Owner reviews and merges — do not merge your own PR**
-
-`develop` → `main` is merged separately by the owner after review.
 
 ---
 
@@ -51,7 +51,6 @@ Direct pushes to `main` or `develop` are forbidden. All changes go through a pul
 ## Forbidden Actions
 
 - `git push origin main` — forbidden
-- `git push origin develop` — forbidden
 - `git push --force` on any protected branch — forbidden
 - Merging your own PR — forbidden
 
