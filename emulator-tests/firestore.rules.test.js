@@ -21,7 +21,7 @@ const hostAndPort = process.env.FIRESTORE_EMULATOR_HOST?.split(':') ?? ['127.0.0
 const host = hostAndPort[0];
 const port = Number(hostAndPort[1]);
 let temporaryEnvironment;
-let finalEnvironment;
+let postMigrationEnvironment;
 
 beforeAll(async () => {
   temporaryEnvironment = await initializeTestEnvironment({
@@ -32,24 +32,24 @@ beforeAll(async () => {
       rules: fs.readFileSync(path.resolve(__dirname, '../firestore.rules'), 'utf8'),
     },
   });
-  finalEnvironment = await initializeTestEnvironment({
+  postMigrationEnvironment = await initializeTestEnvironment({
     projectId: 'demo-timbers-matchday-final',
     firestore: {
       host,
       port,
-      rules: fs.readFileSync(path.resolve(__dirname, '../firestore.rules.final'), 'utf8'),
+      rules: fs.readFileSync(path.resolve(__dirname, '../firestore.post-migration.rules'), 'utf8'),
     },
   });
 });
 
 afterEach(async () => {
   if (temporaryEnvironment) await temporaryEnvironment.clearFirestore();
-  if (finalEnvironment) await finalEnvironment.clearFirestore();
+  if (postMigrationEnvironment) await postMigrationEnvironment.clearFirestore();
 });
 
 afterAll(async () => {
   if (temporaryEnvironment) await temporaryEnvironment.cleanup();
-  if (finalEnvironment) await finalEnvironment.cleanup();
+  if (postMigrationEnvironment) await postMigrationEnvironment.cleanup();
 });
 
 describe('temporary legacy compatibility rules', () => {
@@ -105,7 +105,7 @@ describe('temporary legacy compatibility rules', () => {
 
 describe('final post-grace rules', () => {
   function publicVote() {
-    return doc(finalEnvironment.unauthenticatedContext().firestore(), 'votes', '1786156200000');
+    return doc(postMigrationEnvironment.unauthenticatedContext().firestore(), 'votes', '1786156200000');
   }
 
   test('keeps legacy aggregate reads available', async () => {
@@ -119,7 +119,7 @@ describe('final post-grace rules', () => {
 
   test('denies reads and writes outside the legacy aggregate collection', async () => {
     const rawResponse = doc(
-      finalEnvironment.unauthenticatedContext().firestore(),
+      postMigrationEnvironment.unauthenticatedContext().firestore(),
       'compatibilityPolls',
       'poll',
       'responses',

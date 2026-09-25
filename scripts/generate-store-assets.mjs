@@ -8,11 +8,12 @@ import sharp from 'sharp';
 
 const execFileAsync = promisify(execFile);
 const rootDirectory = path.resolve(import.meta.dirname, '..');
+const extensionDirectory = path.join(rootDirectory, 'extension');
 const brandDirectory = path.join(rootDirectory, 'assets', 'brand');
 const storeDirectory = path.join(rootDirectory, 'assets', 'store');
-const iconsDirectory = path.join(rootDirectory, 'icons');
+const iconsDirectory = path.join(extensionDirectory, 'icons');
 const markSource = await fs.readFile(path.join(brandDirectory, 'pdx-matchday-mark.svg'), 'utf8');
-const popupTemplate = await fs.readFile(path.join(rootDirectory, 'popup.html'), 'utf8');
+const popupTemplate = await fs.readFile(path.join(extensionDirectory, 'popup.html'), 'utf8');
 const markBody = markSource.match(/<svg[^>]*>([\s\S]*)<\/svg>/)?.[1];
 
 if (!markBody) throw new Error('Unable to read PDX Matchday mark.');
@@ -33,7 +34,7 @@ await fs.mkdir(storeDirectory, { recursive: true });
 await fs.mkdir(iconsDirectory, { recursive: true });
 
 await Promise.all([
-  renderSvg(markSource, path.join(rootDirectory, 'icon.png'), 640, 640),
+  renderSvg(markSource, path.join(extensionDirectory, 'icon.png'), 640, 640),
   ...[16, 48, 128].map((size) => renderSvg(markSource, path.join(iconsDirectory, `icon-${size}.png`), size, size)),
 ]);
 
@@ -243,7 +244,7 @@ async function capturePopupStates(outputDirectory) {
 }
 
 function buildCaptureHtml(fixture) {
-  const baseUrl = pathToFileURL(`${rootDirectory}${path.sep}`).href;
+  const baseUrl = pathToFileURL(`${extensionDirectory}${path.sep}`).href;
   const fixtureJson = JSON.stringify(fixture).replaceAll('<', '\\u003c');
   const captureSetup = `<base href="${baseUrl}">
     <style>* { animation-duration: 0s !important; transition-duration: 0s !important; } html, body { width: 380px; min-height: 1000px; } body { max-height: none !important; overflow: visible !important; }</style>

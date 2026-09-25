@@ -8,6 +8,7 @@
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+EXTENSION_DIR="${PROJECT_ROOT}/extension"
 OUTPUT_DIR="${PROJECT_ROOT}/safari"
 APP_NAME="PDX Matchday"
 BUNDLE_ID="com.timbersmatchday.safari-extension"
@@ -37,9 +38,9 @@ if ! command -v python3 &>/dev/null; then
 fi
 
 # ── Safety check: telemetry.local.js must NOT ship in the Safari bundle ───────
-if [ -f "${PROJECT_ROOT}/telemetry.local.js" ]; then
+if [ -f "${EXTENSION_DIR}/telemetry.local.js" ]; then
   echo ""
-  echo "⚠️  WARNING: telemetry.local.js is present in the project root." >&2
+  echo "⚠️  WARNING: telemetry.local.js is present in extension/." >&2
   echo "   The converter will include it in the Xcode project." >&2
   echo "   After conversion, cleanup-safari-resources.py will remove it" >&2
   echo "   from the extension target's build phase." >&2
@@ -54,17 +55,16 @@ if [ -d "$OUTPUT_DIR" ]; then
 fi
 
 # ── Run the converter ─────────────────────────────────────────────────────────
-# Runs against the project root (not a staging directory — required by this
-# version of safari-web-extension-converter). The converter will reference all
-# files in the project root; cleanup-safari-resources.py removes the unwanted
-# ones from the extension target's build phase in the next step.
+# Runs against extension/ (not a staging copy — required by this version of
+# safari-web-extension-converter). cleanup-safari-resources.py still runs
+# afterward as a belt-and-suspenders check on the Xcode target's build phase.
 
 echo "Converting Chrome extension to Safari Web Extension..."
-echo "  Source:  ${PROJECT_ROOT}"
+echo "  Source:  ${EXTENSION_DIR}"
 echo "  Output:  ${OUTPUT_DIR}"
 echo ""
 
-xcrun safari-web-extension-converter "${PROJECT_ROOT}" \
+xcrun safari-web-extension-converter "${EXTENSION_DIR}" \
   --project-location "${OUTPUT_DIR}" \
   --app-name "${APP_NAME}" \
   --bundle-identifier "${BUNDLE_ID}" \
@@ -74,9 +74,9 @@ xcrun safari-web-extension-converter "${PROJECT_ROOT}" \
   --no-prompt
 
 # ── Clean up the Xcode project ────────────────────────────────────────────────
-# The converter adds ALL files from the project root to the extension target's
-# Resources build phase (including node_modules, tests, zip archives, etc.).
-# This step removes them so only the actual extension files are bundled.
+# extension/ only holds runtime files, so this is a belt-and-suspenders pass —
+# it removes anything unexpected (e.g. a stray telemetry.local.js) that ended
+# up in the extension target's Resources build phase.
 
 if [ -f "$PBXPROJ" ]; then
   echo ""

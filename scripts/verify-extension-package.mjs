@@ -5,7 +5,8 @@ import path from 'node:path';
 import { readProjectMetadata, verifyExtensionDirectory } from './extension-artifact.mjs';
 
 const rootDirectory = path.resolve(import.meta.dirname, '..');
-const { packageJson } = readProjectMetadata(rootDirectory);
+const extensionDirectory = path.join(rootDirectory, 'extension');
+const { packageJson } = readProjectMetadata(extensionDirectory, rootDirectory);
 const zipPath = process.argv[2]
   ? path.resolve(process.argv[2])
   : path.join(rootDirectory, 'dist', `pdx-matchday-v${packageJson.version}.zip`);
@@ -15,7 +16,7 @@ if (!fs.existsSync(zipPath)) throw new Error(`Extension ZIP not found: ${zipPath
 const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'matchday-extension-'));
 try {
   execFileSync('unzip', ['-q', zipPath, '-d', temporaryDirectory]);
-  const files = verifyExtensionDirectory(rootDirectory, temporaryDirectory);
+  const files = verifyExtensionDirectory(extensionDirectory, temporaryDirectory, rootDirectory);
   process.stdout.write(`Verified ${files.length} packaged runtime files in ${zipPath}\n`);
 } finally {
   fs.rmSync(temporaryDirectory, { recursive: true, force: true });

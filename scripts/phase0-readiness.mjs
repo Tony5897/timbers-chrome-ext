@@ -13,13 +13,13 @@ checkCommandVersion('Java', 'java', ['-version'], 21);
 checkCommandVersion('Firebase CLI', path.join(rootDirectory, 'node_modules', '.bin', 'firebase'), ['--version'], 15);
 
 const packageJson = readJson('package.json');
-const manifest = readJson('manifest.json');
+const manifest = readJson('extension/manifest.json');
 check('release versions agree', manifest.version === packageJson.version, {
   packageVersion: packageJson.version,
   manifestVersion: manifest.version,
 });
 
-const runtimeConfigSource = readText('runtime-config.js');
+const runtimeConfigSource = readText('extension/runtime-config.js');
 const runtimeConfig = {
   projectId: capture(runtimeConfigSource, /projectId:\s*'([^']+)'/),
   apiBaseUrl: capture(runtimeConfigSource, /apiBaseUrl:\s*'([^']+)'/),
@@ -47,10 +47,10 @@ if (runtimeApiUrl) {
 
 for (const requiredFile of [
   'firebase.json',
-  'firebase.final.json',
+  'firebase.post-migration.json',
   'firestore.indexes.json',
   'firestore.rules',
-  'firestore.rules.final',
+  'firestore.post-migration.rules',
 ]) {
   check(`required deployment file exists: ${requiredFile}`, fs.existsSync(path.join(rootDirectory, requiredFile)));
 }

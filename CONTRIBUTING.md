@@ -61,14 +61,15 @@ Direct pushes to `main` or `develop` are forbidden. All changes go through a pul
 
 | File | Purpose |
 |---|---|
-| `manifest.json` | MV3, current release version, service worker, storage + alarms |
-| `background.js` | Three-tier fetch: live → cache → fallback |
-| `popup.js / popup.html / styles.css` | Popup UI, countdown, confidence poll |
-| `runtime-config.js / auth.js / community.js` | Public runtime config, anonymous auth, compatibility API client |
+| `extension/` | The installable Chrome/Edge/Safari extension — everything below is inside it |
+| `extension/manifest.json` | MV3, current release version, service worker, storage + alarms |
+| `extension/background.js` | Three-tier fetch: live → cache → fallback |
+| `extension/popup.js / popup.html / styles.css` | Popup UI, countdown, confidence poll |
+| `extension/runtime-config.js / auth.js / community.js` | Public runtime config, anonymous auth, compatibility API client |
+| `extension/data/fallback.json` | Bundled fallback match data — keep current |
 | `packages/contracts/` | Shared Zod schemas and API/domain DTOs |
 | `packages/domain/` | Shared team configuration, capabilities, and stable identifier rules |
 | `services/api/` | Firebase Functions compatibility API and scheduled cleanup |
-| `data/fallback.json` | Bundled fallback match data — keep current |
 | `tests/` | Extension Jest tests — must stay green before any PR |
 
 The repository uses npm workspaces with one root lockfile. Use Node 22 and install from the repository root:

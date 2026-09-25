@@ -243,7 +243,7 @@ jobs:
         if: inputs.component == 'final-rules'
         env:
           PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-        run: npx firebase-tools --config firebase.final.json deploy --only firestore:rules --project "$PROJECT_ID" --non-interactive
+        run: npx firebase-tools --config firebase.post-migration.json deploy --only firestore:rules --project "$PROJECT_ID" --non-interactive
 
       - name: Run API smoke tests
         if: inputs.component == 'api'

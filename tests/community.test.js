@@ -53,7 +53,7 @@ describe('CommunityVotes compatibility client', () => {
       ok: true,
       json: async () => ({ choices: { high: 4, medium: 2, low: 1, total: 7 } }),
     });
-    const community = require('../community');
+    const community = require('../extension/community');
 
     await expect(community.get(matchTimestamp)).resolves.toEqual({ high: 4, medium: 2, low: 1 });
     expect(global.MatchdayAuth.getIdToken).not.toHaveBeenCalled();
@@ -63,7 +63,7 @@ describe('CommunityVotes compatibility client', () => {
     const storage = createChromeStorage();
     global.chrome = storage.chrome;
     global.fetch = jest.fn().mockRejectedValue(new Error('offline'));
-    const community = require('../community');
+    const community = require('../extension/community');
 
     await expect(community.increment(matchTimestamp, 'high')).resolves.toEqual({
       synced: false,
@@ -90,7 +90,7 @@ describe('CommunityVotes compatibility client', () => {
       status: 201,
       json: async () => ({ choices: { high: 1, medium: 1, low: 0, total: 2 } }),
     });
-    const community = require('../community');
+    const community = require('../extension/community');
 
     await expect(community.get(matchTimestamp)).resolves.toEqual({ high: 1, medium: 1, low: 0 });
     expect(global.fetch).toHaveBeenCalledWith(
@@ -112,7 +112,7 @@ describe('CommunityVotes compatibility client', () => {
         status: 201,
         json: async () => ({ choices: { high: 0, medium: 0, low: 1, total: 1 } }),
       });
-    const community = require('../community');
+    const community = require('../extension/community');
 
     await expect(community.increment(matchTimestamp, 'low')).resolves.toEqual({
       synced: true,
@@ -136,7 +136,7 @@ describe('CommunityVotes compatibility client', () => {
       status: 202,
       json: async () => ({ status: 'scheduled', receiptId: 'deletion-receipt-001' }),
     });
-    const community = require('../community');
+    const community = require('../extension/community');
 
     await expect(community.deleteInstallation()).resolves.toEqual({
       deleted: true,

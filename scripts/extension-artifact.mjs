@@ -14,14 +14,18 @@ const SECRET_PATTERNS = [
   /"private_key"\s*:/,
 ];
 
-export function readProjectMetadata(rootDirectory) {
-  const manifest = JSON.parse(fs.readFileSync(path.join(rootDirectory, 'manifest.json'), 'utf8'));
-  const packageJson = JSON.parse(fs.readFileSync(path.join(rootDirectory, 'package.json'), 'utf8'));
+export function readManifest(extensionDirectory) {
+  return JSON.parse(fs.readFileSync(path.join(extensionDirectory, 'manifest.json'), 'utf8'));
+}
+
+export function readProjectMetadata(extensionDirectory, repoRootDirectory = extensionDirectory) {
+  const manifest = readManifest(extensionDirectory);
+  const packageJson = JSON.parse(fs.readFileSync(path.join(repoRootDirectory, 'package.json'), 'utf8'));
   return { manifest, packageJson };
 }
 
-export function collectExtensionFiles(rootDirectory) {
-  const { manifest } = readProjectMetadata(rootDirectory);
+export function collectExtensionFiles(extensionDirectory) {
+  const manifest = readManifest(extensionDirectory);
   const files = new Set(['manifest.json']);
   const queue = [];
 
@@ -29,13 +33,13 @@ export function collectExtensionFiles(rootDirectory) {
     if (!reference || isExternalReference(reference)) return;
     const normalized = normalizeReference(reference);
     if (!normalized) return;
-    const absolutePath = path.join(rootDirectory, normalized);
+    const absolutePath = path.join(extensionDirectory, normalized);
     if (!fs.existsSync(absolutePath)) {
       throw new Error(`Missing extension runtime dependency: ${normalized}`);
     }
     if (fs.statSync(absolutePath).isDirectory()) {
       for (const child of walkDirectory(absolutePath)) {
-        addReference(path.relative(rootDirectory, child));
+        addReference(path.relative(extensionDirectory, child));
       }
       return;
     }
@@ -54,7 +58,7 @@ export function collectExtensionFiles(rootDirectory) {
     const current = queue.shift();
     if (!current) continue;
     const extension = path.extname(current).toLowerCase();
-    const content = fs.readFileSync(path.join(rootDirectory, current), 'utf8');
+    const content = fs.readFileSync(path.join(extensionDirectory, current), 'utf8');
 
     if (extension === '.html') {
       for (const match of content.matchAll(/(?:src|href)=["']([^"']+)["']/g)) {
@@ -79,8 +83,8 @@ export function collectExtensionFiles(rootDirectory) {
   return [...files].sort();
 }
 
-export function verifyExtensionDirectory(rootDirectory, packageDirectory) {
-  const expectedFiles = collectExtensionFiles(rootDirectory);
+export function verifyExtensionDirectory(extensionDirectory, packageDirectory, repoRootDirectory = extensionDirectory) {
+  const expectedFiles = collectExtensionFiles(extensionDirectory);
   const actualFiles = walkDirectory(packageDirectory)
     .map((file) => path.relative(packageDirectory, file))
     .sort();
@@ -93,7 +97,7 @@ export function verifyExtensionDirectory(rootDirectory, packageDirectory) {
     ].join('\n'));
   }
 
-  const { manifest, packageJson } = readProjectMetadata(rootDirectory);
+  const { manifest, packageJson } = readProjectMetadata(extensionDirectory, repoRootDirectory);
   if (manifest.version !== packageJson.version) {
     throw new Error(`Version mismatch: manifest ${manifest.version}, package ${packageJson.version}`);
   }

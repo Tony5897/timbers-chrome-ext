@@ -3,8 +3,8 @@ const fs = require('fs');
 const path = require('path');
 
 const SOURCE = path.resolve(__dirname, '..', 'assets', 'brand', 'pdx-matchday-mark.svg');
-const ROOT_OUTPUT = path.resolve(__dirname, '..', 'icon.png');
-const OUT_DIR = path.resolve(__dirname, '..', 'icons');
+const ROOT_OUTPUT = path.resolve(__dirname, '..', 'extension', 'icon.png');
+const OUT_DIR = path.resolve(__dirname, '..', 'extension', 'icons');
 const SIZES = [16, 48, 128];
 
 async function generate() {
@@ -15,7 +15,7 @@ async function generate() {
     .png({ compressionLevel: 9, adaptiveFiltering: true })
     .toFile(ROOT_OUTPUT);
 
-  console.log('  icon.png');
+  console.log('  extension/icon.png');
 
   for (const size of SIZES) {
     await sharp(source)
@@ -23,7 +23,7 @@ async function generate() {
       .png({ compressionLevel: 9, adaptiveFiltering: true })
       .toFile(path.join(OUT_DIR, `icon-${size}.png`));
 
-    console.log(`  icons/icon-${size}.png`);
+    console.log(`  extension/icons/icon-${size}.png`);
   }
 
   console.log('Done.');

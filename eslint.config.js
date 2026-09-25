@@ -22,7 +22,7 @@ module.exports = [
     },
   },
   {
-    files: ['background.js', 'runtime-config.js', 'auth.js', 'community.js'],
+    files: ['extension/background.js', 'extension/runtime-config.js', 'extension/auth.js', 'extension/community.js'],
     languageOptions: {
       globals: {
         module: 'readonly',
@@ -30,7 +30,7 @@ module.exports = [
     },
   },
   {
-    files: ['background.js'],
+    files: ['extension/background.js'],
     languageOptions: {
       globals: {
         importScripts: 'readonly',

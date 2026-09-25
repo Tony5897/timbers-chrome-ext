@@ -9,7 +9,7 @@ describe('Popup HTML Content', () => {
   let html;
 
   beforeAll(() => {
-    html = fs.readFileSync(path.resolve(__dirname, '../popup.html'), 'utf8');
+    html = fs.readFileSync(path.resolve(__dirname, '../extension/popup.html'), 'utf8');
   });
 
   beforeEach(() => {
@@ -82,7 +82,7 @@ describe('Popup.js Functionality', () => {
       if (type === 'DOMContentLoaded') activeDomContentLoadedListener = listener;
       originalAddEventListener(type, listener, options);
     };
-    const popupScriptContent = fs.readFileSync(path.resolve(__dirname, '../popup.js'), 'utf8');
+    const popupScriptContent = fs.readFileSync(path.resolve(__dirname, '../extension/popup.js'), 'utf8');
     const scriptEl = document.createElement('script');
     scriptEl.id = 'popupScript';
     scriptEl.textContent = popupScriptContent;
@@ -99,7 +99,7 @@ describe('Popup.js Functionality', () => {
   };
 
   beforeAll(() => {
-    html = fs.readFileSync(path.resolve(__dirname, '../popup.html'), 'utf8');
+    html = fs.readFileSync(path.resolve(__dirname, '../extension/popup.html'), 'utf8');
   });
 
   beforeEach(() => {
