@@ -9,7 +9,7 @@ A Chrome-first matchday extension for Portland Timbers and Portland Thorns suppo
 - **Extension version:** `1.0.5` (Manifest V3)
 - **Public site:** [tony5897.github.io/timbers-chrome-ext](https://tony5897.github.io/timbers-chrome-ext/)
 - **Privacy policy:** [PRIVACY.md](PRIVACY.md) (also hosted on the public site)
-- **Chrome Web Store:** published unlisted on an earlier package; release `1.0.5` is prepared and not yet submitted
+- **Chrome Web Store:** published and public; release `1.0.5` is live
 - **Backend:** dual-team API (schedule, standings grouped by conference, live match) is deployed to staging and production (last deployed 2026-09-24); ESPN remains the server-side sports-data provider
 
 ## Features
@@ -242,14 +242,14 @@ Public poll IDs use `poll-{matchId}-confidence-v1`, for example `poll-espn-40199
 
 ## Chrome Web Store
 
-- **Current listing status:** Published — unlisted
-- **Release `1.0.5` status:** Not submitted
+- **Current listing status:** Published — public
+- **Release `1.0.5` status:** Live
 
 ![Chrome Web Store presentation preview](assets/store/promo-marquee-1400x560.png)
 
-The extension is live on the Chrome Web Store and installable via direct link. It was submitted and approved on March 6, 2026.
+The extension is live and publicly listed on the Chrome Web Store — searchable in the store as well as installable via direct link. The original package was submitted and approved on March 6, 2026; release `1.0.5` was submitted and approved on 2026-09-25.
 
-Release `1.0.5` will not be submitted until its API, authentication, migration, rollback, privacy, support, listing-copy, screenshot, and store-artwork gates are approved. Store publication is intentionally outside the automated deployment workflow.
+Store publication is intentionally outside the automated deployment workflow.
 
 The original PDX Matchday identity, required promotional graphics, and five current-feature screenshots ship with this repository. Listing copy, permission justifications, privacy disclosures, release notes, and the final human review checklist are maintained privately and are not published in this repository. No current artwork uses a club crest, league mark, or official trade dress, and the listing explicitly identifies the extension as an independent fan project.
 
