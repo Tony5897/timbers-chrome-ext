@@ -29,11 +29,23 @@ A Chrome-first matchday extension for Portland Timbers and Portland Thorns suppo
 
 | Browser | Minimum Version | Status |
 |---------|----------------|--------|
-| Chrome  | 102+           | Supported |
-| Edge    | 102+           | Supported (Chromium-based) |
-| Safari  | 15.4+          | Supported (via Xcode conversion) |
+| Chrome  | Current stable | Primary review target; older versions not verified |
+| Edge    | Current stable | Chromium candidate; separate browser verification required |
+| Safari  | Current macOS/Xcode | Conversion tooling provided; compatibility not verified |
 
 ## Installation
+
+### Reviewer path and branch identity
+
+[Recorded checks and limitations](REVIEW.md)
+
+Use `main` explicitly: GitHub's default `develop` branch has a different layout and development history. At the September 30 review, `main` was `7cb124a` and `develop` was `2287dce`; they had diverged. This README describes the `main` layout (`extension/`). Commit identity, source version, and the installed store package are separate evidence; inspect the store's displayed version before comparing them. No branch reconciliation is required for local review.
+
+Start with [fallback resolution](extension/background.js), [failure-mode tests](tests/scraper.test.js), and [popup behavior tests](tests/popup.test.js). The popup suite loads the actual script through Jest so exercised behavior contributes to coverage. Coverage includes the four extension logic files; API and emulator suites are separate.
+
+No `.env` file or production credentials are required for install, lint, type-check, unit tests, builds, or the demo-project emulator suites. Use Node 22 and npm 10/11; `test:rules` additionally needs Java 21+. Run `npm run verify:phase0` for the complete local pipeline. First emulator execution downloads a Java archive.
+
+The packaged public runtime config points at the deployed backend. Browsing schedules makes read requests; community features can create anonymous authentication sessions and submit records. For isolated review, use test fixtures and the emulator, and do not vote or delete community data. `npm run dev` is a popup preview, not a complete replacement for loading the extension. Backend deployment requires separately configured Firebase projects and operator credentials; deployment/export/smoke commands are not setup steps.
 
 ### Prerequisites
 
@@ -43,7 +55,7 @@ A Chrome-first matchday extension for Portland Timbers and Portland Thorns suppo
 ### Setup
 
 ```bash
-git clone https://github.com/Tony5897/timbers-chrome-ext.git
+git clone --branch main https://github.com/Tony5897/timbers-chrome-ext.git
 cd timbers-chrome-ext
 npm ci
 npm run build:icons
@@ -90,16 +102,16 @@ Safari requires converting the extension into an Xcode project using Apple's too
 - Safari > Settings > Advanced > check **Show Develop menu in menu bar**
 - Develop > **Allow Unsigned Extensions** (requires re-enabling after each Safari restart)
 
-### Safari API Compatibility
+### Safari verification boundary
 
-All APIs used by this extension are natively supported in Safari 15.4+:
+Conversion alone does not establish Safari support. Verify these APIs, permissions, authentication, notifications, and service-worker behavior on the intended macOS/Safari version:
 
 - `chrome.runtime` (sendMessage, onMessage)
 - `chrome.storage.local`
 - `chrome.alarms`
 - MV3 service workers
 
-No polyfills or browser-specific code paths are required. The `chrome` namespace works natively in Safari Web Extensions.
+No minimum Safari version is claimed by the current verification record.
 
 ## Usage
 
@@ -235,7 +247,7 @@ Public poll IDs use `poll-{matchId}-confidence-v1`, for example `poll-espn-40199
 ## Security Considerations
 
 - **Manifest V3 service workers** — No persistent background page; the service worker is event-driven and terminates when idle, reducing memory footprint and attack surface.
-- **Minimal permissions** — Only `storage`, `alarms`, and three specific hosts for Firebase anonymous authentication, token refresh, and the Matchday API. ESPN is accessed server-side and is not a browser host permission. No `tabs`, `activeTab`, `webRequest`, geolocation, or broad host access.
+- **Permissions** — `storage`, `alarms`, `notifications`, and three specific hosts for Firebase anonymous authentication, token refresh, and the Matchday API. ESPN is accessed server-side and is not a browser host permission. No `tabs`, `activeTab`, `webRequest`, geolocation, or broad host access.
 - **No remote code execution** — All JavaScript is bundled locally. No CDN imports, no `eval()`, no dynamically injected scripts.
 - **CSP-compliant** — No inline scripts in `popup.html`; all logic loads from `popup.js` via a standard `<script>` tag, satisfying Chrome's extension Content Security Policy.
 - **Structured data only** — Match data is consumed as parsed JSON from the Matchday API. No raw HTML is injected into the popup.
@@ -257,7 +269,7 @@ The original PDX Matchday identity, required promotional graphics, and five curr
 
 - **Manifest V3** compliant
 - Icons at 16px, 48px, and 128px
-- Minimal permissions (`storage`, `alarms`, and specific hosts for Firebase anonymous authentication, token refresh, and the Matchday API; ESPN is accessed server-side only)
+- Permissions (`storage`, `alarms`, `notifications`, and specific hosts for Firebase anonymous authentication, token refresh, and the Matchday API; ESPN is accessed server-side only)
 - Privacy policy included (`PRIVACY.md`)
 - No remote code execution; all logic is bundled locally
 

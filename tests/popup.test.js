@@ -82,11 +82,8 @@ describe('Popup.js Functionality', () => {
       if (type === 'DOMContentLoaded') activeDomContentLoadedListener = listener;
       originalAddEventListener(type, listener, options);
     };
-    const popupScriptContent = fs.readFileSync(path.resolve(__dirname, '../extension/popup.js'), 'utf8');
-    const scriptEl = document.createElement('script');
-    scriptEl.id = 'popupScript';
-    scriptEl.textContent = popupScriptContent;
-    document.body.appendChild(scriptEl);
+    // Load through Jest's transformer so the exercised script contributes coverage.
+    jest.isolateModules(() => require('../extension/popup.js'));
     document.addEventListener = originalAddEventListener;
   };
 
